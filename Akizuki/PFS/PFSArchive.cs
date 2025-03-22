@@ -26,11 +26,26 @@ public sealed class PFSArchive : IDisposable {
 		var data = new SpanReader(rented.AsSpan(0, size));
 		try {
 			Header = data.Read<PFSIndexHeader>();
-			if (Header.EndianTest is not 0x02000000) throw new NotSupportedException("PFS Index Big Endian is not supported");
+			if (Header.EndianTest is not 0x02000000) {
+				throw new NotSupportedException("PFS Index Big Endian is not supported");
+			}
 
-			if (Header.Magic != PFSIndexHeader.PFSIMagic) throw new InvalidDataException("PFS Index Unrecognised File Identifier");
+			if (Header.Magic != PFSIndexHeader.PFSIMagic) {
+				throw new InvalidDataException("PFS Index Unrecognised File Identifier");
+			}
 
-			if (Header.Bits is not 64) throw new NotSupportedException($"PFS Index Bit Size of {Header.Bits} not supported");
+			if (Header.Bits is not 64) {
+				throw new NotSupportedException($"PFS Index Bit Size of {Header.Bits} not supported");
+			}
+
+			if (ShouldValidate) {
+				var hash = MurmurHash3Algorithm.Hash32_32(data.Buffer[0x10..]);
+				if (hash != Header.Hash) {
+					throw new CorruptDataException("PFS Index Checksum Mismatch");
+				}
+
+				AkizukiLog.Verbose("PFS Passed Checksum Validation");
+			}
 
 			AkizukiLog.Debug("{Value}", Header);
 
@@ -46,7 +61,7 @@ public sealed class PFSArchive : IDisposable {
 			var names = new Dictionary<ulong, (string, PFSFileName)>(Info.FileNameCount);
 			foreach (var fileName in fileNames) {
 				data.Offset = nameOffset + (int) fileName.Name.NamePtr;
-				names[fileName.Name.Id] = (data.ReadString(), fileName);
+				names[fileName.Name.Id] = (data.ReadString((int) fileName.Name.NameLength - 1), fileName);
 				nameOffset += oneNameEntry;
 			}
 
@@ -70,19 +85,19 @@ public sealed class PFSArchive : IDisposable {
 			var packageNames = data.Read<PFSNamedId>(Info.PackageCount);
 			foreach (var packageName in packageNames) {
 				data.Offset = packageOffset + (int) packageName.NamePtr;
-				var path = Path.Combine(packageDirectory, data.ReadString());
-				if (File.Exists(path)) Packages[packageName.Id] = new FileStream(Path.Combine(packageDirectory, data.ReadString()), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+				var path = Path.Combine(packageDirectory, data.ReadString((int) packageName.NameLength - 1));
+
+				if (File.Exists(path)) {
+					Packages[packageName.Id] = new FileStream(Path.Combine(packageDirectory, path), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+				}
 
 				packageOffset += onePkgEntry;
 			}
-			
-			if (ShouldValidate) {
-				var hash = MurmurHash3Algorithm.Hash32_32(data.Buffer[..data.Offset][0x10..]);
-				if (hash != Header.Hash) throw new CorruptDataException("PFS Index Checksum Mismatch");
-			}
 		} finally {
 			ArrayPool<byte>.Shared.Return(rented);
-			if (!leaveOpen) stream.Dispose();
+			if (!leaveOpen) {
+				stream.Dispose();
+			}
 		}
 	}
 
@@ -104,13 +119,17 @@ public sealed class PFSArchive : IDisposable {
 	}
 
 	private void ResolvePath(PFSFileName fileName, Dictionary<ulong, (string Name, PFSFileName FileName)> names) {
-		if (Paths.ContainsKey(fileName.Name.Id)) return;
+		if (Paths.ContainsKey(fileName.Name.Id)) {
+			return;
+		}
 
 		ResolvePath(names[fileName.Name.Id].Name, fileName.Name.Id, fileName.ParentId, names);
 	}
 
 	private string ResolvePath(string name, ulong id, ulong parentId, Dictionary<ulong, (string Name, PFSFileName FileName)> names) {
-		if (Paths.TryGetValue(parentId, out var parentPath)) return Paths[id] = parentPath + "/" + name;
+		if (Paths.TryGetValue(parentId, out var parentPath)) {
+			return Paths[id] = parentPath + "/" + name;
+		}
 
 		var (parentName, parentFile) = names[parentId];
 		return Paths[id] = ResolvePath(parentName, parentId, parentFile.ParentId, names) + "/" + name;
@@ -118,7 +137,9 @@ public sealed class PFSArchive : IDisposable {
 
 	public byte[]? OpenFile(string path, out int length) {
 		foreach (var (id, name) in Paths) {
-			if (name.Equals(path, StringComparison.OrdinalIgnoreCase)) return OpenFile(id, out length);
+			if (name.Equals(path, StringComparison.OrdinalIgnoreCase)) {
+				return OpenFile(id, out length);
+			}
 		}
 
 		length = 0;
@@ -135,13 +156,17 @@ public sealed class PFSArchive : IDisposable {
 		var file = Files[fileIndex];
 		length = (int) file.UncompressedSize;
 		var data = OpenFile(file);
-		if (data == null) length = 0;
+		if (data == null) {
+			length = 0;
+		}
 
 		return data;
 	}
 
 	public byte[]? OpenFile(PFSFile file, ArrayPool<byte>? pool = null) {
-		if (!Packages.TryGetValue(file.PackageId, out var packageStream)) return null;
+		if (!Packages.TryGetValue(file.PackageId, out var packageStream)) {
+			return null;
+		}
 
 		pool ??= ArrayPool<byte>.Shared;
 		var data = pool.Rent(int.CreateChecked(file.UncompressedSize));
@@ -176,7 +201,11 @@ public sealed class PFSArchive : IDisposable {
 
 			if (ShouldValidate) {
 				var hash = CRC.HashData(CRC32Variants.ISO, dataSpan);
-				if (hash != file.Hash) throw new InvalidDataException("Checksum mismatch");
+				if (hash != file.Hash) {
+					throw new InvalidDataException("Checksum mismatch");
+				}
+
+				AkizukiLog.Verbose("File {File:x16} Passed Checksum Validation", file.Id);
 			}
 		} catch {
 			pool.Return(data);

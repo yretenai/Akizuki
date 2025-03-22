@@ -30,9 +30,16 @@ internal static class Program {
 				AkizukiLog.Information("{Value}", name ?? $"{file.Id:x16}");
 
 				var data = pfs.OpenFile(file);
-				if (data == null) return;
+				if (data == null) {
+					AkizukiLog.Warning("Failed ot open {File}", name ?? $"{file.Id:x16}");
+					continue;
+				}
 
 				try {
+					if (flags.Dry) {
+						continue;
+					}
+					
 					var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 					Directory.CreateDirectory(dir);
 					using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
@@ -68,4 +75,7 @@ internal record ProgramFlags : CommandLineFlags {
 
 	[Flag("validate", Help = "Verify if package data is corrupt or not", Category = "Akizuki")]
 	public bool Validate { get; set; }
+
+	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
+	public bool Dry { get; set; }
 }
