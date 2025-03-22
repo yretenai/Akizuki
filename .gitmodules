@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2025 Ada N
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+[submodule "DragonLib"]
+	path = DragonLib
+	url = https://github.com/yretenai/DragonLib.git
+[submodule "Waterfall"]
+	path = Waterfall
+	url = https://github.com/yretenai/Waterfall.git
