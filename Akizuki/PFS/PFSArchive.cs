@@ -35,7 +35,7 @@ public sealed class PFSArchive : IDisposable {
 		}
 
 		if (Header.Magic != PFSIndexHeader.PFSIMagic) {
-			throw new InvalidDataException("PFS Index Unrecognised File Identifier");
+			throw new InvalidDataException("File is not recognised as a PFS Index");
 		}
 
 		if (Header.Bits is not 64) {
@@ -133,7 +133,7 @@ public sealed class PFSArchive : IDisposable {
 		return Paths[id] = ResolvePath(parentName, parentId, parentFile.ParentId, names) + "/" + name;
 	}
 
-	public IMemoryBuffer? OpenFile(string path) {
+	public IMemoryBuffer<byte>? OpenFile(string path) {
 		foreach (var (id, name) in Paths) {
 			if (name.Equals(path, StringComparison.OrdinalIgnoreCase)) {
 				return OpenFile(id);
@@ -143,7 +143,7 @@ public sealed class PFSArchive : IDisposable {
 		return null;
 	}
 
-	public IMemoryBuffer? OpenFile(ulong id) {
+	public IMemoryBuffer<byte>? OpenFile(ulong id) {
 		var fileIndex = Files.BinarySearch(new PFSFile { Id = id });
 		if (fileIndex < 0 || fileIndex >= Files.Count) {
 			return null;
@@ -152,18 +152,18 @@ public sealed class PFSArchive : IDisposable {
 		return OpenFile(Files[fileIndex]);
 	}
 
-	public IMemoryBuffer? OpenFile(PFSFile file) {
+	public IMemoryBuffer<byte>? OpenFile(PFSFile file) {
 		if (!Packages.TryGetValue(file.PackageId, out var packageStream)) {
 			return null;
 		}
 
-		var data = new MemoryBuffer(int.CreateChecked(file.UncompressedSize));
+		var data = new MemoryBuffer<byte>(int.CreateChecked(file.UncompressedSize));
 		var dataMemory = data.Memory;
 		var dataSpan = data.Span;
 
 		try {
 			if ((file.Flags & PFSFileFlags.Compressed) != 0) {
-				using var compressed = new MemoryBuffer(int.CreateChecked(file.CompressedSize));
+				using var compressed = new MemoryBuffer<byte>(int.CreateChecked(file.CompressedSize));
 				var compressedMemory = compressed.Memory;
 				var compressedSpan = compressed.Span;
 

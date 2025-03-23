@@ -7,9 +7,9 @@ using DragonLib.IO;
 namespace Akizuki;
 
 public static class Extensions {
-	public static IMemoryBuffer ToRented(this Stream stream) {
+	public static IMemoryBuffer<byte> ToRented(this Stream stream) {
 		var size = (int) (stream.Length - stream.Position);
-		var memory = new MemoryBuffer(size);
+		var memory = new MemoryBuffer<byte>(size);
 		stream.ReadExactly(memory.Span);
 		return memory;
 	}
