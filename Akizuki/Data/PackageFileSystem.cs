@@ -2,23 +2,24 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Akizuki.Exceptions;
-using Akizuki.Structs.PFS;
+using Akizuki.Structs.Data;
 using DragonLib.Hash;
 using DragonLib.Hash.Algorithms;
 using DragonLib.Hash.Basis;
 using DragonLib.IO;
 using Waterfall.Compression;
 
-namespace Akizuki.PFS;
+namespace Akizuki.Data;
 
-public sealed class PFSArchive : IDisposable {
-	public PFSArchive(string packageDirectory, string path, bool validate = true) :
+public sealed class PackageFileSystem : IDisposable {
+	public PackageFileSystem(string packageDirectory, string path, bool validate = true) :
 		this(packageDirectory, new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), false, validate) { }
 
-	public PFSArchive(string packageDirectory, Stream stream, bool leaveOpen = false, bool validate = true) {
+	public PackageFileSystem(string packageDirectory, Stream stream, bool leaveOpen = false, bool validate = true) {
 		ShouldValidate = validate;
 
 		using var deferred = new DeferredDisposable(() => {
@@ -29,64 +30,71 @@ public sealed class PFSArchive : IDisposable {
 
 		using var rented = stream.ToRented();
 		var data = new SpanReader(rented.Span);
-		Header = data.Read<PFSIndexHeader>();
-		if (Header.EndianTest is not 0x02000000) {
+		BigWorldHeader = data.Read<BWFileHeader>();
+		Version = (int) BinaryPrimitives.ReverseEndianness(BigWorldHeader.EndianTest);
+
+		if (Version > BigWorldHeader.EndianTest) {
 			throw new NotSupportedException("PFS Index Big Endian is not supported");
 		}
 
-		if (Header.Magic != PFSIndexHeader.PFSIMagic) {
+		if (Version != 2) {
+			throw new NotSupportedException("Only PFS Version 2 is supported");
+		}
+
+		if (BigWorldHeader.Magic != BWFileHeader.PFSIMagic) {
 			throw new InvalidDataException("File is not recognised as a PFS Index");
 		}
 
-		if (Header.Bits is not 64) {
-			throw new NotSupportedException($"PFS Index Bit Size of {Header.Bits} not supported");
+		if (BigWorldHeader.Bits is not 64) {
+			throw new NotSupportedException($"PFS Index Bit Size of {BigWorldHeader.Bits} not supported");
 		}
 
+		var baseRel = Unsafe.SizeOf<BWFileHeader>();
+
 		if (ShouldValidate) {
-			var hash = MurmurHash3Algorithm.Hash32_32(data.Buffer[0x10..]);
-			if (hash != Header.Hash) {
+			var hash = MurmurHash3Algorithm.Hash32_32(data.Buffer[baseRel..]);
+			if (hash != BigWorldHeader.Hash) {
 				throw new CorruptDataException("PFS Index Checksum Mismatch");
 			}
 
 			AkizukiLog.Verbose("PFS Passed Checksum Validation");
 		}
 
+		AkizukiLog.Debug("{Value}", BigWorldHeader);
+
+		Header = data.Read<PFSIndexHeader>();
 		AkizukiLog.Debug("{Value}", Header);
 
-		var pfsOffset = data.Offset;
-		Info = data.Read<PFSIndexInfo>();
-		AkizukiLog.Debug("{Value}", Info);
-
-		var nameOffset = pfsOffset + (int) Info.FileNameSectionPtr;
+		var nameOffset = baseRel + (int) Header.FileNameSectionPtr;
 		data.Offset = nameOffset;
 		var oneNameEntry = Unsafe.SizeOf<PFSFileName>();
 
-		var fileNames = data.Read<PFSFileName>(Info.FileNameCount);
-		var names = new Dictionary<ulong, (string, PFSFileName)>(Info.FileNameCount);
+		var fileNames = data.Read<PFSFileName>(Header.FileNameCount);
+		var names = new Dictionary<ulong, (string, PFSFileName)>(Header.FileNameCount);
 		foreach (var fileName in fileNames) {
 			data.Offset = nameOffset + (int) fileName.Name.NamePtr;
 			names[fileName.Name.Id] = (data.ReadString((int) fileName.Name.NameLength - 1), fileName);
 			nameOffset += oneNameEntry;
 		}
 
-		Paths.EnsureCapacity(Info.FileNameCount);
+		Paths.EnsureCapacity(Header.FileNameCount);
 		foreach (var fileName in fileNames) {
 			ResolvePath(fileName, names);
 		}
 
-		data.Offset = pfsOffset + (int) Info.FileInfoSectionPtr;
-		var files = data.Read<PFSFile>(Info.FileInfoCount);
-		Files.EnsureCapacity(Info.FileNameCount);
+		data.Offset = baseRel + (int) Header.FileInfoSectionPtr;
+		var files = data.Read<PFSFile>(Header.FileInfoCount);
+		Files.EnsureCapacity(Header.FileNameCount);
 		foreach (var file in files) {
 			Files.Add(file);
 		}
 
 		Files.Sort();
 
-		var packageOffset = pfsOffset + (int) Info.PackageSectionPtr;
+		var packageOffset = baseRel + (int) Header.PackageSectionPtr;
 		data.Offset = packageOffset;
 		var onePkgEntry = Unsafe.SizeOf<PFSNamedId>();
-		var packageNames = data.Read<PFSNamedId>(Info.PackageCount);
+		var packageNames = data.Read<PFSNamedId>(Header.PackageCount);
 		foreach (var packageName in packageNames) {
 			data.Offset = packageOffset + (int) packageName.NamePtr;
 			var path = Path.Combine(packageDirectory, data.ReadString((int) packageName.NameLength - 1));
@@ -99,8 +107,9 @@ public sealed class PFSArchive : IDisposable {
 		}
 	}
 
+	public BWFileHeader BigWorldHeader { get; }
+	public int Version { get; }
 	public PFSIndexHeader Header { get; }
-	public PFSIndexInfo Info { get; }
 
 	public Dictionary<ulong, string> Paths { get; } = new() {
 		[0xDBB1A1D1B108B927ul] = "res",

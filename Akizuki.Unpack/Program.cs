@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using Akizuki.PFS;
+using Akizuki.Data;
 using Akizuki.Unpack.Conversion.Space;
 using DragonLib.CommandLine;
 using DragonLib.IO;
@@ -23,7 +23,7 @@ internal static class Program {
 
 		foreach (var idxFile in new FileEnumerator(flags.IndexFiles, "*.idx")) {
 			AkizukiLog.Information("Opening {Index}", Path.GetFileNameWithoutExtension(idxFile));
-			using var pfs = new PFSArchive(flags.PackageDirectory, idxFile, flags.Validate);
+			using var pfs = new PackageFileSystem(flags.PackageDirectory, idxFile, flags.Validate);
 
 			foreach (var file in pfs.Files) {
 				var path = Path.Combine(flags.OutputDirectory, pfs.Paths.TryGetValue(file.Id, out var name) ? name.TrimStart('/', '.') : $"res/{file.Id:x16}.bin");

@@ -9,7 +9,13 @@ using Silk.NET.Maths;
 namespace Akizuki.Space;
 
 public sealed class CompiledTerrain : IDisposable {
-	public CompiledTerrain(IMemoryBuffer<byte> buffer) {
+	public CompiledTerrain(IMemoryBuffer<byte> buffer, bool leaveOpen = false) {
+		using var deferred = new DeferredDisposable(() => {
+			if (!leaveOpen) {
+				buffer.Dispose();
+			}
+		});
+		
 		var data = new SpanReader(buffer.Span);
 
 		Header = data.Read<CompiledTerrainHeader>();

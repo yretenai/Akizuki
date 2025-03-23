@@ -4,7 +4,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace Akizuki.Structs.PFS;
+namespace Akizuki.Structs.Data;
 
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
 public record struct PFSNamedId {

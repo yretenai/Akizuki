@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-namespace Akizuki.Structs.PFS;
+namespace Akizuki.Structs.Data;
 
-public enum PFSCompressionType : uint {
+[Flags]
+public enum PFSFileFlags : uint {
 	None = 0,
-	Deflate = 5,
+	Compressed = 1,
 }
