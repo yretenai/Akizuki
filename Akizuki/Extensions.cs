@@ -2,15 +2,15 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Buffers;
+using DragonLib.IO;
 
 namespace Akizuki;
 
 public static class Extensions {
-	public static byte[] ToRented(this Stream stream, out int size, ArrayPool<byte>? pool = null) {
-		size = (int) (stream.Length - stream.Position);
-		var rent = (pool ?? ArrayPool<byte>.Shared).Rent(size);
-		stream.ReadExactly(rent.AsSpan(0, size));
-		return rent;
+	public static IMemoryBuffer ToRented(this Stream stream) {
+		var size = (int) (stream.Length - stream.Position);
+		var memory = new MemoryBuffer(size);
+		stream.ReadExactly(memory.Span);
+		return memory;
 	}
 }

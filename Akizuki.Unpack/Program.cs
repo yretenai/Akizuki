@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-﻿using System.Buffers;
 using Akizuki.PFS;
 using DragonLib.CommandLine;
 using DragonLib.IO;
@@ -29,24 +28,20 @@ internal static class Program {
 				var path = Path.Combine(flags.OutputDirectory, pfs.Paths.TryGetValue(file.Id, out var name) ? name.TrimStart('/', '.') : $"res/{file.Id:x16}.bin");
 				AkizukiLog.Information("{Value}", name ?? $"{file.Id:x16}");
 
-				var data = pfs.OpenFile(file);
+				using var data = pfs.OpenFile(file);
 				if (data == null) {
 					AkizukiLog.Warning("Failed ot open {File}", name ?? $"{file.Id:x16}");
 					continue;
 				}
 
-				try {
-					if (flags.Dry) {
-						continue;
-					}
-					
-					var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
-					Directory.CreateDirectory(dir);
-					using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-					stream.Write(data.AsSpan(0, (int) file.UncompressedSize));
-				} finally {
-					ArrayPool<byte>.Shared.Return(data);
+				if (flags.Dry) {
+					continue;
 				}
+				
+				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
+				Directory.CreateDirectory(dir);
+				using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+				stream.Write(data.Span);
 			}
 		}
 	}
