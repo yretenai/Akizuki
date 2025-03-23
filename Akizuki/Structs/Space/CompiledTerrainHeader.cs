@@ -12,8 +12,8 @@ public record struct CompiledTerrainHeader {
 	public uint Magic { get; set; }
 	public int Width { get; set; }
 	public int Height { get; set; }
-	public ushort SDSize { get; set; }
-	public ushort Flags { get; set; }
+	public ushort Chunks { get; set; }
+	public ushort UnitsPerChunk { get; set; }
 	public float Min { get; set; }
 	public float Max { get; set; }
 }

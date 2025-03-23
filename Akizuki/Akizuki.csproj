@@ -19,6 +19,7 @@ SPDX-License-Identifier: EUPL-1.2
 
 	<ItemGroup>
 		<PackageReference Include="Serilog" Version="4.2.0"/>
+		<PackageReference Include="Silk.NET.Maths" Version="2.22.0"/>
 	</ItemGroup>
 
 </Project>
