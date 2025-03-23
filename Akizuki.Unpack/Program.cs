@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using Akizuki.PFS;
+using Akizuki.Unpack.Conversion.Space;
 using DragonLib.CommandLine;
 using DragonLib.IO;
 using Serilog;
@@ -23,7 +24,7 @@ internal static class Program {
 		foreach (var idxFile in new FileEnumerator(flags.IndexFiles, "*.idx")) {
 			AkizukiLog.Information("Opening {Index}", Path.GetFileNameWithoutExtension(idxFile));
 			using var pfs = new PFSArchive(flags.PackageDirectory, idxFile, flags.Validate);
-			
+
 			foreach (var file in pfs.Files) {
 				var path = Path.Combine(flags.OutputDirectory, pfs.Paths.TryGetValue(file.Id, out var name) ? name.TrimStart('/', '.') : $"res/{file.Id:x16}.bin");
 				AkizukiLog.Information("{Value}", name ?? $"{file.Id:x16}");
@@ -37,40 +38,73 @@ internal static class Program {
 				if (flags.Dry) {
 					continue;
 				}
-				
+
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 				Directory.CreateDirectory(dir);
+
+				if (flags.Convert && Convert(path, data)) {
+					continue;
+				}
+
 				using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 				stream.Write(data.Span);
 			}
 		}
 	}
-}
 
-internal record ProgramFlags : CommandLineFlags {
-	[Flag("output-directory", Positional = 0, IsRequired = true, Category = "Akizuki")]
-	public string OutputDirectory { get; set; } = null!;
+	private static bool Convert(string path, IMemoryBuffer<byte> data) {
+		var ext = Path.GetExtension(path).ToLowerInvariant();
+		var name = Path.GetFileName(path).ToLowerInvariant();
 
-	[Flag("package-directory", Positional = 1, IsRequired = true, Category = "Akizuki")]
-	public string PackageDirectory { get; set; } = null!;
+		switch (ext) {
+			case ".dd2": // 8k
+			case ".dd1": // 4k
+			case ".dd0": // 2k
+			case ".dds": // 1k
+				// todo
+				break;
+			case ".geometry":
+				// todo
+				break;
+			case ".splash":
+				// todo
+				break;
+			case ".prefab":
+				// todo
+				break;
+			case ".anim":
+				// todo
+				break;
+			case ".wem":
+				// todo
+				break;
+			case ".bnk":
+				// todo
+				break;
+			case ".bin":
+				switch (name) {
+					case "terrain.bin":
+						return TerrainConverter.Convert(path, data);
+					case "decor.bin":
+						// todo
+						break;
+					case "models.bin":
+						// todo
+						break;
+					case "forest.bin":
+						// todo
+						break;
+					case "space.bin":
+						// todo
+						break;
+					case "assets.bin":
+						// todo
+						break;
+				}
 
-	[Flag("package-index", Positional = 2, IsRequired = true, Category = "Akizuki")]
-	public List<string> IndexFiles { get; set; } = [];
+				break;
+		}
 
-	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
-	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
-
-#if DEBUG
-	[Flag("verbose", Help = "Set log level to the highest possible level", Category = "Akizuki")]
-#endif
-	public bool Verbose { get; set; }
-
-	[Flag("quiet", Help = "Set log level to the lowest possible level", Category = "Akizuki")]
-	public bool Quiet { get; set; }
-
-	[Flag("validate", Help = "Verify if package data is corrupt or not", Category = "Akizuki")]
-	public bool Validate { get; set; }
-
-	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
-	public bool Dry { get; set; }
+		return false;
+	}
 }
