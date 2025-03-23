@@ -8,3 +8,9 @@
 [submodule "Waterfall"]
 	path = Waterfall
 	url = https://github.com/yretenai/Waterfall.git
+[submodule "Triton"]
+	path = Triton
+	url = https://github.com/yretenai/Triton.git
+[submodule "BCDecNet"]
+	path = BCDecNet
+	url = https://github.com/yretenai/BCDecNet.git
