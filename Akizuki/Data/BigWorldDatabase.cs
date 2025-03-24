@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using Akizuki.Exceptions;
 using Akizuki.Structs.Data;
@@ -54,8 +53,9 @@ public class BigWorldDatabase {
 
 		var resourceBase = baseRel + Unsafe.SizeOf<BWDBDictionary>() + Unsafe.SizeOf<ulong>() * 2;
 		var pathsBase = resourceBase + Unsafe.SizeOf<BWDBDictionary>();
-		
+
 	#region Strings
+
 		{
 			data.Offset = (int) (baseRel + Header.Strings.KeyPtr);
 			var assetIdKeys = data.Read<BWDBDictionaryKey<uint>>((int) Header.Strings.Count);
@@ -75,9 +75,11 @@ public class BigWorldDatabase {
 				Strings[assetId.Key] = data.ReadString();
 			}
 		}
+
 	#endregion
 
 	#region Paths
+
 		{
 			var nameOffset = (int) (pathsBase + Header.PathsPtr);
 			data.Offset = nameOffset;
@@ -97,6 +99,7 @@ public class BigWorldDatabase {
 				ResolvePath(fileName, names);
 			}
 		}
+
 	#endregion
 
 	#region PathToPrototype
@@ -105,7 +108,7 @@ public class BigWorldDatabase {
 			data.Offset = (int) (resourceBase + Header.ResourcePrototypes.KeyPtr);
 			var resourceKeys = data.Read<BWDBDictionaryKey<ulong>>((int) Header.ResourcePrototypes.Count);
 			data.Offset = (int) (resourceBase + Header.ResourcePrototypes.ValuePtr);
-			var resourceValues = data.Read<int>((int) Header.ResourcePrototypes.Count);
+			var resourceValues = data.Read<BWPrototypeInfo>((int) Header.ResourcePrototypes.Count);
 
 			ResourceToPrototype.EnsureCapacity((int) Header.ResourcePrototypes.Count);
 			for (var index = 0; index < resourceKeys.Length; index++) {
@@ -115,22 +118,23 @@ public class BigWorldDatabase {
 					continue;
 				}
 
-				if (resourceValues[index] < 0) {
+				var resourceInfo = resourceValues[index];
+				if (!resourceInfo.IsValid) {
 					continue;
 				}
-				
-				// todo: resolve this.
+
 				// "data only" assets, such as .model, .visual are stored in this file and named via this.
-				// no clue how it resolves.
-				ResourceToPrototype[resourceId.Key] = new BWPrototypeRef(Paths[resourceId.Key], resourceValues[index]);
+				ResourceToPrototype[resourceId.Key] = resourceInfo;
 			}
 		}
+
 	#endregion
 	}
+
 	public BWFileHeader BigWorldHeader { get; }
 	public BWDBHeader Header { get; }
 	public Dictionary<uint, string> Strings { get; } = [];
-	public Dictionary<ulong, BWPrototypeRef> ResourceToPrototype { get; } = [];
+	public Dictionary<ulong, BWPrototypeInfo> ResourceToPrototype { get; } = [];
 
 	public Dictionary<ulong, string> Paths { get; } = new() {
 		[0] = "res",

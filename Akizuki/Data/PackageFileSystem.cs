@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Akizuki.Exceptions;
