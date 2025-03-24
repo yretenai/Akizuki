@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Text.Json;
 using Akizuki.Data;
 using Akizuki.Unpack.Conversion.Space;
 using DragonLib.CommandLine;
@@ -27,6 +28,12 @@ internal static class Program {
 
 			foreach (var file in pfs.Files) {
 				var path = Path.Combine(flags.OutputDirectory, pfs.Paths.TryGetValue(file.Id, out var name) ? name.TrimStart('/', '.') : $"res/{file.Id:x16}.bin");
+			#if DEBUG
+				if (!path.EndsWith("assets.bin")) {
+					continue;
+				}
+			#endif
+
 				AkizukiLog.Information("{Value}", name ?? $"{file.Id:x16}");
 
 				using var data = pfs.OpenFile(file);
@@ -97,9 +104,12 @@ internal static class Program {
 					case "space.bin":
 						// todo
 						break;
-					case "assets.bin":
-						// todo
+					case "assets.bin": {
+						var assets = new BigWorldDatabase(data);
+						using var stream = new FileStream(Path.ChangeExtension(path, ".json"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+						JsonSerializer.Serialize(stream, assets, new JsonSerializerOptions { WriteIndented = true });
 						break;
+					}
 				}
 
 				break;

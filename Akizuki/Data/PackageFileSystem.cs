@@ -31,13 +31,12 @@ public sealed class PackageFileSystem : IDisposable {
 		using var rented = stream.ToRented();
 		var data = new SpanReader(rented.Span);
 		BigWorldHeader = data.Read<BWFileHeader>();
-		Version = (int) BinaryPrimitives.ReverseEndianness(BigWorldHeader.EndianTest);
 
-		if (Version > BigWorldHeader.EndianTest) {
+		if (!BigWorldHeader.IsHostEndian) {
 			throw new NotSupportedException("PFS Index Big Endian is not supported");
 		}
 
-		if (Version != 2) {
+		if (BigWorldHeader.Version != 2) {
 			throw new NotSupportedException("Only PFS Version 2 is supported");
 		}
 
@@ -45,8 +44,8 @@ public sealed class PackageFileSystem : IDisposable {
 			throw new InvalidDataException("File is not recognised as a PFS Index");
 		}
 
-		if (BigWorldHeader.Bits is not 64) {
-			throw new NotSupportedException($"PFS Index Bit Size of {BigWorldHeader.Bits} not supported");
+		if (BigWorldHeader.PointerSize is not 64) {
+			throw new NotSupportedException($"PFS Index Bit Size of {BigWorldHeader.PointerSize} not supported");
 		}
 
 		var baseRel = Unsafe.SizeOf<BWFileHeader>();
@@ -108,7 +107,6 @@ public sealed class PackageFileSystem : IDisposable {
 	}
 
 	public BWFileHeader BigWorldHeader { get; }
-	public int Version { get; }
 	public PFSIndexHeader Header { get; }
 
 	public Dictionary<ulong, string> Paths { get; } = new() {
