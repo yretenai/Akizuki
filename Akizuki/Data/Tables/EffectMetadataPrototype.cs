@@ -9,7 +9,7 @@ using DragonLib.IO;
 namespace Akizuki.Data.Tables;
 
 public partial class EffectMetadataPrototype : Dictionary<string, EffectMetaPrototype> {
-	public EffectMetadataPrototype(MemoryReader data, BigWorldDatabase db) {
+	public EffectMetadataPrototype(MemoryReader data) {
 		var offset = data.Offset;
 		var info = data.Read<long>(2);
 		var count = (int) info[0];
