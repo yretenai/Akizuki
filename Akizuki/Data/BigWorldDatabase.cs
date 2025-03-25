@@ -208,12 +208,11 @@ public class BigWorldDatabase {
 
 		AkizukiLog.Debug("Unable to resolve record for {Info}", info);
 		return null;
-
 	}
 
 	public bool IsAssetIdUsed(ulong id) => ResourceToPrototype.ContainsKey(id);
 
-	public string GetPath(ulong id) => id == 0 ? string.Empty : Paths.GetValueOrDefault(id, id.ToString("x16"));
+	public string GetPath(ulong id) => id is 0 or ulong.MaxValue ? string.Empty : Paths.GetValueOrDefault(id, id.ToString("x16"));
 
-	public string GetString(uint id) => id == 0 ? string.Empty : Strings.GetValueOrDefault(id, id.ToString("x08"));
+	public string GetString(uint id) => id is 0 or uint.MaxValue ? string.Empty : Strings.GetValueOrDefault(id, id.ToString("x08"));
 }

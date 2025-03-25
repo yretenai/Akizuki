@@ -8,8 +8,11 @@ SPDX-License-Identifier: EUPL-1.2
 	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=BW/@EntryIndexedValue">BW</s:String>
 	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=BWDB/@EntryIndexedValue">BWDB</s:String>
 	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=HD/@EntryIndexedValue">HD</s:String>
+	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=LOD/@EntryIndexedValue">LOD</s:String>
 	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=PFS/@EntryIndexedValue">PFS</s:String>
 	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=SD/@EntryIndexedValue">SD</s:String>
 	<s:String x:Key="/Default/CodeStyle/Naming/CSharpNaming/Abbreviations/=TRB/@EntryIndexedValue">TRB</s:String>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=abovewater/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=akizuki/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=lods/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=pfsi/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

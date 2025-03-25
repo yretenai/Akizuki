@@ -164,7 +164,6 @@ public sealed class PackageFileSystem : IDisposable {
 
 		AkizukiLog.Debug("Could not find {Id:x16}", id);
 		return null;
-
 	}
 
 	public IMemoryBuffer<byte>? OpenFile(PFSFile file) {

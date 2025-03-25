@@ -14,7 +14,7 @@ public interface IPrototype {
 	public static virtual uint Version => 0;
 	public static virtual uint Id => 0;
 	public static virtual int Size => 0;
-	public static virtual string Name => string.Empty;
+	public static virtual string PrototypeName => string.Empty;
 	public static virtual void AppendVersion(StringBuilder sb) { }
 	public static virtual IPrototype Create(MemoryReader data, BigWorldDatabase db) => throw new NotSupportedException();
 

@@ -8,7 +8,7 @@ using Silk.NET.Maths;
 
 namespace Akizuki.Data.Tables;
 
-public partial class MaterialPrototype : IPrototype {
+public partial class MaterialPrototype {
 	public MaterialPrototype(MemoryReader reader, BigWorldDatabase db) {
 		var offset = reader.Offset;
 		var header = reader.Read<MaterialPrototypeHeader>();

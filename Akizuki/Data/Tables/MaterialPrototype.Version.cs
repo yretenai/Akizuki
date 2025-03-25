@@ -9,10 +9,10 @@ using DragonLib.IO;
 
 namespace Akizuki.Data.Tables;
 
-public partial class MaterialPrototype {
+public partial class MaterialPrototype : IPrototype {
 	static MaterialPrototype() {
 		var sb = new StringBuilder(0x4000);
-		sb.Append("MaterialPrototype");
+		sb.Append(PrototypeName);
 		AppendVersion(sb);
 
 		Span<byte> version = stackalloc byte[0x4000];
@@ -66,6 +66,6 @@ public partial class MaterialPrototype {
 
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("MaterialPrototype"u8);
-	public static string Name => "MaterialPrototype";
+	public static string PrototypeName => "MaterialPrototype";
 	public static int Size => 0x78;
 }

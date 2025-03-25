@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Ada N
+//
+// SPDX-License-Identifier: EUPL-1.2
+
 using System.Text.Json;
 using Akizuki.Data;
 
