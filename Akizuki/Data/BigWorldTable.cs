@@ -9,9 +9,10 @@ using DragonLib.IO;
 namespace Akizuki.Data;
 
 public class BigWorldTable {
-	private static readonly Dictionary<uint, ImplWrapper> PrototypeImpls = new() {
+	private static readonly Dictionary<uint, LoadPrototypeDelegate> Prototypes = new() {
 		[MaterialPrototype.Id] = CheckRecords<MaterialPrototype>,
 		[VisualPrototype.Id] = CheckRecords<VisualPrototype>,
+		[ModelPrototype.Id] = CheckRecords<ModelPrototype>,
 	};
 
 	public BigWorldTable(MemoryReader data, BWDBTableHeader header, BigWorldDatabase db) {
@@ -23,7 +24,7 @@ public class BigWorldTable {
 		var offset = (int) info[1];
 		AkizukiLog.Debug("Creating Table {Table:x8} ({Version:x8})", Id, Version);
 
-		if (PrototypeImpls.TryGetValue(Id, out var impl)) {
+		if (Prototypes.TryGetValue(Id, out var impl)) {
 			impl(this, data, count, offset, db);
 		} else {
 			AkizukiLog.Warning("{Id:x8} does not have an implementation", Id);
@@ -51,5 +52,5 @@ public class BigWorldTable {
 		}
 	}
 
-	private delegate void ImplWrapper(BigWorldTable table, MemoryReader data, int count, int offset, BigWorldDatabase db);
+	private delegate void LoadPrototypeDelegate(BigWorldTable table, MemoryReader data, int count, int offset, BigWorldDatabase db);
 }

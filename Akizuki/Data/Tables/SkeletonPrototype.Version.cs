@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Runtime.CompilerServices;
 using System.Text;
 using Akizuki.Structs.Data;
+using Akizuki.Structs.Data.Tables;
 using DragonLib.Hash.Algorithms;
 
 namespace Akizuki.Data.Tables;
@@ -40,5 +42,5 @@ public partial class SkeletonPrototype : IPrototype {
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("SkeletonPrototype"u8);
 	public static string PrototypeName => "SkeletonPrototype";
-	public static int Size => 0x30;
+	public static int Size => Unsafe.SizeOf<SkeletonPrototypeHeader>();
 }

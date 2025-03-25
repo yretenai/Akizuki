@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Runtime.CompilerServices;
 using System.Text;
 using Akizuki.Structs.Data;
 using Akizuki.Structs.Data.Tables;
@@ -57,5 +58,5 @@ public partial class VisualPrototype : IPrototype {
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("VisualPrototype"u8);
 	public static string PrototypeName => "VisualPrototype";
-	public static int Size => 0x70;
+	public static int Size => Unsafe.SizeOf<VisualPrototypeHeader>();
 }

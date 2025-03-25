@@ -12,7 +12,7 @@ public record struct RenderSetPrototypeHeader {
 	public uint MaterialNameId { get; set; }
 	public uint IndicesName { get; set; }
 	public uint VerticesName { get; set; }
-	public ulong MaterialMFMPathId { get; set; }
+	public ulong MaterialResourceId { get; set; }
 	public bool IsSkinned { get; set; }
 	public byte NodeCount { get; set; }
 	public long NodeNameIdsPtr { get; set; }

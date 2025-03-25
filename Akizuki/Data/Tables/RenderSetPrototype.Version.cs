@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Runtime.CompilerServices;
 using System.Text;
 using Akizuki.Structs.Data;
+using Akizuki.Structs.Data.Tables;
 using DragonLib.Hash.Algorithms;
 
 namespace Akizuki.Data.Tables;
@@ -36,5 +38,5 @@ public partial class RenderSetPrototype : IPrototype {
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("RenderSetPrototype"u8);
 	public static string PrototypeName => "RenderSetPrototype";
-	public static int Size => 0x28;
+	public static int Size => Unsafe.SizeOf<RenderSetPrototypeHeader>();
 }

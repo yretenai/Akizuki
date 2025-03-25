@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Runtime.CompilerServices;
 using System.Text;
 using Akizuki.Structs.Data;
+using Akizuki.Structs.Data.Tables;
 using DragonLib.Hash.Algorithms;
 
 namespace Akizuki.Data.Tables;
@@ -26,7 +28,7 @@ public partial class LODPrototype {
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("LODPrototype"u8);
 	public static string PrototypeName => "LODPrototype";
-	public static int Size => 0x10;
+	public static int Size => Unsafe.SizeOf<LODPrototypeHeader>();
 
 	public static void AppendVersion(StringBuilder sb) {
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Float, 4, "extent");

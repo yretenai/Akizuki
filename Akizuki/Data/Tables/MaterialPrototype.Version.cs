@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Runtime.CompilerServices;
 using System.Text;
 using Akizuki.Structs.Data;
+using Akizuki.Structs.Data.Tables;
 using DragonLib.Hash.Algorithms;
 using DragonLib.IO;
 
@@ -67,5 +69,5 @@ public partial class MaterialPrototype : IPrototype {
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("MaterialPrototype"u8);
 	public static string PrototypeName => "MaterialPrototype";
-	public static int Size => 0x78;
+	public static int Size => Unsafe.SizeOf<MaterialPrototypeHeader>();
 }

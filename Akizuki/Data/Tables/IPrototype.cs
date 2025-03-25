@@ -9,9 +9,7 @@ using DragonLib.IO;
 
 namespace Akizuki.Data.Tables;
 
-[JsonPolymorphic]
-[JsonDerivedType(typeof(MaterialPrototype))]
-[JsonDerivedType(typeof(VisualPrototype))]
+[JsonPolymorphic, JsonDerivedType(typeof(MaterialPrototype)), JsonDerivedType(typeof(VisualPrototype)), JsonDerivedType(typeof(ModelPrototype))]
 public interface IPrototype {
 	public static virtual uint Version => 0;
 	public static virtual uint Id => 0;
@@ -22,7 +20,11 @@ public interface IPrototype {
 
 	internal static void AppendField(StringBuilder builder, BWDBFieldType type, BWDBFieldKind kind, int size = 0, string? name = null, BWDBFieldKind nestedKind = BWDBFieldKind.None) {
 		builder.Append((char) type);
-		builder.Append((char) kind);
+
+		if (kind != BWDBFieldKind.None) {
+			builder.Append((char) kind);
+		}
+
 		if (nestedKind != BWDBFieldKind.None) {
 			builder.Append((char) nestedKind);
 		}

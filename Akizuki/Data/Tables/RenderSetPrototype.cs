@@ -13,7 +13,7 @@ public partial class RenderSetPrototype {
 		MaterialName = db.GetString(header.MaterialNameId);
 		IndicesName = db.GetString(header.IndicesName);
 		VerticesName = db.GetString(header.VerticesName);
-		MaterialMFMPath = db.GetPath(header.MaterialMFMPathId);
+		MaterialResource = db.GetPath(header.MaterialResourceId);
 		IsSkinned = header.IsSkinned;
 
 		data.Offset += (int) header.NodeNameIdsPtr;
@@ -27,7 +27,7 @@ public partial class RenderSetPrototype {
 	public string MaterialName { get; set; }
 	public string IndicesName { get; set; }
 	public string VerticesName { get; set; }
-	public string MaterialMFMPath { get; set; }
+	public string MaterialResource { get; set; }
 	public bool IsSkinned { get; set; }
 	public List<string> Nodes { get; set; } = [];
 }
