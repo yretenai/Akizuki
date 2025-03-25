@@ -14,8 +14,8 @@ public partial class SkeletonPrototype {
 
 		// reader.Offset = (int) (offset + header.NameMapNameIdsPtr);
 		// var nameMapNameIds = reader.Read<uint>(header.NodeCount);
-		reader.Offset = (int) (offset + header.NameMapNodeIdsPtr);
-		var nameMapNodeIds = reader.Read<ushort>(header.NodeCount);
+		// reader.Offset = (int) (offset + header.NameMapNodeIdsPtr);
+		// var nameMapNodeIds = reader.Read<ushort>(header.NodeCount);
 		reader.Offset = (int) (offset + header.NameIdsPtr);
 		var nameIds = reader.Read<uint>(header.NodeCount);
 		reader.Offset = (int) (offset + header.MatricesPtr);
@@ -25,7 +25,7 @@ public partial class SkeletonPrototype {
 
 		for (var index = 0; index < header.NodeCount; ++index) {
 			// NameMap.Add(db.GetString(nameMapNameIds[index]));
-			IdMap.Add(nameMapNodeIds[index]);
+			// IdMap.Add(nameMapNodeIds[index]);
 			Names.Add(db.GetString(nameIds[index]));
 			Matrices.Add(matrices[index]);
 			ParentIds.Add(parentIds[index]);
@@ -33,7 +33,7 @@ public partial class SkeletonPrototype {
 	}
 
 	// public List<string> NameMap { get; set; } = [];
-	public List<ushort> IdMap { get; set; } = [];
+	// public List<ushort> IdMap { get; set; } = [];
 	public List<string> Names { get; set; } = [];
 	public List<Matrix4X4<float>> Matrices { get; set; } = [];
 	public List<ushort> ParentIds { get; set; } = [];

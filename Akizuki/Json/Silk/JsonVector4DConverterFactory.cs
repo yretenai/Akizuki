@@ -16,16 +16,12 @@ public class JsonVector4DConverterFactory : JsonConverterFactory {
 		public override Vector4D<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException("please implement me \ud83e\udd7a");
 
 		public override void Write(Utf8JsonWriter writer, Vector4D<T> value, JsonSerializerOptions options) {
-			writer.WriteStartObject();
-			writer.WritePropertyName("X");
+			writer.WriteStartArray();
 			JsonSerializer.Serialize(writer, value.X, options);
-			writer.WritePropertyName("Y");
 			JsonSerializer.Serialize(writer, value.Y, options);
-			writer.WritePropertyName("Z");
 			JsonSerializer.Serialize(writer, value.Z, options);
-			writer.WritePropertyName("W");
 			JsonSerializer.Serialize(writer, value.W, options);
-			writer.WriteEndObject();
+			writer.WriteEndArray();
 		}
 	}
 }

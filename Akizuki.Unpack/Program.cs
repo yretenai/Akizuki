@@ -21,6 +21,7 @@ internal static class Program {
 	internal static JsonSerializerOptions Options { get; } = new() {
 		WriteIndented = true,
 		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
+		NewLine = "\n",
 		Converters = {
 			new JsonStringEnumConverter(),
 			new JsonBigWorldDatabaseConverter(),

@@ -15,6 +15,7 @@ internal static class AssetPaths {
 
 		using var stream = new FileStream(Path.ChangeExtension(path, ".json"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 		JsonSerializer.Serialize(stream, list, Program.Options);
+		stream.WriteByte((byte) '\n');
 	}
 
 	internal static void Save(string path, ProgramFlags flags, BigWorldDatabase list) {
@@ -24,5 +25,6 @@ internal static class AssetPaths {
 
 		using var stream = new FileStream(Path.ChangeExtension(path, ".json"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 		JsonSerializer.Serialize(stream, list, Program.Options);
+		stream.WriteByte((byte) '\n');
 	}
 }

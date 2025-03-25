@@ -33,6 +33,7 @@ internal static class Assets {
 
 			using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 			JsonSerializer.Serialize(stream, prototype, Program.Options);
+			stream.WriteByte((byte) '\n');
 		}
 	}
 }
