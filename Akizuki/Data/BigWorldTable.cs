@@ -14,6 +14,11 @@ public class BigWorldTable {
 		[VisualPrototype.Id] = CheckRecords<VisualPrototype>,
 		[ModelPrototype.Id] = CheckRecords<ModelPrototype>,
 		[PointLightPrototype.Id] = CheckRecords<PointLightPrototype>,
+		[VelocityFieldPrototype.Id] = CheckRecords<VelocityFieldPrototype>,
+		[AtlasContourPrototype.Id] = CheckRecords<AtlasContourPrototype>,
+		[EffectPrototype.Id] = CheckRecords<EffectPrototype>,
+		[EffectPresetPrototype.Id] = CheckRecords<EffectPresetPrototype>,
+		[EffectMetadataPrototype.Id] = CheckRecords<EffectMetadataPrototype>,
 	};
 
 	public BigWorldTable(MemoryReader data, BWDBTableHeader header, BigWorldDatabase db) {
@@ -37,8 +42,15 @@ public class BigWorldTable {
 	public List<IPrototype> Records { get; set; } = [];
 
 	private static void CheckRecords<T>(BigWorldTable table, MemoryReader data, int count, int offset, BigWorldDatabase db) where T : IPrototype {
+		if (T.Size == 0) {
+			AkizukiLog.Warning("{Name} does not have an implementation", T.PrototypeName);
+			return;
+		}
+
 		if (table.Version != T.Version) {
 			AkizukiLog.Warning("Tried loading {Name} with an unsupported version!", T.PrototypeName);
+		} else {
+			AkizukiLog.Debug("{Name} Version Matches", T.PrototypeName);
 		}
 
 		AkizukiLog.Debug("Creating Records for {Name}", T.PrototypeName);

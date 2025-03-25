@@ -14,6 +14,11 @@ namespace Akizuki.Data.Tables;
 [JsonDerivedType(typeof(VisualPrototype))]
 [JsonDerivedType(typeof(ModelPrototype))]
 [JsonDerivedType(typeof(PointLightPrototype))]
+[JsonDerivedType(typeof(VelocityFieldPrototype))]
+[JsonDerivedType(typeof(AtlasContourPrototype))]
+[JsonDerivedType(typeof(EffectPrototype))]
+[JsonDerivedType(typeof(EffectPresetPrototype))]
+[JsonDerivedType(typeof(EffectMetadataPrototype))]
 public interface IPrototype {
 	public static virtual uint Version => 0;
 	public static virtual uint Id => 0;
