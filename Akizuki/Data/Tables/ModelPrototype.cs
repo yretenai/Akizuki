@@ -9,7 +9,7 @@ using DragonLib.IO;
 namespace Akizuki.Data.Tables;
 
 public partial class ModelPrototype {
-	private ModelPrototype(MemoryReader data, BigWorldDatabase db) {
+	public ModelPrototype(MemoryReader data, BigWorldDatabase db) {
 		var offset = data.Offset;
 		var header = data.Read<ModelPrototypeHeader>();
 		VisualResource = db.GetPath(header.VisualResourceId);

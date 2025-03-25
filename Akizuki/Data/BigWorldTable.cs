@@ -13,6 +13,7 @@ public class BigWorldTable {
 		[MaterialPrototype.Id] = CheckRecords<MaterialPrototype>,
 		[VisualPrototype.Id] = CheckRecords<VisualPrototype>,
 		[ModelPrototype.Id] = CheckRecords<ModelPrototype>,
+		[PointLightPrototype.Id] = CheckRecords<PointLightPrototype>,
 	};
 
 	public BigWorldTable(MemoryReader data, BWDBTableHeader header, BigWorldDatabase db) {
