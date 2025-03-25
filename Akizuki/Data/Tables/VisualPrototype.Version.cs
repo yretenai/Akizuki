@@ -26,7 +26,7 @@ public partial class VisualPrototype : IPrototype {
 		Version = MurmurHash3Algorithm.Hash32_32(version[..offset]);
 	}
 
-	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new VisualPrototype(reader, db);
+	public static IPrototype Create(MemoryReader reader) => new VisualPrototype(reader);
 
 	public static void AppendVersion(StringBuilder sb) {
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Type);

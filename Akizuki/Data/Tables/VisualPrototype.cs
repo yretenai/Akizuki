@@ -3,19 +3,20 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Runtime.CompilerServices;
+using Akizuki.Structs.Data;
 using Akizuki.Structs.Data.Tables;
 using DragonLib.IO;
 
 namespace Akizuki.Data.Tables;
 
 public partial class VisualPrototype {
-	public VisualPrototype(MemoryReader data, BigWorldDatabase db) {
+	public VisualPrototype(MemoryReader data) {
 		var offset = data.Offset;
 		var header = data.Read<VisualPrototypeHeader>();
 		data.Offset = offset;
-		Skeleton = new SkeletonPrototype(header.Skeleton, data, db);
+		Skeleton = new SkeletonPrototype(header.Skeleton, data);
 
-		MergedGeometryPath = db.GetPath(header.MergedGeometryPathId);
+		MergedGeometryPath = header.MergedGeometryPathId;
 		IsUnderwaterModel = header.IsUnderwaterModel;
 		IsAbovewaterModel = header.IsAbovewaterModel;
 		BoundingBox = header.BoundingBox;
@@ -25,7 +26,7 @@ public partial class VisualPrototype {
 		var oneLod = Unsafe.SizeOf<LODPrototypeHeader>();
 		for (var index = 0; index < header.LODCount; ++index) {
 			data.Offset = lodOffset;
-			LOD.Add(new LODPrototype(lods[index], data, db));
+			LOD.Add(new LODPrototype(lods[index], data));
 			lodOffset += oneLod;
 		}
 
@@ -34,13 +35,13 @@ public partial class VisualPrototype {
 		var oneRenderSets = Unsafe.SizeOf<RenderSetPrototypeHeader>();
 		for (var index = 0; index < header.RenderSetsCount; ++index) {
 			data.Offset = renderSetOffset;
-			RenderSets.Add(new RenderSetPrototype(renderSets[index], data, db));
+			RenderSets.Add(new RenderSetPrototype(renderSets[index], data));
 			renderSetOffset += oneRenderSets;
 		}
 	}
 
 	public SkeletonPrototype Skeleton { get; }
-	public string MergedGeometryPath { get; }
+	public ResourceId MergedGeometryPath { get; }
 	public bool IsUnderwaterModel { get; }
 	public bool IsAbovewaterModel { get; }
 	public BoundingBox BoundingBox { get; set; }

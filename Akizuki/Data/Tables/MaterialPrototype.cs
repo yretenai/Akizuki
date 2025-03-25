@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using Akizuki.Structs.Data;
 using Akizuki.Structs.Data.Tables;
 using DragonLib.IO;
 using Silk.NET.Maths;
@@ -9,15 +10,15 @@ using Silk.NET.Maths;
 namespace Akizuki.Data.Tables;
 
 public partial class MaterialPrototype {
-	public MaterialPrototype(MemoryReader reader, BigWorldDatabase db) {
+	public MaterialPrototype(MemoryReader reader) {
 		var offset = reader.Offset;
 		var header = reader.Read<MaterialPrototypeHeader>();
-		FxPath = db.GetPath(header.FxPathId);
+		FxPath = header.FxPathId;
 		CollisionFlags = header.CollisionFlags;
 		SortOrder = header.SortOrder;
 
 		reader.Offset = (int) (offset + header.PropertyNameIdsPtr);
-		var propertyNameIds = reader.Read<uint>(header.PropertyCount);
+		var propertyNameIds = reader.Read<StringId>(header.PropertyCount);
 		reader.Offset = (int) (offset + header.PropertyIdsPtr);
 		var propertyIds = reader.Read<MaterialPropertyId>(header.PropertyCount);
 
@@ -34,7 +35,7 @@ public partial class MaterialPrototype {
 		var floats = reader.Read<float>(header.FloatValuesCount);
 
 		reader.Offset = (int) (offset + header.TextureValuesPtr);
-		var textures = reader.Read<ulong>(header.TextureValuesCount);
+		var textures = reader.Read<ResourceId>(header.TextureValuesCount);
 
 		reader.Offset = (int) (offset + header.Vector2ValuesPtr);
 		var vec2ds = reader.Read<Vector2D<float>>(header.Vector2ValuesCount);
@@ -50,7 +51,7 @@ public partial class MaterialPrototype {
 
 		for (var index = 0; index < header.PropertyCount; ++index) {
 			var propertyInfo = propertyIds[index];
-			var propertyName = db.GetString(propertyNameIds[index]);
+			var propertyName = propertyNameIds[index];
 
 			switch (propertyInfo.Type) {
 				case MaterialPropertyType.Bool: {
@@ -70,7 +71,7 @@ public partial class MaterialPrototype {
 					break;
 				}
 				case MaterialPropertyType.Texture: {
-					TextureValues[propertyName] = db.GetPath(textures[propertyInfo.Index]);
+					TextureValues[propertyName] = textures[propertyInfo.Index];
 					break;
 				}
 				case MaterialPropertyType.Vector2: {
@@ -97,16 +98,16 @@ public partial class MaterialPrototype {
 		}
 	}
 
-	public Dictionary<string, bool> BoolValues { get; } = [];
-	public Dictionary<string, int> IntValues { get; } = [];
-	public Dictionary<string, uint> UIntValues { get; } = [];
-	public Dictionary<string, float> FloatValues { get; } = [];
-	public Dictionary<string, string> TextureValues { get; } = [];
-	public Dictionary<string, Vector2D<float>> Vector2Values { get; } = [];
-	public Dictionary<string, Vector3D<float>> Vector3Values { get; } = [];
-	public Dictionary<string, Vector4D<float>> Vector4Values { get; } = [];
-	public Dictionary<string, Matrix4X4<float>> MatrixValues { get; } = [];
-	public string? FxPath { get; }
+	public Dictionary<StringId, bool> BoolValues { get; } = [];
+	public Dictionary<StringId, int> IntValues { get; } = [];
+	public Dictionary<StringId, uint> UIntValues { get; } = [];
+	public Dictionary<StringId, float> FloatValues { get; } = [];
+	public Dictionary<StringId, ResourceId> TextureValues { get; } = [];
+	public Dictionary<StringId, Vector2D<float>> Vector2Values { get; } = [];
+	public Dictionary<StringId, Vector3D<float>> Vector3Values { get; } = [];
+	public Dictionary<StringId, Vector4D<float>> Vector4Values { get; } = [];
+	public Dictionary<StringId, Matrix4X4<float>> MatrixValues { get; } = [];
+	public ResourceId FxPath { get; }
 	public uint CollisionFlags { get; }
 	public int SortOrder { get; }
 }

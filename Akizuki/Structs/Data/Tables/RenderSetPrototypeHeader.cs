@@ -8,11 +8,11 @@ namespace Akizuki.Structs.Data.Tables;
 
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
 public record struct RenderSetPrototypeHeader {
-	public uint NameId { get; set; }
-	public uint MaterialNameId { get; set; }
-	public uint IndicesName { get; set; }
-	public uint VerticesName { get; set; }
-	public ulong MaterialResourceId { get; set; }
+	public StringId NameId { get; set; }
+	public StringId MaterialNameId { get; set; }
+	public StringId IndicesName { get; set; }
+	public StringId VerticesName { get; set; }
+	public ResourceId MaterialResourceId { get; set; }
 	public bool IsSkinned { get; set; }
 	public byte NodeCount { get; set; }
 	public long NodeNameIdsPtr { get; set; }

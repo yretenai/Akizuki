@@ -2,16 +2,17 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using Akizuki.Structs.Data;
 using DragonLib.IO;
 
 namespace Akizuki.Data.Tables;
 
 public partial class EffectPresetPrototype {
-	public EffectPresetPrototype(MemoryReader data, BigWorldDatabase db) {
-		HighPreset = db.GetPath(data.Read<ulong>());
-		LowPreset = db.GetPath(data.Read<ulong>());
+	public EffectPresetPrototype(MemoryReader data) {
+		HighPreset = data.Read<ResourceId>();
+		LowPreset = data.Read<ResourceId>();
 	}
 
-	public string HighPreset { get; set; }
-	public string LowPreset { get; set; }
+	public ResourceId HighPreset { get; set; }
+	public ResourceId LowPreset { get; set; }
 }

@@ -26,7 +26,7 @@ public partial class MaterialPrototype : IPrototype {
 		Version = MurmurHash3Algorithm.Hash32_32(version[..offset]);
 	}
 
-	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new MaterialPrototype(reader, db);
+	public static IPrototype Create(MemoryReader reader) => new MaterialPrototype(reader);
 
 	public static void AppendVersion(StringBuilder sb) {
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Unsigned, 2, "propertiesCount");

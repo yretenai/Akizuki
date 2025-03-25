@@ -8,8 +8,8 @@ namespace Akizuki.Structs.Data.Tables;
 
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
 public record struct DyePrototypeHeader {
-	public uint MatterId { get; set; }
-	public uint ReplacesId { get; set; }
+	public StringId MatterId { get; set; }
+	public StringId ReplacesId { get; set; }
 	public int TintCount { get; set; }
 	public long TintNameIdsPtr { get; set; }
 	public long TintMaterialIdsPtr { get; set; }

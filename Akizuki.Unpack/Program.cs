@@ -26,12 +26,16 @@ internal static class Program {
 			new JsonStringEnumConverter(),
 			new JsonBigWorldDatabaseConverter(),
 			new JsonPackageFileSystemConverter(),
+			new JsonStringIdConverter(),
+			new JsonResourceIdConverter(),
 			new JsonMatrix4X4ConverterFactory(),
 			new JsonVector2DConverterFactory(),
 			new JsonVector3DConverterFactory(),
 			new JsonVector4DConverterFactory(),
 		},
 	};
+
+	private static ResourceManager? Manager { get; set; }
 
 	private static void Main() {
 		var flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>();
@@ -73,7 +77,7 @@ internal static class Program {
 					Directory.CreateDirectory(dir);
 				}
 
-				if ((flags.Convert && Convert(path, flags, data)) || flags.Dry) {
+				if ((flags.ShouldConvertAtAll && Convert(path, flags, data)) || flags.Dry) {
 					continue;
 				}
 
@@ -87,14 +91,20 @@ internal static class Program {
 		var ext = Path.GetExtension(path).ToLowerInvariant();
 		var name = Path.GetFileName(path).ToLowerInvariant();
 
+		if (flags.ConvertLoose && ext == ".geometry") {
+			// todo
+			return false;
+		}
+
+		if (!flags.Convert) {
+			return false;
+		}
+
 		switch (ext) {
 			case ".dd2": // 8k
 			case ".dd1": // 4k
 			case ".dd0": // 2k
 			case ".dds": // 1k
-				// todo
-				break;
-			case ".geometry":
 				// todo
 				break;
 			case ".splash":
@@ -130,6 +140,7 @@ internal static class Program {
 						break;
 					case "assets.bin": {
 						var assets = new BigWorldDatabase(data);
+						Manager = new ResourceManager(assets);
 						AssetPaths.Save(path, flags, assets);
 						Assets.Save(flags, assets);
 						return false; // always save assets.bin

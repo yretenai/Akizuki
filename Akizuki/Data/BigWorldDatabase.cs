@@ -189,6 +189,28 @@ public class BigWorldDatabase {
 		return Paths[id] = ResolvePath(parentName, parentId, parentFile.ParentId, names) + "/" + name;
 	}
 
+	public IPrototype? Resolve(string path) {
+		foreach (var (id, name) in Paths) {
+			if (name.Equals(path, StringComparison.OrdinalIgnoreCase)) {
+				return Resolve(id);
+			}
+		}
+
+		AkizukiLog.Debug("Unable to resolve record for {Info}", path);
+		return null;
+	}
+
+	public IPrototype? Resolve(ResourceId id) => Resolve(id.Hash);
+
+	public IPrototype? Resolve(ulong id) {
+		if (ResourceToPrototype.TryGetValue(id, out var info)) {
+			return Resolve(info);
+		}
+
+		AkizukiLog.Debug("Unable to resolve record for {Info:x16}", id);
+		return null;
+	}
+
 	public IPrototype? Resolve(BWPrototypeInfo info) {
 		if (info.TableIndex > Tables.Count) {
 			AkizukiLog.Debug("Unable to resolve table for {Info}", info);

@@ -27,7 +27,7 @@ public partial class PointLightPrototype : IPrototype {
 		Version = MurmurHash3Algorithm.Hash32_32(version[..offset]);
 	}
 
-	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new PointLightPrototype(reader);
+	public static IPrototype Create(MemoryReader reader) => new PointLightPrototype(reader);
 
 	public static void AppendVersion(StringBuilder sb) {
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Type);

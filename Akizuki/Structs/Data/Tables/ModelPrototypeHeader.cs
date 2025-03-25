@@ -8,7 +8,7 @@ namespace Akizuki.Structs.Data.Tables;
 
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
 public record struct ModelPrototypeHeader {
-	public ulong VisualResourceId { get; set; }
+	public ResourceId VisualResourceId { get; set; }
 	public ModelMiscType MiscType { get; set; }
 	public byte AnimationsCount { get; set; }
 	public byte DyesCount { get; set; }

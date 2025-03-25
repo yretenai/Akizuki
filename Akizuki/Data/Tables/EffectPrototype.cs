@@ -7,5 +7,5 @@ using DragonLib.IO;
 namespace Akizuki.Data.Tables;
 
 public partial class EffectPrototype {
-	public EffectPrototype(MemoryReader data, BigWorldDatabase db) { }
+	public EffectPrototype(MemoryReader data) => throw new NotImplementedException("please implement me \ud83e\udd7a");
 }

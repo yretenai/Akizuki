@@ -29,7 +29,7 @@ public record struct MaterialPrototypeHeader {
 	public long Vector3ValuesPtr { get; set; }
 	public long Vector4ValuesPtr { get; set; }
 	public long MatrixValuesPtr { get; set; }
-	public ulong FxPathId { get; set; }
+	public ResourceId FxPathId { get; set; }
 	public uint CollisionFlags { get; set; }
 	public int SortOrder { get; set; }
 }

@@ -2,32 +2,31 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using Akizuki.Structs.Data;
 using Akizuki.Structs.Data.Tables;
 using DragonLib.IO;
 
 namespace Akizuki.Data.Tables;
 
 public partial class RenderSetPrototype {
-	public RenderSetPrototype(RenderSetPrototypeHeader header, MemoryReader data, BigWorldDatabase db) {
-		Name = db.GetString(header.NameId);
-		MaterialName = db.GetString(header.MaterialNameId);
-		IndicesName = db.GetString(header.IndicesName);
-		VerticesName = db.GetString(header.VerticesName);
-		MaterialResource = db.GetPath(header.MaterialResourceId);
+	public RenderSetPrototype(RenderSetPrototypeHeader header, MemoryReader data) {
+		Name = header.NameId;
+		MaterialName = header.MaterialNameId;
+		IndicesName = header.IndicesName;
+		VerticesName = header.VerticesName;
+		MaterialResource = header.MaterialResourceId;
 		IsSkinned = header.IsSkinned;
 
 		data.Offset += (int) header.NodeNameIdsPtr;
-		var names = data.Read<uint>(header.NodeCount);
-		for (var index = 0; index < header.NodeCount; ++index) {
-			Nodes.Add(db.GetString(names[index]));
-		}
+		var names = data.Read<StringId>(header.NodeCount);
+		Nodes.AddRange(names);
 	}
 
-	public string Name { get; set; }
-	public string MaterialName { get; set; }
-	public string IndicesName { get; set; }
-	public string VerticesName { get; set; }
-	public string MaterialResource { get; set; }
+	public StringId Name { get; set; }
+	public StringId MaterialName { get; set; }
+	public StringId IndicesName { get; set; }
+	public StringId VerticesName { get; set; }
+	public ResourceId MaterialResource { get; set; }
 	public bool IsSkinned { get; set; }
-	public List<string> Nodes { get; set; } = [];
+	public List<StringId> Nodes { get; set; } = [];
 }

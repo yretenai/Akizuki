@@ -54,13 +54,13 @@ public class BigWorldTable {
 		}
 
 		AkizukiLog.Debug("Creating Records for {Name}", T.PrototypeName);
-		table.CreateRecords<T>(data, count, offset, db);
+		table.CreateRecords<T>(data, count, offset);
 	}
 
-	private void CreateRecords<T>(MemoryReader data, int count, int offset, BigWorldDatabase db) where T : IPrototype {
+	private void CreateRecords<T>(MemoryReader data, int count, int offset) where T : IPrototype {
 		for (var index = 0; index < count; ++index) {
 			data.Offset = offset;
-			Records.Add(T.Create(data, db));
+			Records.Add(T.Create(data));
 			offset += T.Size;
 		}
 	}

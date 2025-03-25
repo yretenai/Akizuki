@@ -23,7 +23,7 @@ public partial class EffectPrototype : IPrototype {
 		Version = MurmurHash3Algorithm.Hash32_32(version[..offset]);
 	}
 
-	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new EffectPrototype(reader, db);
+	public static IPrototype Create(MemoryReader reader) => new EffectPrototype(reader);
 
 	public static void AppendVersion(StringBuilder sb) { }
 

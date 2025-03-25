@@ -25,7 +25,7 @@ public interface IPrototype {
 	public static virtual int Size => 0;
 	public static virtual string PrototypeName => string.Empty;
 	public static virtual void AppendVersion(StringBuilder sb) { }
-	public static virtual IPrototype Create(MemoryReader data, BigWorldDatabase db) => throw new NotSupportedException();
+	public static virtual IPrototype Create(MemoryReader data) => throw new NotSupportedException();
 
 	internal static void AppendField(StringBuilder builder, BWDBFieldType type, BWDBFieldKind kind, int size = 0, string? name = null, BWDBFieldKind nestedKind = BWDBFieldKind.None) {
 		builder.Append((char) type);

@@ -156,10 +156,22 @@ public sealed class PackageFileSystem : IDisposable {
 		return null;
 	}
 
-	public IMemoryBuffer<byte>? OpenFile(ulong id) {
+	public PFSFile? FindFile(ResourceId id) => FindFile(id.Hash);
+
+	public PFSFile? FindFile(ulong id) {
 		var fileIndex = Files.BinarySearch(new PFSFile { Id = id });
 		if (fileIndex >= 0 && fileIndex < Files.Count) {
-			return OpenFile(Files[fileIndex]);
+			return Files[fileIndex];
+		}
+
+		return null;
+	}
+
+	public IMemoryBuffer<byte>? OpenFile(ResourceId id) => OpenFile(id.Hash);
+
+	public IMemoryBuffer<byte>? OpenFile(ulong id) {
+		if (FindFile(id) is { } file) {
+			return OpenFile(file);
 		}
 
 		AkizukiLog.Debug("Could not find {Id:x16}", id);

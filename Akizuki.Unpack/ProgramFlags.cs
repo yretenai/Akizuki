@@ -36,4 +36,9 @@ internal record ProgramFlags : CommandLineFlags {
 
 	[Flag("convert", Help = "Convert data to common formats", Category = "Akizuki")]
 	public bool Convert { get; set; }
+
+	[Flag("convert-geometry", Help = "Convert loose geometry", Category = "Akizuki")]
+	public bool ConvertLoose { get; set; }
+
+	public bool ShouldConvertAtAll => Convert || ConvertLoose;
 }
