@@ -9,7 +9,7 @@ using Akizuki.Data;
 namespace Akizuki.Json;
 
 public class JsonPackageFileSystemConverter : JsonConverter<PackageFileSystem> {
-	public override PackageFileSystem Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException();
+	public override PackageFileSystem Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException("please implement me \ud83e\udd7a");
 
 	public override void Write(Utf8JsonWriter writer, PackageFileSystem value, JsonSerializerOptions options) {
 		writer.WriteStartObject();

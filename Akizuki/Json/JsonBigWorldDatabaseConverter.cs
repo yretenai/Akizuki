@@ -9,7 +9,7 @@ using Akizuki.Data;
 namespace Akizuki.Json;
 
 public class JsonBigWorldDatabaseConverter : JsonConverter<BigWorldDatabase> {
-	public override BigWorldDatabase Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException();
+	public override BigWorldDatabase Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException("please implement me \ud83e\udd7a");
 
 	public override void Write(Utf8JsonWriter writer, BigWorldDatabase value, JsonSerializerOptions options) {
 		writer.WriteStartObject();
