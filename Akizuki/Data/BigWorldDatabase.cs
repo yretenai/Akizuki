@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Runtime.CompilerServices;
+using Akizuki.Data.Tables;
 using Akizuki.Exceptions;
 using Akizuki.Structs.Data;
 using DragonLib.Hash.Algorithms;
@@ -54,7 +55,7 @@ public class BigWorldDatabase {
 		var resourceBase = baseRel + Unsafe.SizeOf<BWDBDictionary>() + Unsafe.SizeOf<ulong>() * 2;
 		var pathsBase = resourceBase + Unsafe.SizeOf<BWDBDictionary>();
 
-	#region Strings
+		#region Strings
 
 		{
 			data.Offset = (int) (baseRel + Header.Strings.KeyPtr);
@@ -76,9 +77,9 @@ public class BigWorldDatabase {
 			}
 		}
 
-	#endregion
+		#endregion
 
-	#region Paths
+		#region Paths
 
 		{
 			var nameOffset = (int) (pathsBase + Header.PathsPtr);
@@ -100,9 +101,9 @@ public class BigWorldDatabase {
 			}
 		}
 
-	#endregion
+		#endregion
 
-	#region PathToPrototype
+		#region PathToPrototype
 
 		{
 			data.Offset = (int) (resourceBase + Header.ResourcePrototypes.KeyPtr);
@@ -128,13 +129,32 @@ public class BigWorldDatabase {
 			}
 		}
 
-	#endregion
+		#endregion
+
+		#region Tables
+
+		{
+			var tableOffset = data.Offset = (int) (baseRel + Header.DatabasePtr);
+			Tables.EnsureCapacity((int) Header.DatabaseCount);
+			var tableRecords = data.Read<BWDBTableHeader>((int) Header.DatabaseCount);
+			var oneTableSize = Unsafe.SizeOf<BWDBTableHeader>();
+
+			foreach (var tableRecord in tableRecords) {
+				data.Offset = tableOffset + (int) tableRecord.Ptr;
+				using var partition = new MemoryReader(data.Partition((int) tableRecord.Count));
+				Tables.Add(new BigWorldTable(partition, tableRecord, this));
+				tableOffset += oneTableSize;
+			}
+		}
+
+		#endregion
 	}
 
 	public BWFileHeader BigWorldHeader { get; }
 	public BWDBHeader Header { get; }
 	public Dictionary<uint, string> Strings { get; } = [];
 	public Dictionary<ulong, BWPrototypeInfo> ResourceToPrototype { get; } = [];
+	public List<BigWorldTable> Tables { get; } = [];
 
 	public Dictionary<ulong, string> Paths { get; } = new() {
 		[0] = "res",
@@ -157,4 +177,24 @@ public class BigWorldDatabase {
 		var (parentName, parentFile) = names[parentId];
 		return Paths[id] = ResolvePath(parentName, parentId, parentFile.ParentId, names) + "/" + name;
 	}
+
+	public IPrototype? Resolve(BWPrototypeInfo info) {
+		if (info.TableIndex > Tables.Count) {
+			return null;
+		}
+
+		var table = Tables[info.TableIndex];
+
+		if (info.RecordIndex > table.Records.Count) {
+			return null;
+		}
+
+		return table.Records[info.RecordIndex];
+	}
+
+	public bool IsAssetIdUsed(ulong id) => ResourceToPrototype.ContainsKey(id);
+
+	public string GetPath(ulong id) => id == 0 ? string.Empty : Paths.GetValueOrDefault(id, id.ToString("x16"));
+
+	public string GetString(uint id) => id == 0 ? string.Empty : Strings.GetValueOrDefault(id, id.ToString("x08"));
 }

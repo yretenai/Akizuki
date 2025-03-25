@@ -204,4 +204,9 @@ public sealed class PackageFileSystem : IDisposable {
 
 		return data;
 	}
+
+	public bool IsAssetIdUsed(ulong id) {
+		var fileIndex = Files.BinarySearch(new PFSFile { Id = id });
+		return fileIndex >= 0 && fileIndex < Files.Count;
+	}
 }
