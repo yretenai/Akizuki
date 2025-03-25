@@ -12,4 +12,6 @@ public readonly record struct BWPrototypeInfo(uint Value) {
 	public int TableIndex => (int) ((Value >> 2) & 0x3F);
 	public int RecordIndex => (int) (Value >> 8);
 	public bool IsValid => State == 0;
+
+	public override string ToString() => IsValid ? $"Prototype {{ Table = {TableIndex}, Record = {RecordIndex} }}" : "Prototype { Invalid }";
 }

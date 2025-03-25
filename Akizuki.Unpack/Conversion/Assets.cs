@@ -21,7 +21,7 @@ internal static class Assets {
 			AkizukiLog.Information("{Value}", name ?? $"{assetId:x16}");
 
 			if (flags.Dry) {
-				return;
+				continue;
 			}
 
 			var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;

@@ -55,13 +55,13 @@ public sealed class PackageFileSystem : IDisposable {
 				throw new CorruptDataException("PFS Index Checksum Mismatch");
 			}
 
-			AkizukiLog.Verbose("PFS Passed Checksum Validation");
+			AkizukiLog.Debug("PFS Passed Checksum Validation");
 		}
 
-		AkizukiLog.Debug("{Value}", BigWorldHeader);
+		AkizukiLog.Verbose("{Value}", BigWorldHeader);
 
 		Header = data.Read<PFSIndexHeader>();
-		AkizukiLog.Debug("{Value}", Header);
+		AkizukiLog.Verbose("{Value}", Header);
 
 		var nameOffset = baseRel + (int) Header.FileNameSectionPtr;
 		data.Offset = nameOffset;
@@ -80,6 +80,8 @@ public sealed class PackageFileSystem : IDisposable {
 			ResolvePath(fileName, names);
 		}
 
+		AkizukiLog.Verbose("Loaded {Count} paths", Paths.Count);
+
 		data.Offset = baseRel + (int) Header.FileInfoSectionPtr;
 		var files = data.Read<PFSFile>(Header.FileInfoCount);
 		Files.EnsureCapacity(Header.FileNameCount);
@@ -88,6 +90,8 @@ public sealed class PackageFileSystem : IDisposable {
 		}
 
 		Files.Sort();
+
+		AkizukiLog.Verbose("Loaded {Count} files", Files.Count);
 
 		var packageOffset = baseRel + (int) Header.PackageSectionPtr;
 		data.Offset = packageOffset;
@@ -103,6 +107,8 @@ public sealed class PackageFileSystem : IDisposable {
 
 			packageOffset += onePkgEntry;
 		}
+
+		AkizukiLog.Verbose("Loaded {Count} packages", Packages.Count);
 	}
 
 	public BWFileHeader BigWorldHeader { get; }
@@ -146,20 +152,24 @@ public sealed class PackageFileSystem : IDisposable {
 			}
 		}
 
+		AkizukiLog.Debug("Could not find {Path}", path);
 		return null;
 	}
 
 	public IMemoryBuffer<byte>? OpenFile(ulong id) {
 		var fileIndex = Files.BinarySearch(new PFSFile { Id = id });
-		if (fileIndex < 0 || fileIndex >= Files.Count) {
-			return null;
+		if (fileIndex >= 0 && fileIndex < Files.Count) {
+			return OpenFile(Files[fileIndex]);
 		}
 
-		return OpenFile(Files[fileIndex]);
+		AkizukiLog.Debug("Could not find {Id:x16}", id);
+		return null;
+
 	}
 
 	public IMemoryBuffer<byte>? OpenFile(PFSFile file) {
 		if (!Packages.TryGetValue(file.PackageId, out var packageStream)) {
+			AkizukiLog.Debug("Could not find package {Id:x16}", file.PackageId);
 			return null;
 		}
 
@@ -195,7 +205,7 @@ public sealed class PackageFileSystem : IDisposable {
 					throw new InvalidDataException("Checksum mismatch");
 				}
 
-				AkizukiLog.Verbose("File {File:x16} Passed Checksum Validation", file.Id);
+				AkizukiLog.Debug("File {File:x16} Passed Checksum Validation", file.Id);
 			}
 		} catch {
 			data.Dispose();

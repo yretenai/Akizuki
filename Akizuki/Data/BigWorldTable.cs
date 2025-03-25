@@ -5,7 +5,6 @@
 using Akizuki.Data.Tables;
 using Akizuki.Structs.Data;
 using DragonLib.IO;
-using Serilog;
 
 namespace Akizuki.Data;
 
@@ -17,12 +16,14 @@ public class BigWorldTable {
 		var info = data.Read<long>(2);
 		var count = (int) info[0];
 		var offset = (int) info[1];
+		AkizukiLog.Debug("Creating Table {Table:x8} ({Version:x8})", Id, Version);
 
 		if (Id == MaterialPrototype.Id) {
 			if (Version != MaterialPrototype.Version) {
-				Log.Warning("Tried loading {Name} with an unsupported version!", MaterialPrototype.Name);
+				AkizukiLog.Warning("Tried loading {Name} with an unsupported version!", MaterialPrototype.Name);
 			}
 
+			AkizukiLog.Debug("Creating Records for {Name}", MaterialPrototype.Name);
 			CreateRecords<MaterialPrototype>(data, count, offset, db);
 		}
 	}

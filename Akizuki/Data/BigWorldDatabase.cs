@@ -47,10 +47,13 @@ public class BigWorldDatabase {
 				throw new CorruptDataException("BWDB Checksum Mismatch");
 			}
 
-			AkizukiLog.Verbose("BWDB Passed Checksum Validation");
+			AkizukiLog.Debug("BWDB Passed Checksum Validation");
 		}
 
+		AkizukiLog.Verbose("{Value}", BigWorldHeader);
+
 		Header = data.Read<BWDBHeader>();
+		AkizukiLog.Verbose("{Value}", Header);
 
 		var resourceBase = baseRel + Unsafe.SizeOf<BWDBDictionary>() + Unsafe.SizeOf<ulong>() * 2;
 		var pathsBase = resourceBase + Unsafe.SizeOf<BWDBDictionary>();
@@ -75,6 +78,8 @@ public class BigWorldDatabase {
 				data.Offset = assetValueOffset;
 				Strings[assetId.Key] = data.ReadString();
 			}
+
+			AkizukiLog.Verbose("Loaded {Count} strings", Header.Strings.Count);
 		}
 
 	#endregion
@@ -99,6 +104,8 @@ public class BigWorldDatabase {
 			foreach (var fileName in fileNames) {
 				ResolvePath(fileName, names);
 			}
+
+			AkizukiLog.Verbose("Loaded {Count} strings", Header.PathsCount);
 		}
 
 	#endregion
@@ -127,6 +134,8 @@ public class BigWorldDatabase {
 				// "data only" assets, such as .model, .visual are stored in this file and named via this.
 				ResourceToPrototype[resourceId.Key] = resourceInfo;
 			}
+
+			AkizukiLog.Verbose("Loaded {Count} Prototype mappings", ResourceToPrototype.Count);
 		}
 
 	#endregion
@@ -145,6 +154,8 @@ public class BigWorldDatabase {
 				Tables.Add(new BigWorldTable(partition, tableRecord, this));
 				tableOffset += oneTableSize;
 			}
+
+			AkizukiLog.Verbose("Loaded {Count} tables", Header.DatabaseCount);
 		}
 
 	#endregion
@@ -180,16 +191,24 @@ public class BigWorldDatabase {
 
 	public IPrototype? Resolve(BWPrototypeInfo info) {
 		if (info.TableIndex > Tables.Count) {
+			AkizukiLog.Debug("Unable to resolve table for {Info}", info);
 			return null;
 		}
 
 		var table = Tables[info.TableIndex];
 
-		if (info.RecordIndex > table.Records.Count) {
+		if (table.Records.Count == 0) {
+			AkizukiLog.Debug("Table for {Info} is not implemented", info);
 			return null;
 		}
 
-		return table.Records[info.RecordIndex];
+		if (info.RecordIndex < table.Records.Count) {
+			return table.Records[info.RecordIndex];
+		}
+
+		AkizukiLog.Debug("Unable to resolve record for {Info}", info);
+		return null;
+
 	}
 
 	public bool IsAssetIdUsed(ulong id) => ResourceToPrototype.ContainsKey(id);
