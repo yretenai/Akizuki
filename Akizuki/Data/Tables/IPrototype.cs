@@ -9,8 +9,7 @@ using DragonLib.IO;
 
 namespace Akizuki.Data.Tables;
 
-[JsonPolymorphic]
-[JsonDerivedType(typeof(MaterialPrototype))]
+[JsonPolymorphic, JsonDerivedType(typeof(MaterialPrototype))]
 public interface IPrototype {
 	public static virtual uint Version => 0;
 	public static virtual uint Id => 0;

@@ -15,7 +15,7 @@ public sealed class CompiledTerrain : IDisposable {
 				buffer.Dispose();
 			}
 		});
-		
+
 		var data = new SpanReader(buffer.Span);
 
 		Header = data.Read<CompiledTerrainHeader>();

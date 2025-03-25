@@ -52,7 +52,7 @@ internal static class Program {
 			}
 
 			foreach (var file in pfs.Files) {
-				var path = Path.Combine(flags.OutputDirectory, pfs.Paths.TryGetValue(file.Id, out var name) ? name.TrimStart('/', '.') : $"res/{file.Id:x16}.bin");
+				var path = Path.Combine(flags.OutputDirectory, pfs.Paths.TryGetValue(file.Id, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{file.Id:x16}.bin");
 			#if DEBUG
 				if (!path.EndsWith("assets.bin")) {
 					continue;
@@ -74,7 +74,7 @@ internal static class Program {
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 				Directory.CreateDirectory(dir);
 
-				if (flags.Convert && Convert(path, data)) {
+				if (flags.Convert && Convert(path, flags.OutputDirectory, data)) {
 					continue;
 				}
 
@@ -84,7 +84,7 @@ internal static class Program {
 		}
 	}
 
-	private static bool Convert(string path, IMemoryBuffer<byte> data) {
+	private static bool Convert(string path, string root, IMemoryBuffer<byte> data) {
 		var ext = Path.GetExtension(path).ToLowerInvariant();
 		var name = Path.GetFileName(path).ToLowerInvariant();
 
@@ -132,6 +132,7 @@ internal static class Program {
 					case "assets.bin": {
 						var assets = new BigWorldDatabase(data);
 						AssetPaths.Save(path, assets);
+						Assets.Save(root, assets);
 						break;
 					}
 				}

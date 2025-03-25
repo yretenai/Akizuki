@@ -9,7 +9,9 @@ SPDX-License-Identifier: EUPL-1.2
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/BCDecNet" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/DragonLib" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Triton" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Waterfall" vcs="Git" />
   </component>
   <component name="VcsProjectSettings">

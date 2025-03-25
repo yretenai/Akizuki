@@ -22,10 +22,15 @@ public class BigWorldTable {
 			if (Version != MaterialPrototype.Version) {
 				Log.Warning("Tried loading {Name} with an unsupported version!", MaterialPrototype.Name);
 			}
+
 			CreateRecords<MaterialPrototype>(data, count, offset, db);
 		}
 	}
-	
+
+	public uint Id { get; set; }
+	public uint Version { get; set; }
+	public List<IPrototype> Records { get; set; } = [];
+
 	private void CreateRecords<T>(MemoryReader data, int count, int offset, BigWorldDatabase db) where T : IPrototype {
 		for (var index = 0; index < count; ++count) {
 			data.Offset = offset;
@@ -33,9 +38,4 @@ public class BigWorldTable {
 			offset += T.Size;
 		}
 	}
-	
-	public uint Id { get; set; }
-	public uint Version { get; set; }
-	public List<IPrototype> Records { get; set; } = [];
-
 }

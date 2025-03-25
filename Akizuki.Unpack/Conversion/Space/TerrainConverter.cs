@@ -16,7 +16,7 @@ public static class TerrainConverter {
 		if (TIFFEncoder.IsAvailable) {
 			path = Path.ChangeExtension(path, ".tif");
 			encoder = new TIFFEncoder(TIFFCompression.None, TIFFCompression.None);
-		} else if(PNGEncoder.IsAvailable) {
+		} else if (PNGEncoder.IsAvailable) {
 			path = Path.ChangeExtension(path, ".png");
 			encoder = new PNGEncoder(PNGCompressionLevel.SuperFast);
 		} else {
@@ -36,7 +36,7 @@ public static class TerrainConverter {
 		for (var i = 0; i < span.Length; i++) {
 			span[i] = (span[i] - min) / range;
 		}
-		
+
 		using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 		encoder.Write(stream, EncoderWriteOptions.Default, [heightmap]);
 		return true;

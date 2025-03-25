@@ -14,6 +14,7 @@ indent_size = tab
 tab_width = 4
 
 # Microsoft .NET properties
+csharp_force_attribute_style = join
 csharp_new_line_before_catch = false
 csharp_new_line_before_else = false
 csharp_new_line_before_finally = false
@@ -141,6 +142,8 @@ resharper_align_linq_query = true
 resharper_align_multiline_binary_expressions_chain = false
 resharper_align_multiline_calls_chain = true
 resharper_autodetect_indent_settings = true
+resharper_braces_for_ifelse = required
+resharper_braces_for_dowhile = required
 resharper_braces_for_for = required
 resharper_braces_for_foreach = required
 resharper_braces_for_while = required

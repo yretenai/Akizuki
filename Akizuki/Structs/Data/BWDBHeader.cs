@@ -12,7 +12,7 @@ public record struct BWDBHeader {
 	public long StringsSize { get; set; }
 	public long StringsPtr { get; set; }
 	public BWDBDictionary ResourcePrototypes { get; set; }
-	public long	PathsCount { get; set; }
+	public long PathsCount { get; set; }
 	public long PathsPtr { get; set; }
 	public long DatabaseCount { get; set; }
 	public long DatabasePtr { get; set; }

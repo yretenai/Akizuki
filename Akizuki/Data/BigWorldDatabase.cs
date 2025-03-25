@@ -55,7 +55,7 @@ public class BigWorldDatabase {
 		var resourceBase = baseRel + Unsafe.SizeOf<BWDBDictionary>() + Unsafe.SizeOf<ulong>() * 2;
 		var pathsBase = resourceBase + Unsafe.SizeOf<BWDBDictionary>();
 
-		#region Strings
+	#region Strings
 
 		{
 			data.Offset = (int) (baseRel + Header.Strings.KeyPtr);
@@ -77,9 +77,9 @@ public class BigWorldDatabase {
 			}
 		}
 
-		#endregion
+	#endregion
 
-		#region Paths
+	#region Paths
 
 		{
 			var nameOffset = (int) (pathsBase + Header.PathsPtr);
@@ -101,9 +101,9 @@ public class BigWorldDatabase {
 			}
 		}
 
-		#endregion
+	#endregion
 
-		#region PathToPrototype
+	#region PathToPrototype
 
 		{
 			data.Offset = (int) (resourceBase + Header.ResourcePrototypes.KeyPtr);
@@ -129,9 +129,9 @@ public class BigWorldDatabase {
 			}
 		}
 
-		#endregion
+	#endregion
 
-		#region Tables
+	#region Tables
 
 		{
 			var tableOffset = data.Offset = (int) (baseRel + Header.DatabasePtr);
@@ -147,7 +147,7 @@ public class BigWorldDatabase {
 			}
 		}
 
-		#endregion
+	#endregion
 	}
 
 	public BWFileHeader BigWorldHeader { get; }
