@@ -32,7 +32,7 @@ public class BigWorldTable {
 	public List<IPrototype> Records { get; set; } = [];
 
 	private void CreateRecords<T>(MemoryReader data, int count, int offset, BigWorldDatabase db) where T : IPrototype {
-		for (var index = 0; index < count; ++count) {
+		for (var index = 0; index < count; ++index) {
 			data.Offset = offset;
 			Records.Add(T.Create(data, db));
 			offset += T.Size;

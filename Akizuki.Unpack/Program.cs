@@ -48,7 +48,7 @@ internal static class Program {
 				var path = Path.Combine(flags.OutputDirectory, "idx", Path.GetFileName(idxFile));
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 				Directory.CreateDirectory(dir);
-				AssetPaths.Save(path, pfs);
+				AssetPaths.Save(path, flags, pfs);
 			}
 
 			foreach (var file in pfs.Files) {
@@ -67,14 +67,12 @@ internal static class Program {
 					continue;
 				}
 
-				if (flags.Dry) {
-					continue;
+				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
+				if (!flags.Dry) {
+					Directory.CreateDirectory(dir);
 				}
 
-				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
-				Directory.CreateDirectory(dir);
-
-				if (flags.Convert && Convert(path, flags.OutputDirectory, data)) {
+				if ((flags.Convert && Convert(path, flags, data)) || flags.Dry) {
 					continue;
 				}
 
@@ -84,7 +82,7 @@ internal static class Program {
 		}
 	}
 
-	private static bool Convert(string path, string root, IMemoryBuffer<byte> data) {
+	private static bool Convert(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
 		var ext = Path.GetExtension(path).ToLowerInvariant();
 		var name = Path.GetFileName(path).ToLowerInvariant();
 
@@ -116,7 +114,7 @@ internal static class Program {
 			case ".bin":
 				switch (name) {
 					case "terrain.bin":
-						return TerrainConverter.Convert(path, data);
+						return TerrainConverter.Convert(path, flags, data);
 					case "decor.bin":
 						// todo
 						break;
@@ -131,9 +129,9 @@ internal static class Program {
 						break;
 					case "assets.bin": {
 						var assets = new BigWorldDatabase(data);
-						AssetPaths.Save(path, assets);
-						Assets.Save(root, assets);
-						break;
+						AssetPaths.Save(path, flags, assets);
+						Assets.Save(flags, assets);
+						return false; // always save assets.bin
 					}
 				}
 

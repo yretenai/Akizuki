@@ -10,8 +10,8 @@ using Triton.Pixel.Formats;
 
 namespace Akizuki.Unpack.Conversion.Space;
 
-public static class TerrainConverter {
-	public static bool Convert(string path, IMemoryBuffer<byte> data) {
+internal static class TerrainConverter {
+	internal static bool Convert(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
 		IEncoder encoder;
 		if (TIFFEncoder.IsAvailable) {
 			path = Path.ChangeExtension(path, ".tif");
@@ -35,6 +35,10 @@ public static class TerrainConverter {
 		var span = terrain.Data.Span;
 		for (var i = 0; i < span.Length; i++) {
 			span[i] = (span[i] - min) / range;
+		}
+
+		if (flags.Dry) {
+			return true;
 		}
 
 		using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
