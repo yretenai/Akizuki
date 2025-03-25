@@ -7,8 +7,8 @@ using Silk.NET.Maths;
 
 namespace Akizuki.Data.Tables;
 
-public partial class AtlasContourPrototype {
-	public AtlasContourPrototype(MemoryReader data, BigWorldDatabase db) {
+public partial class AtlasContourPrototype : List<List<Vector2D<float>>> {
+	public AtlasContourPrototype(MemoryReader data) {
 		var offset = data.Offset;
 		var info = data.Read<long>(2);
 		var count = (int) info[0];
@@ -22,11 +22,9 @@ public partial class AtlasContourPrototype {
 
 			var points = new List<Vector2D<float>>();
 			points.AddRange(data.Read<Vector2D<float>>(pointsCount));
-			Frames.Add(points);
+			Add(points);
 
 			offset += 0x10;
 		}
 	}
-
-	public List<List<Vector2D<float>>> Frames { get; set; } = [];
 }

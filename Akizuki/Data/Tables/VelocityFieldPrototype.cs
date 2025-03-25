@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Runtime.CompilerServices;
 using Akizuki.Structs.Data.Tables;
 using DragonLib.IO;
 using Silk.NET.Maths;
@@ -10,7 +9,7 @@ using Silk.NET.Maths;
 namespace Akizuki.Data.Tables;
 
 public partial class VelocityFieldPrototype {
-	public VelocityFieldPrototype(MemoryReader data, BigWorldDatabase db) {
+	public VelocityFieldPrototype(MemoryReader data) {
 		var offset = data.Offset;
 		var header = data.Read<VelocityFieldPrototypeHeader>();
 		Dimensions = header.Dimensions;

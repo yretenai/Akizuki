@@ -24,7 +24,7 @@ public partial class AtlasContourPrototype : IPrototype {
 		Version = MurmurHash3Algorithm.Hash32_32(version[..offset]);
 	}
 
-	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new AtlasContourPrototype(reader, db);
+	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new AtlasContourPrototype(reader);
 
 	public static void AppendVersion(StringBuilder sb) {
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Signed, 4, "frameCount");

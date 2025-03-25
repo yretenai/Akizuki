@@ -26,7 +26,7 @@ public partial class VelocityFieldPrototype : IPrototype {
 		Version = MurmurHash3Algorithm.Hash32_32(version[..offset]);
 	}
 
-	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new VelocityFieldPrototype(reader, db);
+	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new VelocityFieldPrototype(reader);
 
 	public static void AppendVersion(StringBuilder sb) {
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Unsigned, 4, "dimX");

@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Runtime.CompilerServices;
 using System.Text;
-using Akizuki.Structs.Data;
-using Akizuki.Structs.Data.Tables;
 using DragonLib.Hash.Algorithms;
 using DragonLib.IO;
 
@@ -28,8 +25,7 @@ public partial class EffectPrototype : IPrototype {
 
 	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new EffectPrototype(reader, db);
 
-	public static void AppendVersion(StringBuilder sb) {
-	}
+	public static void AppendVersion(StringBuilder sb) { }
 
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("EffectPrototype"u8);

@@ -11,8 +11,11 @@ namespace Akizuki.Structs.Data.Tables;
 
 [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 4)]
 public record struct BoundingBox {
-	[field: FieldOffset(0)] public Vector3D<float> Min { get; set; }
-	[field: FieldOffset(16)] public Vector3D<float> Max { get; set; }
+	[field: FieldOffset(0)]
+	public Vector3D<float> Min { get; set; }
+
+	[field: FieldOffset(16)]
+	public Vector3D<float> Max { get; set; }
 
 	public static void AppendVersion(StringBuilder sb) {
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Type, 12, "min");

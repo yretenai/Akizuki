@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Text;
+using Akizuki.Structs.Data;
 using DragonLib.Hash.Algorithms;
 using DragonLib.IO;
 
@@ -26,10 +27,25 @@ public partial class EffectMetadataPrototype : IPrototype {
 	public static IPrototype Create(MemoryReader reader, BigWorldDatabase db) => new EffectMetadataPrototype(reader, db);
 
 	public static void AppendVersion(StringBuilder sb) {
+		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Unsigned, 4, "intensitiesCount");
+		IPrototype.AppendField(sb, BWDBFieldType.Array, BWDBFieldKind.Pointer, nestedKind: BWDBFieldKind.Type);
+
+		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Type);
+		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Unsigned, 4, "size");
+		IPrototype.AppendField(sb, BWDBFieldType.Array, BWDBFieldKind.Pointer, 1, "text", BWDBFieldKind.Signed);
+		IPrototype.AppendField(sb, BWDBFieldType.Count, BWDBFieldKind.Unsigned, 4, "size");
+		sb.Append("intensityName");
+
+		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Float, 4, "minIntensity");
+		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Float, 4, "maxIntensity");
+		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Float, 4, "defaultIntensity");
+
+		sb.Append("intensitiesMetadata");
+		IPrototype.AppendField(sb, BWDBFieldType.Count, BWDBFieldKind.Unsigned, 4, "intensitiesCount");
 	}
 
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("EffectMetadataPrototype"u8);
 	public static string PrototypeName => "EffectMetadataPrototype";
-	public static int Size => 0; // Unsafe.SizeOf<EffectMetadataPrototypeHeader>();
+	public static int Size => 0x10;
 }
