@@ -13,17 +13,16 @@ namespace Akizuki.Unpack.Conversion;
 
 internal static class SpaceConverter {
 	internal static bool ConvertTerrain(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
-		var imageFormat = flags.ValidFormat;
+		var imageFormat = flags.SelectedFormat;
 		if (imageFormat == TextureFormat.None) {
 			return false;
 		}
 
-		IEncoder encoder = imageFormat switch {
-			TextureFormat.PNG => new PNGEncoder(PNGCompressionLevel.SuperFast),
-			TextureFormat.TIF => new TIFFEncoder(TIFFCompression.None, TIFFCompression.None),
-			TextureFormat.None => throw new UnreachableException(),
-			_ => throw new UnreachableException(),
-		};
+		var encoder = flags.FormatEncoder;
+		if (encoder == null) {
+			return false;
+		}
+
 		path = Path.ChangeExtension(path, $".{imageFormat.ToString().ToLowerInvariant()}");
 
 		using var terrain = new CompiledTerrain(data);

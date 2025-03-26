@@ -10,6 +10,7 @@ namespace Akizuki.Unpack;
 
 internal enum TextureFormat {
 	None,
+	Auto,
 	PNG,
 	TIF,
 }
@@ -28,7 +29,7 @@ internal record ProgramFlags : CommandLineFlags {
 	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
 
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
-	public TextureFormat Format { get; set; } = TextureFormat.TIF;
+	public TextureFormat Format { get; set; } = TextureFormat.Auto;
 
 #if DEBUG
 	[Flag("verbose", Help = "Set log level to the highest possible level", Category = "Akizuki")]
@@ -52,18 +53,30 @@ internal record ProgramFlags : CommandLineFlags {
 
 	public bool ShouldConvertAtAll => Convert || ConvertLoose;
 
-	public TextureFormat ValidFormat {
+	public TextureFormat SelectedFormat {
 		get {
-			var hasTiff = TIFFEncoder.IsAvailable;
-			var hasPng = PNGEncoder.IsAvailable;
+			if (Format != TextureFormat.Auto) {
+				return Format;
+			}
 
-			return Format switch {
-				TextureFormat.TIF when !hasTiff && hasPng => TextureFormat.PNG,
-				TextureFormat.TIF => Format,
-				TextureFormat.PNG when !hasPng && hasTiff => TextureFormat.TIF,
-				TextureFormat.PNG => Format,
-				_ => TextureFormat.None,
-			};
+			if (TIFFEncoder.IsAvailable) {
+				Format = TextureFormat.TIF;
+			} else if (PNGEncoder.IsAvailable) {
+				Format = TextureFormat.PNG;
+			} else {
+				Format = TextureFormat.None;
+			}
+
+			return Format;
 		}
 	}
+
+	public IEncoder? FormatEncoder =>
+		SelectedFormat switch {
+			TextureFormat.PNG when PNGEncoder.IsAvailable => new PNGEncoder(PNGCompressionLevel.SuperSmall),
+			TextureFormat.TIF when TIFFEncoder.IsAvailable => new TIFFEncoder(TIFFCompression.Deflate, TIFFCompression.Deflate),
+			TextureFormat.None => null,
+			TextureFormat.Auto => null,
+			_ => null,
+		};
 }

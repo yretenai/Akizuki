@@ -31,17 +31,15 @@ internal static class GeometryConverter {
 	}
 
 	public static bool ConvertTexture(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
-		var imageFormat = flags.ValidFormat;
+		var imageFormat = flags.SelectedFormat;
 		if (imageFormat == TextureFormat.None) {
 			return false;
 		}
 
-		IEncoder encoder = imageFormat switch {
-			TextureFormat.PNG => new PNGEncoder(PNGCompressionLevel.SuperSmall),
-			TextureFormat.TIF => new TIFFEncoder(TIFFCompression.Zip, TIFFCompression.Zip),
-			TextureFormat.None => throw new UnreachableException(),
-			_ => throw new UnreachableException(),
-		};
+		var encoder = flags.FormatEncoder;
+		if (encoder == null) {
+			return false;
+		}
 
 		var ext = Path.GetExtension(path);
 		if (ext != ".dds") {
