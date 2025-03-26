@@ -10,8 +10,8 @@ namespace Akizuki.Structs.Data.Tables;
 public record struct RenderSetPrototypeHeader {
 	public StringId NameId { get; set; }
 	public StringId MaterialNameId { get; set; }
-	public StringId IndicesName { get; set; }
 	public StringId VerticesName { get; set; }
+	public StringId IndicesName { get; set; }
 	public ResourceId MaterialResourceId { get; set; }
 	public bool IsSkinned { get; set; }
 	public byte NodeCount { get; set; }

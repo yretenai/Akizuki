@@ -12,8 +12,8 @@ public partial class RenderSetPrototype {
 	public RenderSetPrototype(RenderSetPrototypeHeader header, MemoryReader data) {
 		Name = header.NameId;
 		MaterialName = header.MaterialNameId;
-		IndicesName = header.IndicesName;
 		VerticesName = header.VerticesName;
+		IndicesName = header.IndicesName;
 		MaterialResource = header.MaterialResourceId;
 		IsSkinned = header.IsSkinned;
 
@@ -24,8 +24,8 @@ public partial class RenderSetPrototype {
 
 	public StringId Name { get; set; }
 	public StringId MaterialName { get; set; }
-	public StringId IndicesName { get; set; }
 	public StringId VerticesName { get; set; }
+	public StringId IndicesName { get; set; }
 	public ResourceId MaterialResource { get; set; }
 	public bool IsSkinned { get; set; }
 	public List<StringId> Nodes { get; set; } = [];
