@@ -16,10 +16,11 @@ namespace Akizuki.Data;
 
 public sealed class PackageFileSystem : IDisposable {
 	public PackageFileSystem(string packageDirectory, string path, bool validate = true) :
-		this(packageDirectory, new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), false, validate) { }
+		this(packageDirectory, new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Path.GetFileNameWithoutExtension(path), false, validate) { }
 
-	public PackageFileSystem(string packageDirectory, Stream stream, bool leaveOpen = false, bool validate = true) {
+	public PackageFileSystem(string packageDirectory, Stream stream, string name, bool leaveOpen = false, bool validate = true) {
 		ShouldValidate = validate;
+		Name = name;
 
 		using var deferred = new DeferredDisposable(() => {
 			if (!leaveOpen) {
@@ -32,19 +33,19 @@ public sealed class PackageFileSystem : IDisposable {
 		BigWorldHeader = data.Read<BWFileHeader>();
 
 		if (!BigWorldHeader.IsHostEndian) {
-			throw new NotSupportedException("PFS Index Big Endian is not supported");
+			throw new NotSupportedException($"PFS Index {name} is Big Endian, which is not supported");
 		}
 
 		if (BigWorldHeader.Version != 2) {
-			throw new NotSupportedException("Only PFS Version 2 is supported");
+			throw new NotSupportedException($"PFS {name} has an invalid version. Only PFS Version 2 is supported");
 		}
 
 		if (BigWorldHeader.Magic != BWFileHeader.PFSIMagic) {
-			throw new InvalidDataException("File is not recognised as a PFS Index");
+			throw new InvalidDataException($"File {name} is not recognised as a PFS Index");
 		}
 
 		if (BigWorldHeader.PointerSize is not 64) {
-			throw new NotSupportedException($"PFS Index Bit Size of {BigWorldHeader.PointerSize} not supported");
+			throw new NotSupportedException($"PFS Index {name} Bit Size of {BigWorldHeader.PointerSize} not supported");
 		}
 
 		var baseRel = Unsafe.SizeOf<BWFileHeader>();
@@ -52,10 +53,10 @@ public sealed class PackageFileSystem : IDisposable {
 		if (ShouldValidate) {
 			var hash = MurmurHash3Algorithm.Hash32_32(data.Buffer[baseRel..]);
 			if (hash != BigWorldHeader.Hash) {
-				throw new CorruptDataException("PFS Index Checksum Mismatch");
+				throw new CorruptDataException($"PFS {name} Index Checksum Mismatch");
 			}
 
-			AkizukiLog.Debug("PFS Passed Checksum Validation");
+			AkizukiLog.Debug("PFS {Name} Passed Checksum Validation", name);
 		}
 
 		AkizukiLog.Verbose("{Value}", BigWorldHeader);
@@ -121,6 +122,7 @@ public sealed class PackageFileSystem : IDisposable {
 	public List<PFSFile> Files { get; } = [];
 	public Dictionary<ulong, Stream> Packages { get; } = [];
 	public bool ShouldValidate { get; }
+	public string Name { get; }
 
 	public void Dispose() {
 		foreach (var (_, stream) in Packages) {

@@ -23,7 +23,7 @@ internal record ProgramFlags : CommandLineFlags {
 	public string PackageDirectory { get; set; } = null!;
 
 	[Flag("package-index", Positional = 2, IsRequired = true, Category = "Akizuki")]
-	public List<string> IndexFiles { get; set; } = [];
+	public string IndexDirectory { get; set; } = null!;
 
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
 	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;

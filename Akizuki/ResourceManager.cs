@@ -39,7 +39,8 @@ public sealed class ResourceManager : IDisposable {
 				}
 
 				PathLookup[path] = id;
-				IdLookup[id] = (index, file);
+				ReversePathLookup[id] = path;
+				IdLookup[id] = (index, path, file);
 			}
 		}
 
@@ -55,7 +56,9 @@ public sealed class ResourceManager : IDisposable {
 
 	public List<PackageFileSystem> Packages { get; set; } = [];
 	public Dictionary<string, ulong> PathLookup { get; set; } = [];
-	public Dictionary<ulong, (int Index, PFSFile File)> IdLookup { get; set; } = [];
+	public Dictionary<ulong, string> ReversePathLookup { get; set; } = [];
+	public Dictionary<ulong, (int Index, string Name, PFSFile File)> IdLookup { get; set; } = [];
+	public IEnumerable<ulong> Files => IdLookup.Keys;
 	public BigWorldDatabase? Database { get; set; }
 
 	public void Dispose() {

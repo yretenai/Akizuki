@@ -34,8 +34,6 @@ internal static class Program {
 		},
 	};
 
-	private static ResourceManager? Manager { get; set; }
-
 	private static void Main() {
 		var flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>();
 
@@ -44,39 +42,44 @@ internal static class Program {
 							.WriteTo.Console(theme: AnsiConsoleTheme.Literate)
 							.CreateLogger();
 
-		foreach (var idxFile in new FileEnumerator(flags.IndexFiles, "*.idx")) {
-			AkizukiLog.Information("Opening {Index}", Path.GetFileNameWithoutExtension(idxFile));
-			using var pfs = new PackageFileSystem(flags.PackageDirectory, idxFile, flags.Validate);
+		using var manager = new ResourceManager(flags.IndexDirectory, flags.PackageDirectory, flags.Validate);
 
-			if (!flags.Dry) {
-				var path = Path.Combine(flags.OutputDirectory, "idx", Path.GetFileName(idxFile));
+		if (flags.Convert) {
+			if (manager.Database != null) {
+				var path = Path.Combine(flags.OutputDirectory, "res/content/assets.bin");
+				AssetPaths.Save(path, flags, manager.Database);
+				Assets.Save(flags, manager.Database);
+			}
+
+			foreach (var pfs in manager.Packages) {
+				var path = Path.Combine(flags.OutputDirectory, "idx", Path.GetFileName(pfs.Name));
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 				Directory.CreateDirectory(dir);
 				AssetPaths.Save(path, flags, pfs);
 			}
+		}
 
-			foreach (var file in pfs.Files) {
-				var path = Path.Combine(flags.OutputDirectory, pfs.Paths.TryGetValue(file.Id, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{file.Id:x16}.bin");
-				AkizukiLog.Information("{Value}", name ?? $"{file.Id:x16}");
+		foreach (var fileId in manager.Files) {
+			var path = Path.Combine(flags.OutputDirectory, manager.ReversePathLookup.TryGetValue(fileId, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{fileId:x16}.bin");
+			AkizukiLog.Information("{Value}", name ?? $"{fileId:x16}");
 
-				using var data = pfs.OpenFile(file);
-				if (data == null) {
-					AkizukiLog.Warning("Failed ot open {File}", name ?? $"{file.Id:x16}");
-					continue;
-				}
-
-				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
-				if (!flags.Dry) {
-					Directory.CreateDirectory(dir);
-				}
-
-				if ((flags.ShouldConvertAtAll && Convert(path, flags, data)) || flags.Dry) {
-					continue;
-				}
-
-				using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-				stream.Write(data.Span);
+			using var data = manager.OpenFile(fileId);
+			if (data == null) {
+				AkizukiLog.Warning("Failed to open {File}", name ?? $"{fileId:x16}");
+				continue;
 			}
+
+			var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
+			if (!flags.Dry) {
+				Directory.CreateDirectory(dir);
+			}
+
+			if ((flags.ShouldConvertAtAll && Convert(path, flags, data)) || flags.Dry) {
+				continue;
+			}
+
+			using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+			stream.Write(data.Span);
 		}
 	}
 
@@ -130,12 +133,7 @@ internal static class Program {
 						// todo
 						break;
 					case "assets.bin": {
-						var assets = new BigWorldDatabase(data);
-						Manager = new ResourceManager(assets);
-						AssetPaths.Save(path, flags, assets);
-						Assets.Save(flags, assets);
-						// todo: save all geometries.
-						return false; // always save assets.bin
+						return false; // handled separately
 					}
 				}
 
