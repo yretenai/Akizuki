@@ -36,8 +36,31 @@ public sealed class DDSTexture : IDisposable {
 				Debug.Assert(dx10.ResourceDimension == DXGIResourceDimension.Texture2D);
 				Format = dx10.Format; break;
 			}
-			case var _ when (header.Flags & DDSFlags.Linear) == 0: Format = (DXGIFormat) header.PixelFormat.FourCC; break;
-			default: throw new NotSupportedException();
+			case var _ when header.PixelFormat.FourCC > 0: Format = (DXGIFormat) header.PixelFormat.FourCC; break;
+			default: {
+				if ((header.PixelFormat.Flags & (DDSPixelFormatFlags.RGB | DDSPixelFormatFlags.Luminance)) == 0) {
+					throw new NotSupportedException();
+				}
+
+				switch (header.PixelFormat.RGBBitCount) {
+					case 8:
+						Format = DXGIFormat.R8_UNORM;
+						break;
+					case 16:
+						Format = DXGIFormat.R8G8_UNORM;
+						break;
+					case 24:
+						Format = DXGIFormat.R8G8B8_UNORM;
+						break;
+					case 32:
+						Format = DXGIFormat.R8G8B8A8_UNORM;
+						break;
+					default:
+						throw new NotSupportedException();
+				}
+
+				break;
+			}
 		}
 
 		if ((header.Caps2 & DDSCaps2.CubeMapAll) == DDSCaps2.CubeMapAll) {
@@ -65,8 +88,7 @@ public sealed class DDSTexture : IDisposable {
 	private uint CalculateSurfaceSize(out uint largestMip) {
 		var (bitsPerBlock, pixelsPerBlock) = PitchFactor;
 		if (pixelsPerBlock == 0 || bitsPerBlock == 0) {
-			largestMip = 0;
-			return 0;
+			throw new NotSupportedException();
 		}
 
 		var oneSurface = 0u;
@@ -87,8 +109,9 @@ public sealed class DDSTexture : IDisposable {
 			DXGIFormat.BC2_UNORM or DXGIFormat.BC2_UNORM_SRGB or DXGIFormat.BC3_UNORM or DXGIFormat.BC3_UNORM_SRGB => (128, 16),
 			DXGIFormat.BC4_UNORM or DXGIFormat.BC4_SNORM => (64, 16),
 			DXGIFormat.BC5_UNORM or DXGIFormat.BC5_SNORM or DXGIFormat.BC6H_SF16 or DXGIFormat.BC6H_UF16 or DXGIFormat.BC7_UNORM or DXGIFormat.BC7_UNORM_SRGB => (128, 16),
-			DXGIFormat.A8_UNORM or DXGIFormat.R8_UNORM or DXGIFormat.R8_SNORM => (8, 1),
-			DXGIFormat.R8G8_SINT or DXGIFormat.R8G8_UINT or DXGIFormat.R8G8_SNORM or DXGIFormat.R8G8_UNORM or DXGIFormat.R16_SINT or DXGIFormat.R16_UINT or DXGIFormat.R16_FLOAT or DXGIFormat.R16_SNORM or DXGIFormat.R16_UNORM => (16, 1),
+			DXGIFormat.IA44 or DXGIFormat.P8 or DXGIFormat.A8_UNORM or DXGIFormat.R8_UNORM or DXGIFormat.R8_SNORM => (8, 1),
+			DXGIFormat.A8P8 or DXGIFormat.R8G8_SINT or DXGIFormat.R8G8_UINT or DXGIFormat.R8G8_SNORM or DXGIFormat.R8G8_UNORM or DXGIFormat.R16_SINT or DXGIFormat.R16_UINT or DXGIFormat.R16_FLOAT or DXGIFormat.R16_SNORM or DXGIFormat.R16_UNORM => (16, 1),
+			DXGIFormat.R8G8B8_UNORM => (24, 1),
 			DXGIFormat.R8G8B8A8_UNORM or DXGIFormat.R8G8B8A8_UNORM_SRGB or DXGIFormat.R8G8B8A8_SNORM or DXGIFormat.R8G8B8A8_SINT or DXGIFormat.R8G8B8A8_UINT or DXGIFormat.R32_FLOAT or DXGIFormat.R32_SINT or DXGIFormat.R32_UINT or DXGIFormat.R16G16_FLOAT or DXGIFormat.R16G16_UNORM or DXGIFormat.R16G16_UINT or DXGIFormat.R16G16_SNORM or DXGIFormat.R16G16_SINT or DXGIFormat.R10G10B10A2_UNORM or DXGIFormat.R10G10B10A2_UINT or DXGIFormat.B8G8R8A8_UNORM or DXGIFormat.B8G8R8A8_UNORM_SRGB
 				or DXGIFormat.B8G8R8X8_UNORM or DXGIFormat.B8G8R8X8_UNORM_SRGB => (32, 1),
 			DXGIFormat.R16G16B16A16_FLOAT or DXGIFormat.R16G16B16A16_SINT or DXGIFormat.R16G16B16A16_UINT or DXGIFormat.R16G16B16A16_SNORM or DXGIFormat.R16G16B16A16_UNORM or DXGIFormat.R32G32_FLOAT or DXGIFormat.R32G32_SINT or DXGIFormat.R32G32_UINT => (64, 1),

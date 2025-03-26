@@ -120,4 +120,7 @@ public enum DXGIFormat : uint {
 	P8 = 113,
 	A8P8 = 114,
 	B4G4R4A4_UNORM = 115,
+
+	// custom
+	R8G8B8_UNORM,
 }

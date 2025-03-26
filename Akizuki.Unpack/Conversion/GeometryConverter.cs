@@ -10,6 +10,8 @@ using BCDecNet;
 using DragonLib.IO;
 using Triton;
 using Triton.Encoder;
+using Triton.Pixel;
+using Triton.Pixel.Channels;
 using Triton.Pixel.Formats;
 
 namespace Akizuki.Unpack.Conversion;
@@ -35,8 +37,8 @@ internal static class GeometryConverter {
 		}
 
 		IEncoder encoder = imageFormat switch {
-			TextureFormat.PNG => new PNGEncoder(PNGCompressionLevel.SuperFast),
-			TextureFormat.TIF => new TIFFEncoder(TIFFCompression.None, TIFFCompression.None),
+			TextureFormat.PNG => new PNGEncoder(PNGCompressionLevel.SuperSmall),
+			TextureFormat.TIF => new TIFFEncoder(TIFFCompression.Zip, TIFFCompression.Zip),
 			TextureFormat.None => throw new UnreachableException(),
 			_ => throw new UnreachableException(),
 		};
@@ -49,7 +51,7 @@ internal static class GeometryConverter {
 		}
 
 		using var texture = new DDSTexture(data);
-		if (texture.OneMipSize == 0 ) {
+		if (texture.OneMipSize == 0) {
 			return false;
 		}
 
@@ -121,6 +123,8 @@ internal static class GeometryConverter {
 				case DXGIFormat.A8_UNORM:
 				case DXGIFormat.R8_UNORM:
 				case DXGIFormat.R8_SNORM:
+				case DXGIFormat.P8:
+				case DXGIFormat.IA44: // what are these formats 😭
 					collection.Add(new ImageBuffer<ColorR<byte>, byte>(chunk, width, height));
 					continue;
 				case DXGIFormat.R8G8_SINT:
@@ -129,6 +133,7 @@ internal static class GeometryConverter {
 					continue;
 				case DXGIFormat.R8G8_UNORM:
 				case DXGIFormat.R8G8_UINT:
+				case DXGIFormat.A8P8:
 					collection.Add(new ImageBuffer<ColorRG<byte>, byte>(chunk, width, height));
 					continue;
 				case DXGIFormat.R16_SINT:
@@ -194,8 +199,15 @@ internal static class GeometryConverter {
 				case DXGIFormat.R32G32B32A32_FLOAT:
 					collection.Add(new ImageBuffer<ColorRGBA<float>, float>(chunk, width, height));
 					continue;
+				case DXGIFormat.B8G8R8A8_UNORM:
+				case DXGIFormat.B8G8R8A8_UNORM_SRGB:
+					collection.Add(new ImageBuffer<Color<byte, B, G, R, A>, byte>(chunk, width, height));
+					continue;
+				case DXGIFormat.R8G8B8_UNORM:
+					collection.Add(new ImageBuffer<ColorRGB<byte>, byte>(chunk, width, height));
+					continue;
 				default:
-					return false;
+					throw new NotSupportedException();
 			}
 		}
 
@@ -205,8 +217,6 @@ internal static class GeometryConverter {
 
 		using var stream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
 		encoder.Write(stream, EncoderWriteOptions.Default, collection);
-		GC.KeepAlive(collection);
-		GC.KeepAlive(stream);
 		return true;
 	}
 }
