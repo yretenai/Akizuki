@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Diagnostics;
 using Akizuki.Space;
 using DragonLib.IO;
 using Triton;

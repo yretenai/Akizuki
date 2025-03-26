@@ -4,7 +4,6 @@
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Akizuki.Data;
 using Akizuki.Json;
 using Akizuki.Json.Silk;
 using Akizuki.Unpack.Conversion;
@@ -47,6 +46,11 @@ internal static class Program {
 		if (flags.Convert) {
 			if (manager.Database != null) {
 				var path = Path.Combine(flags.OutputDirectory, "res/content/assets.bin");
+				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
+				if (!flags.Dry) {
+					Directory.CreateDirectory(dir);
+				}
+
 				AssetPaths.Save(path, flags, manager.Database);
 				Assets.Save(flags, manager.Database);
 			}
@@ -54,7 +58,11 @@ internal static class Program {
 			foreach (var pfs in manager.Packages) {
 				var path = Path.Combine(flags.OutputDirectory, "idx", Path.GetFileName(pfs.Name));
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
-				Directory.CreateDirectory(dir);
+				if (!flags.Dry) {
+					Directory.CreateDirectory(dir);
+				}
+
+				AkizukiLog.Information("{Value}", $"idx/{pfs.Name}.json");
 				AssetPaths.Save(path, flags, pfs);
 			}
 		}
