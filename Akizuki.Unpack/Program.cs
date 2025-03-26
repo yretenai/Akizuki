@@ -8,7 +8,6 @@ using Akizuki.Data;
 using Akizuki.Json;
 using Akizuki.Json.Silk;
 using Akizuki.Unpack.Conversion;
-using Akizuki.Unpack.Conversion.Space;
 using DragonLib.CommandLine;
 using DragonLib.IO;
 using Serilog;
@@ -58,12 +57,6 @@ internal static class Program {
 
 			foreach (var file in pfs.Files) {
 				var path = Path.Combine(flags.OutputDirectory, pfs.Paths.TryGetValue(file.Id, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{file.Id:x16}.bin");
-			#if DEBUG
-				if (!path.EndsWith("assets.bin")) {
-					continue;
-				}
-			#endif
-
 				AkizukiLog.Information("{Value}", name ?? $"{file.Id:x16}");
 
 				using var data = pfs.OpenFile(file);
@@ -105,11 +98,9 @@ internal static class Program {
 			case ".dd1": // 4k
 			case ".dd0": // 2k
 			case ".dds": // 1k
-				// todo
-				break;
+				return GeometryConverter.ConvertTexture(path, flags, data);
 			case ".splash":
-				// todo
-				break;
+				return GeometryConverter.ConvertSplash(path, flags, data);
 			case ".prefab":
 				// todo
 				break;
@@ -125,7 +116,7 @@ internal static class Program {
 			case ".bin":
 				switch (name) {
 					case "terrain.bin":
-						return TerrainConverter.Convert(path, flags, data);
+						return SpaceConverter.ConvertTerrain(path, flags, data);
 					case "decor.bin":
 						// todo
 						break;
@@ -143,6 +134,7 @@ internal static class Program {
 						Manager = new ResourceManager(assets);
 						AssetPaths.Save(path, flags, assets);
 						Assets.Save(flags, assets);
+						// todo: save all geometries.
 						return false; // always save assets.bin
 					}
 				}

@@ -14,7 +14,7 @@ public record struct VisualPrototypeHeader {
 	public bool IsAbovewaterModel { get; set; }
 	public ushort RenderSetsCount { get; set; }
 	public byte LODCount { get; set; }
-	public BoundingBox BoundingBox { get; set; }
+	public BoundingBox16 BoundingBox { get; set; }
 	public long RenderSetsPtr { get; set; }
 	public long LODPtr { get; set; }
 }

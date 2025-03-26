@@ -4,8 +4,15 @@
 
 using DragonLib.CommandLine;
 using Serilog.Events;
+using Triton.Encoder;
 
 namespace Akizuki.Unpack;
+
+internal enum TextureFormat {
+	None,
+	PNG,
+	TIF,
+}
 
 internal record ProgramFlags : CommandLineFlags {
 	[Flag("output-directory", Positional = 0, IsRequired = true, Category = "Akizuki")]
@@ -19,6 +26,9 @@ internal record ProgramFlags : CommandLineFlags {
 
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
 	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
+
+	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
+	public TextureFormat Format { get; set; } = TextureFormat.TIF;
 
 #if DEBUG
 	[Flag("verbose", Help = "Set log level to the highest possible level", Category = "Akizuki")]
@@ -41,4 +51,19 @@ internal record ProgramFlags : CommandLineFlags {
 	public bool ConvertLoose { get; set; }
 
 	public bool ShouldConvertAtAll => Convert || ConvertLoose;
+
+	public TextureFormat ValidFormat {
+		get {
+			var hasTiff = TIFFEncoder.IsAvailable;
+			var hasPng = PNGEncoder.IsAvailable;
+
+			return Format switch {
+				TextureFormat.TIF when !hasTiff && hasPng => TextureFormat.PNG,
+				TextureFormat.TIF => Format,
+				TextureFormat.PNG when !hasPng && hasTiff => TextureFormat.TIF,
+				TextureFormat.PNG => Format,
+				_ => TextureFormat.None,
+			};
+		}
+	}
 }

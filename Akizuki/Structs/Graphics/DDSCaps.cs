@@ -1,0 +1,13 @@
+// SPDX-FileCopyrightText: 2025 Ada N
+//
+// SPDX-License-Identifier: EUPL-1.2
+
+namespace Akizuki.Structs.Graphics;
+
+[Flags]
+public enum DDSCaps : uint {
+	None = 0,
+	Complex = 0x8,
+	Texture = 0x1000,
+	MipMapped = 0x400000,
+}

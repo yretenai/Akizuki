@@ -2,26 +2,29 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Diagnostics;
 using Akizuki.Space;
 using DragonLib.IO;
 using Triton;
 using Triton.Encoder;
 using Triton.Pixel.Formats;
 
-namespace Akizuki.Unpack.Conversion.Space;
+namespace Akizuki.Unpack.Conversion;
 
-internal static class TerrainConverter {
-	internal static bool Convert(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
-		IEncoder encoder;
-		if (TIFFEncoder.IsAvailable) {
-			path = Path.ChangeExtension(path, ".tif");
-			encoder = new TIFFEncoder(TIFFCompression.None, TIFFCompression.None);
-		} else if (PNGEncoder.IsAvailable) {
-			path = Path.ChangeExtension(path, ".png");
-			encoder = new PNGEncoder(PNGCompressionLevel.SuperFast);
-		} else {
+internal static class SpaceConverter {
+	internal static bool ConvertTerrain(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
+		var imageFormat = flags.ValidFormat;
+		if (imageFormat == TextureFormat.None) {
 			return false;
 		}
+
+		IEncoder encoder = imageFormat switch {
+			TextureFormat.PNG => new PNGEncoder(PNGCompressionLevel.SuperFast),
+			TextureFormat.TIF => new TIFFEncoder(TIFFCompression.None, TIFFCompression.None),
+			TextureFormat.None => throw new UnreachableException(),
+			_ => throw new UnreachableException(),
+		};
+		path = Path.ChangeExtension(path, $".{imageFormat.ToString().ToLowerInvariant()}");
 
 		using var terrain = new CompiledTerrain(data);
 		using var cast = new CastMemoryBuffer<byte, float>(terrain.Data);

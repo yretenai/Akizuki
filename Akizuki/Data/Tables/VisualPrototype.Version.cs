@@ -38,7 +38,7 @@ public partial class VisualPrototype : IPrototype {
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Unsigned, 1, "abovewaterModel");
 
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Type);
-		BoundingBox.AppendVersion(sb);
+		BoundingBox16.AppendVersion(sb);
 		sb.Append("boundingBox");
 
 		IPrototype.AppendField(sb, BWDBFieldType.Field, BWDBFieldKind.Unsigned, 2, "renderSetsCount");

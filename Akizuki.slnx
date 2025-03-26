@@ -1,12 +1,8 @@
-<!--
-SPDX-FileCopyrightText: 2025 Ada N
-
-SPDX-License-Identifier: EUPL-1.2
--->
 <Solution>
-	<Project Path="Akizuki.Unpack\Akizuki.Unpack.csproj" Type="Classic C#"/>
-	<Project Path="Akizuki/Akizuki.csproj"/>
-	<Project Path="DragonLib/DragonLib/DragonLib.csproj"/>
-	<Project Path="Triton\Triton\Triton.csproj" Type="Classic C#"/>
-	<Project Path="Waterfall/Waterfall/Waterfall.csproj"/>
+  <Project Path="Akizuki.Unpack\Akizuki.Unpack.csproj" Type="Classic C#" />
+  <Project Path="Akizuki/Akizuki.csproj" />
+  <Project Path="BCDecNet\BCDecNet\BCDecNet.csproj" Type="Classic C#" />
+  <Project Path="DragonLib/DragonLib/DragonLib.csproj" />
+  <Project Path="Triton\Triton\Triton.csproj" Type="Classic C#" />
+  <Project Path="Waterfall/Waterfall/Waterfall.csproj" />
 </Solution>

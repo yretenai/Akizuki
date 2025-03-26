@@ -44,7 +44,7 @@ public partial class VisualPrototype {
 	public ResourceId MergedGeometryPath { get; }
 	public bool IsUnderwaterModel { get; }
 	public bool IsAbovewaterModel { get; }
-	public BoundingBox BoundingBox { get; set; }
+	public BoundingBox16 BoundingBox { get; set; }
 	public List<RenderSetPrototype> RenderSets { get; set; } = [];
 	public List<LODPrototype> LOD { get; set; } = [];
 }
