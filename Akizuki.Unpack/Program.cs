@@ -85,7 +85,7 @@ internal static class Program {
 		foreach (var fileId in manager.Files) {
 			var path = Path.Combine(flags.OutputDirectory, manager.ReversePathLookup.TryGetValue(fileId, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{fileId:x16}.bin");
 		#if DEBUG
-			if (!path.EndsWith("GameParams.data")) {
+			if (!path.EndsWith(".geometry")) {
 				continue;
 			}
 		#endif

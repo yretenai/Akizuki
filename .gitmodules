@@ -17,3 +17,6 @@
 [submodule "Ferment"]
 	path = Libraries/Ferment
 	url = https://github.com/yretenai/Ferment.git
+[submodule "glTFScaffold"]
+	path = Libraries/glTFScaffold
+	url = https://github.com/yretenai/glTFScaffold.git
