@@ -7,14 +7,16 @@ SPDX-License-Identifier: EUPL-1.2
 -->
 
 <project version="4">
-  <component name="VcsDirectoryMappings">
-    <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/BCDecNet" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/DragonLib" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Triton" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Waterfall" vcs="Git" />
-  </component>
-  <component name="VcsProjectSettings">
-    <option name="detectVcsMappingsAutomatically" value="false" />
-  </component>
+	<component name="VcsDirectoryMappings">
+		<mapping directory="" vcs="Git" />
+		<mapping directory="$PROJECT_DIR$/Libraries/BCDecNet" vcs="Git" />
+		<mapping directory="$PROJECT_DIR$/Libraries/DragonLib" vcs="Git" />
+		<mapping directory="$PROJECT_DIR$/Libraries/Ferment" vcs="Git" />
+		<mapping directory="$PROJECT_DIR$/Libraries/glTFScaffold" vcs="Git" />
+		<mapping directory="$PROJECT_DIR$/Libraries/Triton" vcs="Git" />
+		<mapping directory="$PROJECT_DIR$/Libraries/Waterfall" vcs="Git" />
+	</component>
+	<component name="VcsProjectSettings">
+		<option name="detectVcsMappingsAutomatically" value="false" />
+	</component>
 </project>
