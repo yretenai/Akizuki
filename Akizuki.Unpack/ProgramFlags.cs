@@ -48,13 +48,13 @@ internal record ProgramFlags : CommandLineFlags {
 	[Flag("convert", Help = "Convert data to common formats", Category = "Akizuki")]
 	public bool Convert { get; set; }
 
-	[Flag("allow-game-params", Help = "Convert GameParams.data (WARNING, the Json file is not well formed and 1+GiB)", Category = "Akizuki")]
-	public bool AllowGameData { get; set; }
+	[Flag("convert-game-params", Help = "Convert GameParams.data", Category = "Akizuki")]
+	public bool ConvertGameData { get; set; }
 
-	[Flag("convert-geometry", Help = "Convert loose geometry", Category = "Akizuki")]
-	public bool ConvertLoose { get; set; }
+	[Flag("convert-geometry", Help = "Convert loose geometry (warning, this will overwrite proper processing)", Category = "Akizuki")]
+	public bool ConvertLooseGeometry { get; set; }
 
-	internal bool ShouldConvertAtAll => Convert || ConvertLoose;
+	internal bool ShouldConvertAtAll => Convert || ConvertLooseGeometry;
 
 	internal TextureFormat SelectedFormat {
 		get {

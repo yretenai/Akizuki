@@ -38,8 +38,7 @@ internal static class Assets {
 		}
 	}
 
-	internal static bool SaveData(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
-		var pickled = new PickledData(data);
+	internal static bool SaveData(string path, ProgramFlags flags, PickledData pickled) {
 		if (flags.Dry) {
 			return false;
 		}

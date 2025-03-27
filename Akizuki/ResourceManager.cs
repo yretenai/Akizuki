@@ -27,6 +27,7 @@ public sealed class ResourceManager : IDisposable {
 
 		Instance = this;
 
+		AkizukiLog.Information("Loading Packages");
 		foreach (var idxFile in new FileEnumerator(idxDir, "*.idx")) {
 			AkizukiLog.Information("Opening {Index}", Path.GetFileNameWithoutExtension(idxFile));
 			var pkg = new PackageFileSystem(pkgDir, idxFile, validate);
@@ -45,15 +46,25 @@ public sealed class ResourceManager : IDisposable {
 		}
 
 		if (OpenFile("res/content/assets.bin") is not { } assetsBin) {
-			Log.Warning("No assets database, most features will be unavailable");
+			AkizukiLog.Warning("No assets database, ship building will be unavailable");
 			return;
 		}
 
+		AkizukiLog.Information("Loading Asset Database");
 		Database = new BigWorldDatabase(assetsBin, validate);
+
+		if (OpenFile("res/content/GameParams.data") is not { } gameParamsData) {
+			AkizukiLog.Warning("No GameParams.data, automatic ship building will be unavailable");
+			return;
+		}
+
+		AkizukiLog.Information("Loading Game Params data");
+		GameParams = new PickledData(gameParamsData);
 	}
 
 	public static ResourceManager? Instance { get; private set; }
 
+	public PickledData? GameParams { get; set; }
 	public List<PackageFileSystem> Packages { get; set; } = [];
 	public Dictionary<string, ulong> PathLookup { get; set; } = [];
 	public Dictionary<ulong, string> ReversePathLookup { get; set; } = [];

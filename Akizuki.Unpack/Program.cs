@@ -58,8 +58,20 @@ internal static class Program {
 
 		using var manager = new ResourceManager(flags.IndexDirectory, flags.PackageDirectory, flags.Validate);
 
+		if (manager.GameParams != null && flags.ConvertGameData) {
+			AkizukiLog.Information("{Path}", "res/content/GameParams.data");
+			var path = Path.Combine(flags.OutputDirectory, "res/content/GameParams.data");
+			var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
+			if (!flags.Dry) {
+				Directory.CreateDirectory(dir);
+			}
+
+			Assets.SaveData(path, flags, manager.GameParams);
+		}
+
 		if (flags.Convert) {
 			if (manager.Database != null) {
+				AkizukiLog.Information("{Path}", "res/content/assets.bin");
 				var path = Path.Combine(flags.OutputDirectory, "res/content/assets.bin");
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 				if (!flags.Dry) {
@@ -112,7 +124,7 @@ internal static class Program {
 		var ext = Path.GetExtension(path).ToLowerInvariant();
 		var name = Path.GetFileName(path).ToLowerInvariant();
 
-		if (flags.ConvertLoose && ext == ".geometry") {
+		if (flags.ConvertLooseGeometry && ext == ".geometry") {
 			return GeometryConverter.ConvertLooseGeometry(path, flags, data);
 		}
 
@@ -140,13 +152,6 @@ internal static class Program {
 			case ".bnk":
 				// todo
 				break;
-			case ".data" when flags.AllowGameData: {
-				return name switch {
-					"gameparams.data" => Assets.SaveData(path, flags, data),
-					"uiparams.data" => false, // todo
-					_ => false,
-				};
-			}
 			case ".bin":
 				switch (name) {
 					case "terrain.bin":
