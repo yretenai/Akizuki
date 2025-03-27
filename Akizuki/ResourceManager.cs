@@ -6,7 +6,6 @@ using Akizuki.Data;
 using Akizuki.Data.Tables;
 using Akizuki.Structs.Data;
 using DragonLib.IO;
-using Serilog;
 
 namespace Akizuki;
 

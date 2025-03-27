@@ -39,6 +39,7 @@ public class PickledData {
 				if (value is not Dictionary<object, object> param) {
 					throw new InvalidOperationException();
 				}
+
 				GameParams[key.ToString()!] = param;
 			}
 		}

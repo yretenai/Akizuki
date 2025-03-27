@@ -4,7 +4,6 @@
 
 using System.Text.Json;
 using Akizuki.Data;
-using DragonLib.IO;
 
 namespace Akizuki.Unpack.Conversion;
 
@@ -52,6 +51,7 @@ internal static class Assets {
 			JsonSerializer.Serialize(stream, data, Program.SafeOptions);
 			stream.WriteByte((byte) '\n');
 		}
+
 		return false;
 	}
 }
