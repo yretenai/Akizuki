@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Akizuki.Json;
-using Akizuki.Json.Silk;
-using Akizuki.Unpack.Conversion;
+using Akizuki.Conversion;
 using DragonLib.CommandLine;
 using DragonLib.IO;
 using Serilog;
@@ -16,40 +12,10 @@ using Serilog.Sinks.SystemConsole.Themes;
 namespace Akizuki.Unpack;
 
 internal static class Program {
-	internal static JsonSerializerOptions Options { get; } = new() {
-		WriteIndented = true,
-		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-		NewLine = "\n",
-		Converters = {
-			new JsonStringEnumConverter(),
-			new JsonBigWorldDatabaseConverter(),
-			new JsonPackageFileSystemConverter(),
-			new JsonStringIdConverter(),
-			new JsonResourceIdConverter(),
-			new JsonMatrix4X4ConverterFactory(),
-			new JsonVector2DConverterFactory(),
-			new JsonVector3DConverterFactory(),
-			new JsonVector4DConverterFactory(),
-		},
-	};
-
-	internal static JsonSerializerOptions SafeOptions { get; } = new() {
-		WriteIndented = true,
-		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-		NewLine = "\n",
-		Converters = {
-			new JsonFauxDictionaryConverter(),
-			new JsonMatrix4X4ConverterFactory(),
-			new JsonVector2DConverterFactory(),
-			new JsonVector3DConverterFactory(),
-			new JsonVector4DConverterFactory(),
-		},
-	};
-
-	private static HashSet<string> Names { get; } = [];
+	internal static ProgramFlags Flags { get; private set; } = null!;
 
 	private static void Main() {
-		var flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>();
+		var flags = Flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>();
 
 		AkizukiLog.Logger = new LoggerConfiguration()
 							.MinimumLevel.Is(flags.Verbose ? LogEventLevel.Verbose : flags.Quiet ? LogEventLevel.Fatal : flags.LogLevel)
@@ -58,27 +24,30 @@ internal static class Program {
 
 		using var manager = new ResourceManager(flags.IndexDirectory, flags.PackageDirectory, flags.Validate);
 
-		if (manager.GameParams != null && flags.ConvertGameData) {
+		if (manager.GameParams != null && flags.Convert) {
 			var path = Path.Combine(flags.OutputDirectory, "res/content/GameParams.data");
 			var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 			if (!flags.Dry) {
 				Directory.CreateDirectory(dir);
 			}
 
-			Assets.SaveData(path, flags, manager.GameParams);
+			Assets.SaveData(path, flags, ShouldProcess, manager.GameParams);
 		}
 
 		if (flags.Convert) {
 			if (manager.Database != null) {
-				AkizukiLog.Information("{Path}", "res/content/assets.bin");
 				var path = Path.Combine(flags.OutputDirectory, "res/content/assets.bin");
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 				if (!flags.Dry) {
 					Directory.CreateDirectory(dir);
 				}
 
-				AssetPaths.Save(path, flags, manager.Database);
-				Assets.Save(flags, manager.Database);
+				if (ShouldProcess("res/content/assets.json")) {
+					AkizukiLog.Information("{Path}", "res/content/assets.json");
+					AssetPaths.Save(path, flags, manager.Database);
+				}
+
+				Assets.Save(flags.OutputDirectory, flags, ShouldProcess, manager.Database);
 			}
 
 			foreach (var pfs in manager.Packages) {
@@ -95,6 +64,10 @@ internal static class Program {
 
 		foreach (var fileId in manager.Files) {
 			var path = Path.Combine(flags.OutputDirectory, manager.ReversePathLookup.TryGetValue(fileId, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{fileId:x16}.bin");
+			if (!ShouldProcess(path)) {
+				continue;
+			}
+
 			AkizukiLog.Information("{Value}", name ?? $"{fileId:x16}");
 
 			using var data = manager.OpenFile(fileId);
@@ -108,7 +81,7 @@ internal static class Program {
 				Directory.CreateDirectory(dir);
 			}
 
-			if ((flags.ShouldConvertAtAll && Convert(path, flags, data)) || flags.Dry) {
+			if ((flags.Convert && Convert(path, flags, data)) || flags.Dry) {
 				continue;
 			}
 
@@ -119,17 +92,28 @@ internal static class Program {
 		AkizukiLog.Information("Done");
 	}
 
+	internal static bool ShouldProcess(string? path) {
+		var hasAnyFilters = false;
+		if (Flags.Regexes.Count > 0) {
+			hasAnyFilters = true;
+			if (path != null && Flags.Regexes.Any(regex => regex.IsMatch(path))) {
+				return true;
+			}
+		}
+
+		if (Flags.Filters.Count > 0) {
+			hasAnyFilters = true;
+			if (path != null && Flags.Filters.Any(filter => path.Contains(filter, StringComparison.OrdinalIgnoreCase))) {
+				return true;
+			}
+		}
+
+		return !hasAnyFilters;
+	}
+
 	private static bool Convert(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
 		var ext = Path.GetExtension(path).ToLowerInvariant();
 		var name = Path.GetFileName(path).ToLowerInvariant();
-
-		if (flags.ConvertLooseGeometry && ext == ".geometry") {
-			return GeometryConverter.ConvertLooseGeometry(path, flags, data);
-		}
-
-		if (!flags.Convert) {
-			return false;
-		}
 
 		switch (ext) {
 			case ".dd2": // 2x
@@ -139,6 +123,8 @@ internal static class Program {
 				return GeometryConverter.ConvertTexture(path, flags, data);
 			case ".splash":
 				return GeometryConverter.ConvertSplash(path, flags, data);
+			case ".geometry":
+				return GeometryConverter.ConvertLooseGeometry(path, flags, data);
 			case ".prefab":
 				// todo
 				break;

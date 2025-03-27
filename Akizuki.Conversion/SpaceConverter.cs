@@ -8,10 +8,10 @@ using Triton;
 using Triton.Encoder;
 using Triton.Pixel.Formats;
 
-namespace Akizuki.Unpack.Conversion;
+namespace Akizuki.Conversion;
 
-internal static class SpaceConverter {
-	internal static bool ConvertTerrain(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
+public static class SpaceConverter {
+	public static bool ConvertTerrain(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		var imageFormat = flags.SelectedFormat;
 		if (imageFormat == TextureFormat.None) {
 			return false;

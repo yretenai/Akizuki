@@ -24,9 +24,9 @@ using Triton.Pixel.Channels;
 using Triton.Pixel.Formats;
 using GL = GLTF.Scaffold;
 
-namespace Akizuki.Unpack.Conversion;
+namespace Akizuki.Conversion;
 
-internal static class GeometryConverter {
+public static class GeometryConverter {
 	private static JsonSerializerOptions GltfOptions =>
 		new() {
 			WriteIndented = true,
@@ -37,9 +37,9 @@ internal static class GeometryConverter {
 			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		};
 
-	private static MethodInfo VertexMethod { get; } = typeof(GeometryConverter).GetMethod("BuildVertexBuffer", BindingFlags.Static | BindingFlags.NonPublic)!;
+	private static MethodInfo VertexMethod { get; } = typeof(GeometryConverter).GetMethod("BuildVertexBuffer", BindingFlags.Static | BindingFlags.Public)!;
 
-	internal static bool ConvertSplash(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
+	public static bool ConvertSplash(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		var splash = new Splash(data);
 
 		if (flags.Dry) {
@@ -47,12 +47,12 @@ internal static class GeometryConverter {
 		}
 
 		using var stream = new FileStream(path + ".json", FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-		JsonSerializer.Serialize(stream, splash, Program.Options);
+		JsonSerializer.Serialize(stream, splash, JsonOptions.Options);
 		stream.WriteByte((byte) '\n');
 		return true;
 	}
 
-	internal static bool ConvertTexture(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
+	public static bool ConvertTexture(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		var imageFormat = flags.SelectedFormat;
 		if (imageFormat == TextureFormat.None) {
 			return false;
@@ -240,7 +240,7 @@ internal static class GeometryConverter {
 		return true;
 	}
 
-	internal static Dictionary<(bool IsVertexBuffer, int GeometryBufferId), Dictionary<string, int>>
+	public static Dictionary<(bool IsVertexBuffer, int GeometryBufferId), Dictionary<string, int>>
 		BuildGeometryBuffers(GL.Root gltf, Stream stream, Geometry geometry) {
 		var mapping = new Dictionary<(bool, int), Dictionary<string, int>>();
 
@@ -266,7 +266,7 @@ internal static class GeometryConverter {
 		return mapping;
 	}
 
-	internal static Dictionary<string, int> BuildVertexBuffer<T>(GL.Root gltf, Stream stream, GeometryVertexBuffer indexBuffer) where T : struct, IStandardVertex {
+	public static Dictionary<string, int> BuildVertexBuffer<T>(GL.Root gltf, Stream stream, GeometryVertexBuffer indexBuffer) where T : struct, IStandardVertex {
 		using var buffer = indexBuffer.DecodeBuffer<T>();
 		if (buffer.Length == 0) {
 			return [];
@@ -341,7 +341,7 @@ internal static class GeometryConverter {
 		return result;
 	}
 
-	internal static bool ConvertLooseGeometry(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
+	public static bool ConvertLooseGeometry(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		using var geometry = new Geometry(data);
 
 		var gltfPath = Path.ChangeExtension(path, ".gltf");

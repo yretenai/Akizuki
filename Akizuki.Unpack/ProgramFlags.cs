@@ -2,20 +2,15 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Text.RegularExpressions;
+using Akizuki.Conversion;
 using DragonLib.CommandLine;
 using Serilog.Events;
 using Triton.Encoder;
 
 namespace Akizuki.Unpack;
 
-public enum TextureFormat {
-	None,
-	Auto,
-	PNG,
-	TIF,
-}
-
-internal record ProgramFlags : CommandLineFlags {
+internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("output-directory", Positional = 0, IsRequired = true, Category = "Akizuki")]
 	public string OutputDirectory { get; set; } = null!;
 
@@ -24,6 +19,12 @@ internal record ProgramFlags : CommandLineFlags {
 
 	[Flag("package-index", Positional = 2, IsRequired = true, Category = "Akizuki")]
 	public string IndexDirectory { get; set; } = null!;
+
+	[Flag("expr", Help = "Only handle files that match these regexes", Category = "Akizuki", Extra = RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+	public HashSet<Regex> Regexes { get; set; } = [];
+
+	[Flag("filter", Help = "Only handle files that match these strings", Category = "Export")]
+	public HashSet<string> Filters { get; set; } = [];
 
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
 	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
@@ -48,15 +49,7 @@ internal record ProgramFlags : CommandLineFlags {
 	[Flag("convert", Help = "Convert data to common formats", Category = "Akizuki")]
 	public bool Convert { get; set; }
 
-	[Flag("convert-game-params", Help = "Convert GameParams.data", Category = "Akizuki")]
-	public bool ConvertGameData { get; set; }
-
-	[Flag("convert-geometry", Help = "Convert loose geometry (warning, this will overwrite proper processing)", Category = "Akizuki")]
-	public bool ConvertLooseGeometry { get; set; }
-
-	internal bool ShouldConvertAtAll => Convert || ConvertLooseGeometry;
-
-	internal TextureFormat SelectedFormat {
+	public TextureFormat SelectedFormat {
 		get {
 			if (Format != TextureFormat.Auto) {
 				return Format;
@@ -74,7 +67,7 @@ internal record ProgramFlags : CommandLineFlags {
 		}
 	}
 
-	internal IEncoder? FormatEncoder =>
+	public IEncoder? FormatEncoder =>
 		SelectedFormat switch {
 			TextureFormat.PNG when PNGEncoder.IsAvailable => new PNGEncoder(PNGCompressionLevel.SuperSmall),
 			TextureFormat.TIF when TIFFEncoder.IsAvailable => new TIFFEncoder(TIFFCompression.Deflate, TIFFCompression.Deflate),
