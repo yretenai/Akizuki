@@ -1,9 +1,10 @@
-// SPDX-FileCopyrightText: 2025 Ada N
+// SPDX-FileCopyrightText: 2025 Legiayayana
 //
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Akizuki.Graphics;
 using Akizuki.Json;
 using Akizuki.Json.Silk;
 using Akizuki.Unpack.Conversion;
@@ -96,7 +97,7 @@ internal static class Program {
 		var name = Path.GetFileName(path).ToLowerInvariant();
 
 		if (flags.ConvertLoose && ext == ".geometry") {
-			// todo
+			using var geometry = new Geometry(data);
 			return false;
 		}
 
@@ -105,10 +106,10 @@ internal static class Program {
 		}
 
 		switch (ext) {
-			case ".dd2": // 8k
-			case ".dd1": // 4k
-			case ".dd0": // 2k
-			case ".dds": // 1k
+			case ".dd2": // 2x
+			case ".dd1": // 4x
+			case ".dd0": // 8x
+			case ".dds": // 1x
 				return GeometryConverter.ConvertTexture(path, flags, data);
 			case ".splash":
 				return GeometryConverter.ConvertSplash(path, flags, data);
