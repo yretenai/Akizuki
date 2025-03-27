@@ -1,0 +1,10 @@
+using System.Runtime.InteropServices;
+using Silk.NET.Maths;
+
+namespace Akizuki.Structs.Graphics;
+
+[StructLayout(LayoutKind.Sequential, Pack = 8)]
+public record struct GeometryArmorVertex {
+	public Vector3D<float> Position { get; set; }
+	public Vector2D<ushort> Unknown { get; set; }
+}
