@@ -48,6 +48,9 @@ internal record ProgramFlags : CommandLineFlags {
 	[Flag("convert", Help = "Convert data to common formats", Category = "Akizuki")]
 	public bool Convert { get; set; }
 
+	[Flag("allow-game-params", Help = "Convert GameParams.data (WARNING, the Json file is not well formed and 1+GiB)", Category = "Akizuki")]
+	public bool AllowGameData { get; set; }
+
 	[Flag("convert-geometry", Help = "Convert loose geometry", Category = "Akizuki")]
 	public bool ConvertLoose { get; set; }
 

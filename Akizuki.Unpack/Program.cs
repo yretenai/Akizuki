@@ -35,6 +35,19 @@ internal static class Program {
 		},
 	};
 
+	internal static JsonSerializerOptions SafeOptions { get; } = new() {
+		WriteIndented = true,
+		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
+		NewLine = "\n",
+		Converters = {
+			new JsonFauxDictionaryConverter(),
+			new JsonMatrix4X4ConverterFactory(),
+			new JsonVector2DConverterFactory(),
+			new JsonVector3DConverterFactory(),
+			new JsonVector4DConverterFactory(),
+		},
+	};
+
 	private static void Main() {
 		var flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>();
 
@@ -72,7 +85,7 @@ internal static class Program {
 		foreach (var fileId in manager.Files) {
 			var path = Path.Combine(flags.OutputDirectory, manager.ReversePathLookup.TryGetValue(fileId, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{fileId:x16}.bin");
 		#if DEBUG
-			if (!path.EndsWith(".geometry")) {
+			if (!path.EndsWith("GameParams.data")) {
 				continue;
 			}
 		#endif
@@ -132,6 +145,13 @@ internal static class Program {
 			case ".bnk":
 				// todo
 				break;
+			case ".data" when flags.AllowGameData: {
+				return name switch {
+					"gameparams.data" => Assets.SaveData(path, flags, data),
+					"uiparams.data" => false, // todo
+					_ => false,
+				};
+			}
 			case ".bin":
 				switch (name) {
 					case "terrain.bin":

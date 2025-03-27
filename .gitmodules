@@ -3,14 +3,17 @@
 # SPDX-License-Identifier: EUPL-1.2
 
 [submodule "DragonLib"]
-	path = DragonLib
+	path = Libraries/DragonLib
 	url = https://github.com/yretenai/DragonLib.git
 [submodule "Waterfall"]
-	path = Waterfall
+	path = Libraries/Waterfall
 	url = https://github.com/yretenai/Waterfall.git
 [submodule "Triton"]
-	path = Triton
+	path = Libraries/Triton
 	url = https://github.com/yretenai/Triton.git
 [submodule "BCDecNet"]
-	path = BCDecNet
+	path = Libraries/BCDecNet
 	url = https://github.com/yretenai/BCDecNet.git
+[submodule "Ferment"]
+	path = Libraries/Ferment
+	url = https://github.com/yretenai/Ferment.git

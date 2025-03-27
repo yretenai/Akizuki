@@ -10,11 +10,13 @@ SPDX-License-Identifier: EUPL-1.2
 		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\DragonLib\DragonLib\DragonLib.csproj"/>
-		<ProjectReference Include="..\Waterfall\Waterfall\Waterfall.csproj"/>
+		<ProjectReference Include="..\Libraries\DragonLib\DragonLib\DragonLib.csproj"/>
+		<ProjectReference Include="..\Libraries\Waterfall\Waterfall\Waterfall.csproj"/>
+		<ProjectReference Include="..\Libraries\Ferment\Ferment\Ferment.csproj"/>
 	</ItemGroup>
 
 	<ItemGroup>
