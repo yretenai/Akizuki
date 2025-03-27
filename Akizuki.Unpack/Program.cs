@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Akizuki.Graphics;
@@ -44,7 +45,7 @@ internal static class Program {
 
 		using var manager = new ResourceManager(flags.IndexDirectory, flags.PackageDirectory, flags.Validate);
 
-		if (flags.Convert) {
+		if (flags.Convert && !Debugger.IsAttached) {
 			if (manager.Database != null) {
 				var path = Path.Combine(flags.OutputDirectory, "res/content/assets.bin");
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
@@ -70,6 +71,12 @@ internal static class Program {
 
 		foreach (var fileId in manager.Files) {
 			var path = Path.Combine(flags.OutputDirectory, manager.ReversePathLookup.TryGetValue(fileId, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{fileId:x16}.bin");
+		#if DEBUG
+			if (!path.EndsWith(".geometry")) {
+				continue;
+			}
+		#endif
+
 			AkizukiLog.Information("{Value}", name ?? $"{fileId:x16}");
 
 			using var data = manager.OpenFile(fileId);
