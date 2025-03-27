@@ -37,7 +37,7 @@ internal static class GeometryConverter {
 			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		};
 
-	private static MethodInfo VertexMethod { get; } = typeof(GeometryConverter).GetMethod("BuildVertexBuffer", BindingFlags.Static | BindingFlags.Public)!;
+	private static MethodInfo VertexMethod { get; } = typeof(GeometryConverter).GetMethod("BuildVertexBuffer", BindingFlags.Static | BindingFlags.NonPublic)!;
 
 	internal static bool ConvertSplash(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
 		var splash = new Splash(data);
