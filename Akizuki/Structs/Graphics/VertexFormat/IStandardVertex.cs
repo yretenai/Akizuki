@@ -9,5 +9,5 @@ namespace Akizuki.Structs.Graphics.VertexFormat;
 public interface IStandardVertex {
 	public Vector3D<float> Position { get; }
 	public Vector3D<float> Normal { get; }
-	public Vector2D<Half> UV { get; }
+	public Vector2D<float> UV { get; }
 }

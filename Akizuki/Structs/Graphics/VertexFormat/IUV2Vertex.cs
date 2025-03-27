@@ -6,6 +6,6 @@ using Silk.NET.Maths;
 
 namespace Akizuki.Structs.Graphics.VertexFormat;
 
-public interface IUV2Vertex {
-	public Vector2D<Half> UV2 { get; }
+public interface IUV2Vertex : IStandardVertex {
+	public Vector2D<float> UV2 { get; }
 }

@@ -9,7 +9,7 @@ public class JsonFauxDictionaryConverter : JsonConverter<Dictionary<object, obje
 	public override void Write(Utf8JsonWriter writer, Dictionary<object, object> dict, JsonSerializerOptions options) {
 		writer.WriteStartArray();
 
-		foreach(var (key, value) in dict) {
+		foreach (var (key, value) in dict) {
 			writer.WriteStartObject();
 
 			writer.WritePropertyName("Key");

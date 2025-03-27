@@ -4,6 +4,6 @@
 
 namespace Akizuki.Structs.Graphics.VertexFormat;
 
-public interface IRadiusVertex {
+public interface IRadiusVertex : IStandardVertex {
 	public float Radius { get; }
 }

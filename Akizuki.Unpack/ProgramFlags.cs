@@ -17,46 +17,46 @@ internal enum TextureFormat {
 
 internal record ProgramFlags : CommandLineFlags {
 	[Flag("output-directory", Positional = 0, IsRequired = true, Category = "Akizuki")]
-	public string OutputDirectory { get; set; } = null!;
+	internal string OutputDirectory { get; set; } = null!;
 
 	[Flag("package-directory", Positional = 1, IsRequired = true, Category = "Akizuki")]
-	public string PackageDirectory { get; set; } = null!;
+	internal string PackageDirectory { get; set; } = null!;
 
 	[Flag("package-index", Positional = 2, IsRequired = true, Category = "Akizuki")]
-	public string IndexDirectory { get; set; } = null!;
+	internal string IndexDirectory { get; set; } = null!;
 
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
-	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
+	internal LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
 
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
-	public TextureFormat Format { get; set; } = TextureFormat.Auto;
+	internal TextureFormat Format { get; set; } = TextureFormat.Auto;
 
 #if DEBUG
 	[Flag("verbose", Help = "Set log level to the highest possible level", Category = "Akizuki")]
 #endif
-	public bool Verbose { get; set; }
+	internal bool Verbose { get; set; }
 
 	[Flag("quiet", Help = "Set log level to the lowest possible level", Category = "Akizuki")]
-	public bool Quiet { get; set; }
+	internal bool Quiet { get; set; }
 
 	[Flag("validate", Help = "Verify if package data is corrupt or not", Category = "Akizuki")]
-	public bool Validate { get; set; }
+	internal bool Validate { get; set; }
 
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
-	public bool Dry { get; set; }
+	internal bool Dry { get; set; }
 
 	[Flag("convert", Help = "Convert data to common formats", Category = "Akizuki")]
-	public bool Convert { get; set; }
+	internal bool Convert { get; set; }
 
 	[Flag("allow-game-params", Help = "Convert GameParams.data (WARNING, the Json file is not well formed and 1+GiB)", Category = "Akizuki")]
-	public bool AllowGameData { get; set; }
+	internal bool AllowGameData { get; set; }
 
 	[Flag("convert-geometry", Help = "Convert loose geometry", Category = "Akizuki")]
-	public bool ConvertLoose { get; set; }
+	internal bool ConvertLoose { get; set; }
 
-	public bool ShouldConvertAtAll => Convert || ConvertLoose;
+	internal bool ShouldConvertAtAll => Convert || ConvertLoose;
 
-	public TextureFormat SelectedFormat {
+	internal TextureFormat SelectedFormat {
 		get {
 			if (Format != TextureFormat.Auto) {
 				return Format;
@@ -74,7 +74,7 @@ internal record ProgramFlags : CommandLineFlags {
 		}
 	}
 
-	public IEncoder? FormatEncoder =>
+	internal IEncoder? FormatEncoder =>
 		SelectedFormat switch {
 			TextureFormat.PNG when PNGEncoder.IsAvailable => new PNGEncoder(PNGCompressionLevel.SuperSmall),
 			TextureFormat.TIF when TIFFEncoder.IsAvailable => new TIFFEncoder(TIFFCompression.Deflate, TIFFCompression.Deflate),

@@ -4,6 +4,6 @@
 
 namespace Akizuki.Structs.Graphics.VertexFormat;
 
-public interface IIdVertex {
+public interface IIdVertex : IStandardVertex {
 	public uint Id { get; }
 }

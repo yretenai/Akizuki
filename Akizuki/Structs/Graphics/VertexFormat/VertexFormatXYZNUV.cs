@@ -13,7 +13,8 @@ namespace Akizuki.Structs.Graphics.VertexFormat;
 public record struct VertexFormatXYZNUV : IStandardVertex {
 	public Vector3D<float> Position { get; set; }
 	public Vector4D<sbyte> PackedNormal { get; set; }
-	public Vector2D<Half> UV { get; set; }
+	public Vector2D<Half> PackedUV { get; set; }
 
 	public Vector3D<float> Normal => VertexHelper.Unpack(PackedNormal);
+	public Vector2D<float> UV => VertexHelper.Unpack(PackedUV);
 }

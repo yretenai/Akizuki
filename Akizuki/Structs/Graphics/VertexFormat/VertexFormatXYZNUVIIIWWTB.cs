@@ -10,10 +10,10 @@ namespace Akizuki.Structs.Graphics.VertexFormat;
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
 // ReSharper disable once IdentifierTypo
 // ReSharper disable once InconsistentNaming
-public record struct VertexFormatXYZNUVIIIWWTB : IStandardVertex, IBoneVertex, ITangentVertex {
+public record struct VertexFormatXYZNUVIIIWWTB : IBoneVertex, ITangentVertex {
 	public Vector3D<float> Position { get; set; }
 	public Vector4D<sbyte> PackedNormal { get; set; }
-	public Vector2D<Half> UV { get; set; }
+	public Vector2D<Half> PackedUV { get; set; }
 	public Vector4D<byte> BoneIndex { get; set; }
 	public Vector4D<byte> PackedBoneWeight { get; set; }
 	public Vector4D<sbyte> PackedTangent { get; set; }
@@ -23,4 +23,5 @@ public record struct VertexFormatXYZNUVIIIWWTB : IStandardVertex, IBoneVertex, I
 	public Vector4D<float> BoneWeight => VertexHelper.Unpack(PackedBoneWeight);
 	public Vector3D<float> Tangent => VertexHelper.Unpack(PackedTangent);
 	public Vector3D<float> Binormal => VertexHelper.Unpack(PackedBinormal);
+	public Vector2D<float> UV => VertexHelper.Unpack(PackedUV);
 }

@@ -2,10 +2,8 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Akizuki.Graphics;
 using Akizuki.Json;
 using Akizuki.Json.Silk;
 using Akizuki.Unpack.Conversion;
@@ -48,6 +46,8 @@ internal static class Program {
 		},
 	};
 
+	private static HashSet<string> Names { get; } = [];
+
 	private static void Main() {
 		var flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>();
 
@@ -58,7 +58,7 @@ internal static class Program {
 
 		using var manager = new ResourceManager(flags.IndexDirectory, flags.PackageDirectory, flags.Validate);
 
-		if (flags.Convert && !Debugger.IsAttached) {
+		if (flags.Convert) {
 			if (manager.Database != null) {
 				var path = Path.Combine(flags.OutputDirectory, "res/content/assets.bin");
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
@@ -84,12 +84,6 @@ internal static class Program {
 
 		foreach (var fileId in manager.Files) {
 			var path = Path.Combine(flags.OutputDirectory, manager.ReversePathLookup.TryGetValue(fileId, out var name) ? name.TrimStart('/', '.') : $"res/unknown/{fileId:x16}.bin");
-		#if DEBUG
-			if (!path.EndsWith(".geometry")) {
-				continue;
-			}
-		#endif
-
 			AkizukiLog.Information("{Value}", name ?? $"{fileId:x16}");
 
 			using var data = manager.OpenFile(fileId);
@@ -117,8 +111,8 @@ internal static class Program {
 		var name = Path.GetFileName(path).ToLowerInvariant();
 
 		if (flags.ConvertLoose && ext == ".geometry") {
-			using var geometry = new Geometry(data);
-			return false;
+			GeometryConverter.ConvertLooseGeometry(path, flags, data);
+			return true;
 		}
 
 		if (!flags.Convert) {

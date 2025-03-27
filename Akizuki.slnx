@@ -5,12 +5,14 @@ SPDX-License-Identifier: EUPL-1.2
 -->
 
 <Solution>
-	<Project Path="Akizuki.Unpack/Akizuki.Unpack.csproj" />
+	<Folder Name="/Libraries/">
+		<Project Path="Libraries/BCDecNet/BCDecNet/BCDecNet.csproj" />
+		<Project Path="Libraries/DragonLib/DragonLib/DragonLib.csproj" />
+		<Project Path="Libraries/Ferment/Ferment/Ferment.csproj" />
+		<Project Path="Libraries/Triton/Triton/Triton.csproj" />
+		<Project Path="Libraries/Waterfall/Waterfall/Waterfall.csproj" />
+		<Project Path="Libraries/glTFScaffold/glTFScaffold.csproj" />
+	</Folder>
 	<Project Path="Akizuki/Akizuki.csproj" />
-	<Project Path="Libraries/BCDecNet/BCDecNet/BCDecNet.csproj" />
-	<Project Path="Libraries/DragonLib/DragonLib/DragonLib.csproj" />
-	<Project Path="Libraries/Triton/Triton/Triton.csproj" />
-	<Project Path="Libraries/Waterfall/Waterfall/Waterfall.csproj" />
-	<Project Path="Libraries/Ferment/Ferment/Ferment.csproj" />
-	<Project Path="Libraries/glTFScaffold/glTFScaffold.csproj" />
+	<Project Path="Akizuki.Unpack/Akizuki.Unpack.csproj" />
 </Solution>

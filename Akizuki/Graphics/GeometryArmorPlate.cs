@@ -12,7 +12,7 @@ public sealed class GeometryArmorPlate : IDisposable {
 		Thickness = header.Thickness;
 		Type = header.Type;
 		BoundingBox = header.BoundingBox;
-		Vertices = reader.Partition<GeometryArmorVertex>(header.VertexCount);
+		Vertices = reader.Partition<GeometryArmorVertex>(header.VertexCount, true);
 	}
 
 	public int Thickness { get; set; }

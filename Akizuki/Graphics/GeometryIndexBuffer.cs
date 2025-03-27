@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Akizuki.Graphics.MeshCompression;
 using Akizuki.Structs.Graphics;
@@ -32,4 +33,12 @@ public sealed class GeometryIndexBuffer : IDisposable {
 	public IMemoryBuffer<byte> Buffer { get; set; }
 
 	public void Dispose() => Buffer.Dispose();
+
+	public IMemoryBuffer<T> DecodeBuffer<T>() where T : struct {
+		if (Unsafe.SizeOf<T>() != Stride) {
+			throw new InvalidOperationException("Index size mismatched");
+		}
+
+		return new CastMemoryBuffer<T, byte>(Buffer);
+	}
 }

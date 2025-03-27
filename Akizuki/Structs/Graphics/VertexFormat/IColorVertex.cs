@@ -6,7 +6,6 @@ using Silk.NET.Maths;
 
 namespace Akizuki.Structs.Graphics.VertexFormat;
 
-public interface ITangentVertex : IStandardVertex {
-	public Vector3D<float> Tangent { get; }
-	public Vector3D<float> Binormal { get; }
+public interface IColorVertex : IStandardVertex {
+	public Vector4D<float> Color { get; }
 }
