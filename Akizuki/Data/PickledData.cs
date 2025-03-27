@@ -25,9 +25,24 @@ public class PickledData {
 			using var stream = new UnmanagedMemoryStream((byte*) pinned.Pointer, compressed.Length);
 			using var decompressor = new ZLibStream(stream, CompressionMode.Decompress);
 			using var pickler = new Unpickler(decompressor);
-			Data = pickler.Read()!;
+
+			var data = pickler.Read()!;
+			if (data is not object[] dataArray || dataArray.Length < 2) {
+				throw new InvalidOperationException();
+			}
+
+			if (dataArray[1] is not Dictionary<object, object> valueArray) {
+				throw new InvalidOperationException();
+			}
+
+			foreach (var (key, value) in valueArray) {
+				if (value is not Dictionary<object, object> param) {
+					throw new InvalidOperationException();
+				}
+				GameParams[key.ToString()!] = param;
+			}
 		}
 	}
 
-	public object Data { get; set; }
+	public Dictionary<string, Dictionary<object, object>> GameParams { get; set; } = [];
 }

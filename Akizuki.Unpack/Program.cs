@@ -59,7 +59,6 @@ internal static class Program {
 		using var manager = new ResourceManager(flags.IndexDirectory, flags.PackageDirectory, flags.Validate);
 
 		if (manager.GameParams != null && flags.ConvertGameData) {
-			AkizukiLog.Information("{Path}", "res/content/GameParams.data");
 			var path = Path.Combine(flags.OutputDirectory, "res/content/GameParams.data");
 			var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 			if (!flags.Dry) {

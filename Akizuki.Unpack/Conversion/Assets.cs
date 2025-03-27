@@ -43,11 +43,15 @@ internal static class Assets {
 			return false;
 		}
 
-		var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
-		Directory.CreateDirectory(dir);
-		using var stream = new FileStream(Path.ChangeExtension(path, ".json"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-		JsonSerializer.Serialize(stream, pickled.Data, Program.SafeOptions);
-		stream.WriteByte((byte) '\n');
+		path = Path.ChangeExtension(path, null);
+		Directory.CreateDirectory(path);
+		foreach (var (key, data) in pickled.GameParams) {
+			AkizukiLog.Information("{Path}", $"res/content/GameParams/{key}.json");
+			var paramPath = Path.Combine(path, key + ".json");
+			using var stream = new FileStream(paramPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+			JsonSerializer.Serialize(stream, data, Program.SafeOptions);
+			stream.WriteByte((byte) '\n');
+		}
 		return false;
 	}
 }
