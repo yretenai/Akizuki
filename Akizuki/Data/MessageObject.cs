@@ -10,6 +10,8 @@ using Akizuki.Structs.Data;
 namespace Akizuki.Data;
 
 public class MessageObject : Dictionary<string, string> {
+	public MessageObject() { }
+
 	public MessageObject(Stream stream) {
 		var header = new MOHeader();
 		stream.ReadExactly(MemoryMarshal.AsBytes(new Span<MOHeader>(ref header)));
@@ -55,5 +57,10 @@ public class MessageObject : Dictionary<string, string> {
 			ArrayPool<MOStringEntry>.Shared.Return(translatedStringTable);
 			ArrayPool<byte>.Shared.Return(slop);
 		}
+	}
+
+	public new string this[string text] {
+		get => this.GetValueOrDefault("IDS_" + text, text);
+		set => base[text] = value;
 	}
 }

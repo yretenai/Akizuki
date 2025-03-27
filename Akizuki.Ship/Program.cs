@@ -22,6 +22,10 @@ internal static class Program {
 
 		using var manager = new ResourceManager(flags.InstallDirectory, flags.Validate);
 
+		if (manager.GameParams == null || manager.Database == null) {
+			return;
+		}
+
 		AkizukiLog.Information("Done");
 	}
 }

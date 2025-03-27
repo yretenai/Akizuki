@@ -17,6 +17,7 @@ public sealed class ResourceManager : IDisposable {
 
 		Instance = this;
 		Database = db;
+		Text = [];
 	}
 
 	public ResourceManager(string installDir, bool validate = false) {
@@ -52,6 +53,8 @@ public sealed class ResourceManager : IDisposable {
 			AkizukiLog.Information("Loading Translation Messages");
 			using var stream = new FileStream(locFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 			Text = new MessageObject(stream);
+		} else {
+			Text = [];
 		}
 
 		if (OpenFile("res/content/assets.bin") is not { } assetsBin) {
@@ -74,13 +77,13 @@ public sealed class ResourceManager : IDisposable {
 
 	public static ResourceManager? Instance { get; private set; }
 
-	public PickledData? GameParams { get; set; }
 	public List<PackageFileSystem> Packages { get; set; } = [];
 	public Dictionary<string, ulong> PathLookup { get; set; } = [];
 	public Dictionary<ulong, string> ReversePathLookup { get; set; } = [];
 	public Dictionary<ulong, (int Index, string Name, PFSFile File)> IdLookup { get; set; } = [];
 	public IEnumerable<ulong> Files => IdLookup.Keys;
 	public BigWorldDatabase? Database { get; set; }
+	public PickledData? GameParams { get; set; }
 	public MessageObject Text { get; }
 
 	public void Dispose() {
