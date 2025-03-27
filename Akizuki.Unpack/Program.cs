@@ -104,6 +104,8 @@ internal static class Program {
 			using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 			stream.Write(data.Span);
 		}
+
+		AkizukiLog.Information("Done");
 	}
 
 	private static bool Convert(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
@@ -111,8 +113,7 @@ internal static class Program {
 		var name = Path.GetFileName(path).ToLowerInvariant();
 
 		if (flags.ConvertLoose && ext == ".geometry") {
-			GeometryConverter.ConvertLooseGeometry(path, flags, data);
-			return true;
+			return GeometryConverter.ConvertLooseGeometry(path, flags, data);
 		}
 
 		if (!flags.Convert) {
