@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Text.RegularExpressions;
 using Akizuki.Conversion;
 using DragonLib.CommandLine;
 using Serilog.Events;
 using Triton.Encoder;
 
-namespace Akizuki.Unpack;
+namespace Akizuki.Ship;
 
 internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("output-directory", Positional = 0, IsRequired = true, Category = "Akizuki")]
@@ -17,11 +16,11 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("install-directory", Positional = 1, IsRequired = true, Category = "Akizuki")]
 	public string InstallDirectory { get; set; } = null!;
 
-	[Flag("expr", Help = "Only handle files that match these regexes", Category = "Akizuki", Extra = RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-	public HashSet<Regex> Regexes { get; set; } = [];
+	[Flag("ship-name", Positional = 2, IsRequired = true, Category = "Akizuki")]
+	public string ShipName { get; set; } = null!;
 
-	[Flag("filter", Help = "Only handle files that match these strings", Category = "Akizuki")]
-	public HashSet<string> Filters { get; set; } = [];
+	[Flag("ship-parts", Positional = 3, Category = "Akizuki")]
+	public List<string> ShipParts { get; set; } = null!;
 
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
 	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
@@ -42,9 +41,6 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
-
-	[Flag("convert", Help = "Convert data to common formats", Category = "Akizuki")]
-	public bool Convert { get; set; }
 
 	public TextureFormat SelectedFormat {
 		get {

@@ -190,6 +190,12 @@ public class BigWorldDatabase {
 	}
 
 	public IPrototype? Resolve(string path) {
+		path = path.TrimStart('/');
+
+		if (!path.StartsWith("res/")) {
+			path = "res/" + path;
+		}
+
 		foreach (var (id, name) in Paths) {
 			if (name.Equals(path, StringComparison.OrdinalIgnoreCase)) {
 				return Resolve(id);

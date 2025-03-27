@@ -19,12 +19,16 @@ public sealed class ResourceManager : IDisposable {
 		Database = db;
 	}
 
-	public ResourceManager(string idxDir, string pkgDir, bool validate = false) {
+	public ResourceManager(string installDir, bool validate = false) {
 		if (Instance != null) {
 			throw new InvalidOperationException("Only one instance of ResourceManager is allowed");
 		}
 
 		Instance = this;
+
+		var idxDir = Path.Combine(installDir, "idx");
+		var pkgDir = Path.Combine(installDir, "../../res_packages");
+		var locFile = Path.Combine(installDir, "res/texts/en/LC_MESSAGES/global.mo");
 
 		AkizukiLog.Information("Loading Packages");
 		foreach (var idxFile in new FileEnumerator(idxDir, "*.idx")) {
@@ -44,6 +48,12 @@ public sealed class ResourceManager : IDisposable {
 			}
 		}
 
+		if (File.Exists(locFile)) {
+			AkizukiLog.Information("Loading Translation Messages");
+			using var stream = new FileStream(locFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+			Text = new MessageObject(stream);
+		}
+
 		if (OpenFile("res/content/assets.bin") is not { } assetsBin) {
 			AkizukiLog.Warning("No assets database, ship building will be unavailable");
 			return;
@@ -61,6 +71,7 @@ public sealed class ResourceManager : IDisposable {
 		GameParams = new PickledData(gameParamsData);
 	}
 
+
 	public static ResourceManager? Instance { get; private set; }
 
 	public PickledData? GameParams { get; set; }
@@ -70,6 +81,7 @@ public sealed class ResourceManager : IDisposable {
 	public Dictionary<ulong, (int Index, string Name, PFSFile File)> IdLookup { get; set; } = [];
 	public IEnumerable<ulong> Files => IdLookup.Keys;
 	public BigWorldDatabase? Database { get; set; }
+	public MessageObject Text { get; }
 
 	public void Dispose() {
 		foreach (var package in Packages) {
@@ -85,6 +97,12 @@ public sealed class ResourceManager : IDisposable {
 	public IPrototype? OpenPrototype(ulong id) => Database?.Resolve(id);
 
 	public IMemoryBuffer<byte>? OpenFile(string path) {
+		path = path.TrimStart('/');
+
+		if (!path.StartsWith("res/")) {
+			path = "res/" + path;
+		}
+
 		if (PathLookup.TryGetValue(path, out var id)) {
 			return OpenFile(id);
 		}

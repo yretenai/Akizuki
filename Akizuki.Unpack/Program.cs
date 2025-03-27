@@ -22,7 +22,7 @@ internal static class Program {
 							.WriteTo.Console(theme: AnsiConsoleTheme.Literate)
 							.CreateLogger();
 
-		using var manager = new ResourceManager(flags.IndexDirectory, flags.PackageDirectory, flags.Validate);
+		using var manager = new ResourceManager(flags.InstallDirectory, flags.Validate);
 
 		if (manager.GameParams != null && flags.Convert) {
 			var path = Path.Combine(flags.OutputDirectory, "res/content/GameParams.data");

@@ -14,6 +14,7 @@ SPDX-License-Identifier: EUPL-1.2
     <Project Path="Libraries/Waterfall/Waterfall/Waterfall.csproj" />
   </Folder>
   <Project Path="Akizuki.Conversion/Akizuki.Conversion.csproj" Type="Classic C#" />
+  <Project Path="Akizuki.Ship\Akizuki.Ship.csproj" Type="Classic C#" />
   <Project Path="Akizuki.Unpack/Akizuki.Unpack.csproj" />
   <Project Path="Akizuki/Akizuki.csproj" />
 </Solution>
