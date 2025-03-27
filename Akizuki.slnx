@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 Ada N
+
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 <Solution>
   <Folder Name="/Libraries/">
     <Project Path="Libraries/BCDecNet/BCDecNet/BCDecNet.csproj" />
@@ -7,7 +13,7 @@
     <Project Path="Libraries/Triton/Triton/Triton.csproj" />
     <Project Path="Libraries/Waterfall/Waterfall/Waterfall.csproj" />
   </Folder>
-  <Project Path="Akizuki.Conversion\Akizuki.Conversion.csproj" Type="Classic C#" />
+  <Project Path="Akizuki.Conversion/Akizuki.Conversion.csproj" Type="Classic C#" />
   <Project Path="Akizuki.Unpack/Akizuki.Unpack.csproj" />
   <Project Path="Akizuki/Akizuki.csproj" />
 </Solution>

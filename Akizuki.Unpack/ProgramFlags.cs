@@ -23,7 +23,7 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("expr", Help = "Only handle files that match these regexes", Category = "Akizuki", Extra = RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
 	public HashSet<Regex> Regexes { get; set; } = [];
 
-	[Flag("filter", Help = "Only handle files that match these strings", Category = "Export")]
+	[Flag("filter", Help = "Only handle files that match these strings", Category = "Akizuki")]
 	public HashSet<string> Filters { get; set; } = [];
 
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
