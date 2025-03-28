@@ -121,7 +121,7 @@ public static class GeometryConverter {
 		return true;
 	}
 
-	public static string? ConvertTexture(string path, IConversionOptions flags, IMemoryBuffer<byte> data, bool isNormalMap = false, bool isMetalGlossMap = false) {
+	public static string? ConvertTexture(string path, IConversionOptions flags, IMemoryBuffer<byte> data, bool skipExisting = false, bool isNormalMap = false, bool isMetalGlossMap = false) {
 		var imageFormat = flags.SelectedFormat;
 		if (imageFormat == TextureFormat.None) {
 			return null;
@@ -137,6 +137,10 @@ public static class GeometryConverter {
 			path = Path.ChangeExtension(path, $".{ext[^1]}.{imageFormat.ToString().ToLowerInvariant()}");
 		} else {
 			path = Path.ChangeExtension(path, $".{imageFormat.ToString().ToLowerInvariant()}");
+		}
+
+		if (skipExisting && File.Exists(path)) {
+			return path;
 		}
 
 		using var texture = new DDSTexture(data);
@@ -654,12 +658,12 @@ public static class GeometryConverter {
 			hardPoints[hardpoint] = resolvedPart;
 		}
 
-		path = Path.Combine(path, name);
+		var modelPath = Path.Combine(path, name);
 		var texturesPath = Path.Combine(path, "textures");
-		Directory.CreateDirectory(path);
+		Directory.CreateDirectory(modelPath);
 		Directory.CreateDirectory(texturesPath);
 
-		var gltfPath = Path.Combine(path, name + ".gltf");
+		var gltfPath = Path.Combine(modelPath, name + ".gltf");
 		var bufferPath = Path.ChangeExtension(gltfPath, ".glbin");
 		using Stream bufferStream = flags.Dry ? new MemoryStream() : new FileStream(bufferPath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
 
@@ -672,9 +676,9 @@ public static class GeometryConverter {
 		var geoCache = new Dictionary<ResourceId, GeometryCache>();
 		var materialCache = new Dictionary<ResourceId, int>();
 		var textureCache = new Dictionary<ResourceId, int>();
-		var context = new BuilderContext(flags, manager, bufferStream, texturesPath,
-			hardPoints, portPoints,
-			primCache, geoCache, materialCache, textureCache);
+		var context = new BuilderContext(
+			flags, manager, bufferStream, modelPath, texturesPath,
+			hardPoints, portPoints, primCache, geoCache, materialCache, textureCache);
 		BuildShipPart(context, gltf, root, builtVisual);
 
 		gltf.Buffers = [
@@ -863,11 +867,11 @@ public static class GeometryConverter {
 
 		var texturePath = Path.Combine(context.TexturesPath, $"{id.Hash:x16}-" + Path.GetFileName(texturePkgPath));
 		if (context.Flags.SelectedFormat is not TextureFormat.None && isDDS) {
-			if (ConvertTexture(texturePath, context.Flags, buffer, slotName == NormalMapId, slotName == MetalMapId) is not { } newTexturePath) {
+			if (ConvertTexture(texturePath, context.Flags, buffer, true, slotName == NormalMapId, slotName == MetalMapId) is not { } newTexturePath) {
 				return context.TextureCache[id] = -1;
 			}
 
-			texturePath = newTexturePath;
+			texturePath = Path.GetRelativePath(context.ModelPath, newTexturePath);
 		} else if (!context.Flags.Dry) {
 			using var stream = new FileStream(texturePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
 			stream.Write(buffer.Span);
@@ -961,6 +965,7 @@ public static class GeometryConverter {
 		IConversionOptions Flags,
 		ResourceManager Manager,
 		Stream BufferStream,
+		string ModelPath,
 		string TexturesPath,
 		Dictionary<string, string> HardPoints,
 		Dictionary<string, string> PortPoints,
