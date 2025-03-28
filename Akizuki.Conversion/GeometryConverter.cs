@@ -355,8 +355,8 @@ public static class GeometryConverter {
 
 		for (var index = 0; index < geometry.MergedVertexBuffers.Count; index++) {
 			var vertexBuffer = geometry.MergedVertexBuffers[index];
-			var id = (Dictionary<string, int>) vertexBuffer.CreateVertexGenetic(VertexMethod).Invoke(null, [gltf, stream, vertexBuffer])!;
-			if (id.Count == 0) {
+			var id = vertexBuffer.CreateVertexGenetic(VertexMethod).Invoke(null, [gltf, stream, vertexBuffer])! as Dictionary<string, int>;
+			if (id == null || id.Count == 0) {
 				continue;
 			}
 
@@ -796,9 +796,12 @@ public static class GeometryConverter {
 
 		var firstLod = visual.LOD.MinBy(x => x.Extent)!.RenderSets;
 		foreach (var renderSet in firstLod.Select(x => visual.RenderSets[x])) {
-			var shouldUseRoot = renderSet is { IsSkinned: true, Nodes.Count: > 1 } || renderSet.Nodes.Count == 0 || nodeMap.Count == 0;
-			var primaryNode = shouldUseRoot ? node : nodeMap[renderSet.Nodes[0]];
 			var vertexBuffer = geometry.SharedVertexBuffers[renderSet.VerticesName];
+			var vertexHasBones = geometry.MergedVertexBuffers[vertexBuffer.BufferIndex].FormatName.Contains("iii", StringComparison.Ordinal);
+			var setIsSkinned = isSkinned && renderSet is { IsSkinned: true, Nodes.Count: > 1 } && vertexHasBones;
+
+			var shouldUseRoot = setIsSkinned || renderSet.Nodes.Count == 0 || nodeMap.Count == 0;
+			var primaryNode = shouldUseRoot ? node : nodeMap[renderSet.Nodes[0]];
 			var indicesBuffer = geometry.SharedIndexBuffers[renderSet.IndicesName];
 			var material = renderSet.MaterialResource;
 
@@ -809,7 +812,7 @@ public static class GeometryConverter {
 
 			var mesh = gltf.Meshes![meshId];
 			var prim = CreatePrimitive(gltf, mesh, buffers, primCache, vertexBuffer, indicesBuffer, geometry);
-			if (isSkinned) {
+			if (setIsSkinned) {
 				BuildBoneMap(context, gltf, prim, vertexBuffer, geometry, renderSet, visual);
 			}
 
