@@ -33,14 +33,14 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("validate", Help = "Verify if package data is corrupt or not", Category = "Akizuki")]
 	public bool Validate { get; set; }
 
+	[Flag("wildcard", Help = "Assume ship names are regexes (disables part selection)", Category = "Akizuki")]
+	public bool Wildcard { get; set; }
+
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
 	public TextureFormat Format { get; set; } = TextureFormat.Auto;
 
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
-
-	[Flag("wildcard", Help = "Assume ship names are regexes (disables part selection)", Category = "Akizuki")]
-	public bool Wildcard { get; set; }
 
 	public TextureFormat SelectedFormat {
 		get {
