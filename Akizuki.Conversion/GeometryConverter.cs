@@ -386,7 +386,7 @@ public static class GeometryConverter {
 			weightsSpan[index] = vertex.BoneWeight;
 			continue;
 
-			ushort RemapBone(byte boneIndex) => visual.Skeleton.NameMap[renderBones[boneIndex]];
+			ushort RemapBone(byte boneIndex) => (ushort) (boneIndex >= renderBones.Count ? 0 : visual.Skeleton.NameMap[renderBones[boneIndex]]);
 		}
 
 		attributes["JOINTS_0"] = gltf.CreateAccessor(indicesSpan, stream, GL.BufferViewTarget.ArrayBuffer, GL.AccessorType.VEC4, GL.AccessorComponentType.UnsignedShort).Id;
