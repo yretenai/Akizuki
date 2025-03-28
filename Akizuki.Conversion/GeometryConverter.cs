@@ -42,7 +42,8 @@ public static class GeometryConverter {
 			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		};
 
-	private static MethodInfo VertexMethod { get; } = typeof(GeometryConverter).GetMethod("BuildVertexBuffer", BindingFlags.Static | BindingFlags.Public)!;
+	private static MethodInfo VertexMethod { get; } = typeof(GeometryConverter).GetMethod(nameof(BuildVertexBuffer), BindingFlags.Static | BindingFlags.Public)!;
+	private static MethodInfo SkinMethod { get; } = typeof(GeometryConverter).GetMethod(nameof(BuildSkinBuffer), BindingFlags.Static | BindingFlags.Public)!;
 
 	private static StringId NormalMapId { get; } = new(0x4858745d);
 	private static StringId MetalMapId { get; } = new(0x89babfe7);
@@ -363,8 +364,39 @@ public static class GeometryConverter {
 		return mapping;
 	}
 
-	public static Dictionary<string, int> BuildVertexBuffer<T>(GL.Root gltf, Stream stream, GeometryVertexBuffer indexBuffer) where T : struct, IStandardVertex {
-		using var buffer = indexBuffer.DecodeBuffer<T>();
+	public static void BuildSkinBuffer<T>(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, GeometryName vertexBufferName,
+		Dictionary<string, int> attributes, RenderSetPrototype renderSet, VisualPrototype visual) where T : struct, IBoneVertex {
+		using var buffer = vertexBuffer.DecodeBuffer<T>();
+		if (buffer.Length == 0 || renderSet.Nodes.Count == 1) {
+			return;
+		}
+
+		var span = buffer.Span.Slice(vertexBufferName.BufferOffset, vertexBufferName.BufferLength);
+		using var indices = new MemoryBuffer<Vector4D<ushort>>(buffer.Length);
+		using var weights = new MemoryBuffer<Vector4D<float>>(buffer.Length);
+		var indicesSpan = indices.Span;
+		var weightsSpan = weights.Span;
+
+		var renderBones = renderSet.Nodes;
+
+		for (var index = 0; index < span.Length; index++) {
+			var vertex = span[index];
+			var bones = vertex.BoneIndex;
+			indicesSpan[index] = new Vector4D<ushort>(RemapBone(bones.X), RemapBone(bones.Y), RemapBone(bones.Z), 0);
+			weightsSpan[index] = vertex.BoneWeight;
+			continue;
+
+			ushort RemapBone(byte boneIndex) {
+				return visual.Skeleton.NameMap[renderBones[boneIndex]];
+			}
+		}
+
+		attributes["JOINTS_0"] = gltf.CreateAccessor(indicesSpan, stream, GL.BufferViewTarget.ArrayBuffer, GL.AccessorType.VEC4, GL.AccessorComponentType.UnsignedShort).Id;
+		attributes["WEIGHTS_0"] = gltf.CreateAccessor(weightsSpan, stream, GL.BufferViewTarget.ArrayBuffer, GL.AccessorType.VEC4, GL.AccessorComponentType.Float).Id;
+	}
+
+	public static Dictionary<string, int> BuildVertexBuffer<T>(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer) where T : struct, IStandardVertex {
+		using var buffer = vertexBuffer.DecodeBuffer<T>();
 		if (buffer.Length == 0) {
 			return [];
 		}
@@ -673,33 +705,54 @@ public static class GeometryConverter {
 
 	private static void BuildShipPart(BuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual) {
 		var name = Path.GetFileNameWithoutExtension(visual.MergedGeometryPath.Path);
-		var (node, _) = parent.CreateNode(gltf);
+		var (node, rootId) = parent.CreateNode(gltf);
 		node.Name = name;
 
 		var nodeMap = new Dictionary<StringId, GL.Node>();
+		var boneCount = visual.Skeleton.Names.Count;
+		var isSkinned = visual.RenderSets.Values.Any(x => x is { IsSkinned: true, Nodes.Count: > 1 });
 		if (visual.Skeleton.Names.Count > 0) {
-			nodeMap[visual.Skeleton.Names[0]] = node;
+			var worldMatrices = isSkinned ? stackalloc Matrix4x4[boneCount] : [];
+			GL.Skin? skin = null;
+			if (isSkinned) {
+				(skin, node.Skin) = gltf.CreateSkin();
+			}
 
-			for (var nodeIndex = 1; nodeIndex < visual.Skeleton.Names.Count; nodeIndex++) {
+			for (var nodeIndex = 0; nodeIndex < visual.Skeleton.Names.Count; nodeIndex++) {
 				var nodeName = visual.Skeleton.Names[nodeIndex];
 				var nodeParent = visual.Skeleton.ParentIds[nodeIndex];
 				var nodeMatrix = visual.Skeleton.Matrices[nodeIndex];
 				var parentNode = nodeParent == ushort.MaxValue ? node : nodeMap[visual.Skeleton.Names[nodeParent]];
 
-				var (skeletonNode, _) = parentNode.CreateNode(gltf);
-				skeletonNode.Name = nodeName.Text;
+				GL.Node skeletonNode;
+				int skeletonId;
+				var realName = nodeName.Text;
+				if (nodeIndex == 0) {
+					skeletonNode = node;
+					skeletonId = rootId;
+				} else {
+					(skeletonNode, skeletonId) = parentNode.CreateNode(gltf);
+					skeletonNode.Name = realName;
+				}
+
 				nodeMap[nodeName] = skeletonNode;
 
-				if (context.HardPoints.TryGetValue(skeletonNode.Name, out var hardPart)) {
+				if (context.HardPoints.TryGetValue(realName, out var hardPart)) {
 					BuildShipPart(context, gltf, skeletonNode, hardPart);
 				}
 
-				if (context.PortPoints.TryGetValue(skeletonNode.Name, out var portPart)) {
+				if (context.PortPoints.TryGetValue(realName, out var portPart)) {
 					BuildShipPart(context, gltf, skeletonNode, portPart);
 				}
 
-				if (LocateMiscObject(skeletonNode.Name) is { } miscObject) {
+				if (LocateMiscObject(realName) is { } miscObject) {
 					BuildShipPart(context, gltf, skeletonNode, miscObject);
+				}
+
+				if (isSkinned) {
+					var parentMatrix = nodeParent == ushort.MaxValue ? Matrix4x4.Identity : worldMatrices[nodeParent];
+					worldMatrices[nodeIndex] = nodeMatrix.ToSystem() * parentMatrix;
+					skin!.Joints.Add(skeletonId);
 				}
 
 				if (nodeMatrix.IsIdentity) {
@@ -709,6 +762,15 @@ public static class GeometryConverter {
 				var doubleMatrix = nodeMatrix.As<double>();
 				var asSpan = new Span<Matrix4X4<double>>(ref doubleMatrix);
 				skeletonNode.Matrix = MemoryMarshal.Cast<Matrix4X4<double>, double>(asSpan).ToArray().ToList();
+			}
+
+			if (isSkinned) {
+				for (var index = 0; index < boneCount; ++index) {
+					Matrix4x4.Invert(worldMatrices[index], out var inverseMatrix);
+					worldMatrices[index] = inverseMatrix;
+				}
+
+				skin!.InverseBindMatrices = gltf.CreateAccessor(worldMatrices, context.BufferStream, GL.BufferViewTarget.ArrayBuffer, GL.AccessorType.MAT4, GL.AccessorComponentType.Float).Id;
 			}
 		}
 
@@ -733,10 +795,9 @@ public static class GeometryConverter {
 		}
 
 		var firstLod = visual.LOD.MinBy(x => x.Extent)!.RenderSets;
-		var renderSetLookup = visual.RenderSets.ToDictionary(x => x.Name, x => x);
-		foreach (var renderSet in firstLod.Select(x => renderSetLookup[x])) {
-			// todo: special logic for isSkinned.
-			var primaryNode = renderSet.Nodes.Count > 0 && nodeMap.Count > 0 ? nodeMap[renderSet.Nodes[0]] : node;
+		foreach (var renderSet in firstLod.Select(x => visual.RenderSets[x])) {
+			var shouldUseRoot = renderSet is { IsSkinned: true, Nodes.Count: > 1 } || renderSet.Nodes.Count == 0 || nodeMap.Count == 0;
+			var primaryNode = shouldUseRoot ? node : nodeMap[renderSet.Nodes[0]];
 			var vertexBuffer = geometry.SharedVertexBuffers[renderSet.VerticesName];
 			var indicesBuffer = geometry.SharedIndexBuffers[renderSet.IndicesName];
 			var material = renderSet.MaterialResource;
@@ -748,6 +809,9 @@ public static class GeometryConverter {
 
 			var mesh = gltf.Meshes![meshId];
 			var prim = CreatePrimitive(gltf, mesh, buffers, primCache, vertexBuffer, indicesBuffer, geometry);
+			if (isSkinned) {
+				BuildBoneMap(context, gltf, prim, vertexBuffer, geometry, renderSet, visual);
+			}
 
 			if (!context.MaterialCache.TryGetValue(material, out var materialId)) {
 				materialId = context.MaterialCache[material] = CreateMaterial(context, gltf, material);
@@ -757,6 +821,16 @@ public static class GeometryConverter {
 				prim.Material = materialId;
 			}
 		}
+	}
+
+	private static void BuildBoneMap(BuilderContext context, GL.Root gltf, GL.Primitive prim, GeometryName vertexBufferName, Geometry geometry,
+		RenderSetPrototype renderSet, VisualPrototype visual) {
+		if (prim.Attributes.ContainsKey("JOINTS_0")) {
+			return;
+		}
+
+		var vertexBuffer = geometry.MergedVertexBuffers[vertexBufferName.BufferIndex];
+		vertexBuffer.CreateVertexGenetic(SkinMethod).Invoke(null, [gltf, context.BufferStream, vertexBuffer, vertexBufferName, prim.Attributes, renderSet, visual]);
 	}
 
 	private static int CreateTexture(BuilderContext context, GL.Root gltf, ResourceId id, StringId slotName) {

@@ -20,7 +20,8 @@ public record struct VertexFormatXYZNUVIIIWWTB : IBoneVertex, ITangentVertex {
 	public Vector4D<sbyte> PackedBinormal { get; set; }
 
 	public Vector3D<float> Normal => VertexHelper.Unpack(PackedNormal);
-	public Vector4D<float> BoneWeight => VertexHelper.UnpackBone(PackedBoneWeight);
+	public Vector4D<byte> BoneIndex => VertexHelper.UnpackBoneIndex(PackedBoneIndex);
+	public Vector4D<float> BoneWeight => VertexHelper.UnpackBoneWeight(PackedBoneWeight);
 	public Vector3D<float> Tangent => VertexHelper.Unpack(PackedTangent);
 	public Vector3D<float> Binormal => VertexHelper.Unpack(PackedBinormal);
 	public Vector2D<float> UV => VertexHelper.Unpack(PackedUV);

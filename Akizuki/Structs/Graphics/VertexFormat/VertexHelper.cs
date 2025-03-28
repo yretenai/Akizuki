@@ -29,11 +29,16 @@ public static class VertexHelper {
 		return result;
 	}
 
-	public static Vector4D<float> UnpackBone(Vector4D<byte> packed) {
+	public static Vector4D<float> UnpackBoneWeight(Vector4D<byte> packed) {
 		Unsafe.As<Vector4D<byte>, uint>(ref packed) ^= uint.MaxValue;
 		var x = Norm(packed.X);
-		var y = Norm(packed.Y);
+		var y = Norm(packed.Y >= packed.X ? (byte) (packed.X - packed.Y) : packed.Y);
 		var result = new Vector4D<float>(x, y, Math.Max(0, 1.0f - x - y), 0.0f);
+		return result;
+	}
+
+	public static Vector4D<byte> UnpackBoneIndex(Vector4D<byte> packed) {
+		var result = new Vector4D<byte>((byte) (packed.X / 3), (byte) (packed.Y / 3), (byte) (packed.Z / 3), 0);
 		return result;
 	}
 }

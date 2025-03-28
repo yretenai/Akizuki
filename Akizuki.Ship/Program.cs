@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Text.RegularExpressions;
 using Akizuki.Conversion;
 using Akizuki.Data.Params;
 using DragonLib.CommandLine;
@@ -51,6 +52,22 @@ internal static class Program {
 			}
 
 			return;
+		}
+
+		if (flags.Wildcard) {
+			var newSetups = new HashSet<string>();
+			var regexes = flags.ShipSetups.Select(x => new Regex(x)).ToList();
+			foreach (var (key, value) in manager.GameParams.Values.OrderBy(x => x.Key)) {
+				if (TypeInfo.GetTypeName(value) != "Ship") {
+					continue;
+				}
+
+				if (regexes.Any(regex => regex.IsMatch(key))) {
+					newSetups.Add(key);
+				}
+			}
+
+			flags.ShipSetups = newSetups;
 		}
 
 		foreach (var shipSetup in flags.ShipSetups) {

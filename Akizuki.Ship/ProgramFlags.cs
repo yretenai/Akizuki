@@ -39,6 +39,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
 
+	[Flag("wildcard", Help = "Assume ship names are regexes (disables part selection)", Category = "Akizuki")]
+	public bool Wildcard { get; set; }
+
 	public TextureFormat SelectedFormat {
 		get {
 			if (Format != TextureFormat.Auto) {

@@ -35,7 +35,8 @@ public partial class VisualPrototype {
 		var oneRenderSets = Unsafe.SizeOf<RenderSetPrototypeHeader>();
 		for (var index = 0; index < header.RenderSetsCount; ++index) {
 			data.Offset = renderSetOffset;
-			RenderSets.Add(new RenderSetPrototype(renderSets[index], data));
+			var set = new RenderSetPrototype(renderSets[index], data);
+			RenderSets.Add(set.Name, set);
 			renderSetOffset += oneRenderSets;
 		}
 	}
@@ -45,6 +46,6 @@ public partial class VisualPrototype {
 	public bool IsUnderwaterModel { get; }
 	public bool IsAbovewaterModel { get; }
 	public BoundingBox16 BoundingBox { get; set; }
-	public List<RenderSetPrototype> RenderSets { get; set; } = [];
+	public Dictionary<StringId, RenderSetPrototype> RenderSets { get; set; } = [];
 	public List<LODPrototype> LOD { get; set; } = [];
 }

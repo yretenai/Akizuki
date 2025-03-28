@@ -19,6 +19,7 @@ public record struct VertexFormatXYZNUVIIIWWR : IBoneVertex, IRadiusVertex {
 	public float Radius { get; set; }
 
 	public Vector3D<float> Normal => VertexHelper.Unpack(PackedNormal);
-	public Vector4D<float> BoneWeight => VertexHelper.UnpackBone(PackedBoneWeight);
+	public Vector4D<byte> BoneIndex => VertexHelper.UnpackBoneIndex(PackedBoneIndex);
+	public Vector4D<float> BoneWeight => VertexHelper.UnpackBoneWeight(PackedBoneWeight);
 	public Vector2D<float> UV => VertexHelper.Unpack(PackedUV);
 }
