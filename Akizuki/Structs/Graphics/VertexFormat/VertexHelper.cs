@@ -28,4 +28,12 @@ public static class VertexHelper {
 		var result = new Vector4D<float>(Norm(packed.X), Norm(packed.Y), Norm(packed.Z), Norm(packed.W));
 		return result;
 	}
+
+	public static Vector4D<float> UnpackBone(Vector4D<byte> packed) {
+		Unsafe.As<Vector4D<byte>, uint>(ref packed) ^= uint.MaxValue;
+		var x = Norm(packed.X);
+		var y = Norm(packed.Y);
+		var result = new Vector4D<float>(x, y, Math.Max(0, 1.0f - x - y), 0.0f);
+		return result;
+	}
 }

@@ -7,6 +7,6 @@ using Silk.NET.Maths;
 namespace Akizuki.Structs.Graphics.VertexFormat;
 
 public interface IBoneVertex : IStandardVertex {
-	public Vector4D<byte> BoneIndex { get; }
+	public Vector4D<byte> PackedBoneIndex { get; }
 	public Vector4D<float> BoneWeight { get; }
 }
