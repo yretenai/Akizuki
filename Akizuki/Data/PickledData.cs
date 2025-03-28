@@ -35,19 +35,19 @@ public class PickledData {
 				throw new InvalidOperationException();
 			}
 
-			if (dataArray[1] is not Dictionary<object, object> valueArray) {
+			if (dataArray[1] is not GameDataObject valueArray) {
 				throw new InvalidOperationException();
 			}
 
 			foreach (var (key, value) in valueArray) {
-				if (value is not Dictionary<object, object> param) {
+				if (value is not GameDataObject param) {
 					throw new InvalidOperationException();
 				}
 
-				GameParams[key.ToString()!] = param;
+				Values[key.ToString()!] = param;
 			}
 		}
 	}
 
-	public Dictionary<string, Dictionary<object, object>> GameParams { get; set; } = [];
+	public Dictionary<string, GameDataObject> Values { get; set; } = [];
 }

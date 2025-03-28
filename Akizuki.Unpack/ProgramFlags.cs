@@ -26,9 +26,6 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
 	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
 
-	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
-	public TextureFormat Format { get; set; } = TextureFormat.Auto;
-
 #if DEBUG
 	[Flag("verbose", Help = "Set log level to the highest possible level", Category = "Akizuki")]
 #endif
@@ -40,11 +37,14 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("validate", Help = "Verify if package data is corrupt or not", Category = "Akizuki")]
 	public bool Validate { get; set; }
 
-	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
-	public bool Dry { get; set; }
-
 	[Flag("convert", Help = "Convert data to common formats", Category = "Akizuki")]
 	public bool Convert { get; set; }
+
+	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
+	public TextureFormat Format { get; set; } = TextureFormat.Auto;
+
+	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
+	public bool Dry { get; set; }
 
 	public TextureFormat SelectedFormat {
 		get {

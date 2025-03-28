@@ -59,8 +59,17 @@ public class MessageObject : Dictionary<string, string> {
 		}
 	}
 
-	public new string this[string text] {
-		get => this.GetValueOrDefault("IDS_" + text, text);
-		set => base[text] = value;
+	public string GetTranslation(params string[] keys) {
+		if (keys.Length == 0) {
+			throw new ArgumentOutOfRangeException(nameof(keys));
+		}
+
+		foreach (var key in keys) {
+			if (TryGetValue("IDS_" + key, out var value)) {
+				return value;
+			}
+		}
+
+		return keys[0];
 	}
 }

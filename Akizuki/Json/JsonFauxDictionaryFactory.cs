@@ -7,10 +7,10 @@ using System.Text.Json.Serialization;
 
 namespace Akizuki.Json;
 
-public class JsonFauxDictionaryConverter : JsonConverter<Dictionary<object, object>> {
-	public override Dictionary<object, object> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException();
+public class JsonFauxDictionaryConverter : JsonConverter<GameDataObject> {
+	public override GameDataObject Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException();
 
-	public override void Write(Utf8JsonWriter writer, Dictionary<object, object> dict, JsonSerializerOptions options) {
+	public override void Write(Utf8JsonWriter writer, GameDataObject dict, JsonSerializerOptions options) {
 		if (dict.Keys.All(x => x is string or sbyte or short or int or long or byte or ushort or uint or ulong)) {
 			writer.WriteStartObject();
 

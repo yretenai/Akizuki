@@ -48,7 +48,7 @@ public static class Assets {
 
 		path = Path.ChangeExtension(path, null);
 		Directory.CreateDirectory(path);
-		foreach (var (key, data) in pickled.GameParams) {
+		foreach (var (key, data) in pickled.Values) {
 			var name = $"res/content/GameParams/{key}.json";
 			if (!check(name)) {
 				continue;

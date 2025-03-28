@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Akizuki.Data.Tables;
 using Akizuki.Graphics;
 using Akizuki.Structs.Graphics;
 using Akizuki.Structs.Graphics.VertexFormat;
@@ -23,6 +24,7 @@ using Triton.Pixel;
 using Triton.Pixel.Channels;
 using Triton.Pixel.Formats;
 using GL = GLTF.Scaffold;
+using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Graphics.GeometryName Vertex, Akizuki.Structs.Graphics.GeometryName Index), (System.Collections.Generic.Dictionary<string, int> Attributes, int Indices)>;
 
 namespace Akizuki.Conversion;
 
@@ -38,6 +40,64 @@ public static class GeometryConverter {
 		};
 
 	private static MethodInfo VertexMethod { get; } = typeof(GeometryConverter).GetMethod("BuildVertexBuffer", BindingFlags.Static | BindingFlags.Public)!;
+
+
+	public static Dictionary<string, (string Mesh, string Ports)> ResolveShipParts(VisualPrototype prototype, string path) {
+		var skeleton = prototype.Skeleton;
+		path = Path.ChangeExtension(path, null);
+		var result = new Dictionary<string, (string, string)>();
+		foreach (var node in skeleton.Names) {
+			var name = node.Text;
+			if (!name.StartsWith("HP_") || name == "HP_Full") {
+				continue;
+			}
+
+			var modelPath = path + $"_{name[3..]}";
+			result[name] = (modelPath + ".model", modelPath + "_ports.model");
+		}
+
+		return result;
+	}
+
+	public static string? LocateMiscObject(string id) {
+		if (id.StartsWith("MP_")) {
+			id = id[3..];
+		}
+
+		if (id.Length < 5 || id[1] != 'M') {
+			return null;
+		}
+
+		var path = "res/content/gameplay/";
+		switch (id[0]) {
+			case 'A': path += "usa/"; break;
+			case 'B': path += "uk/"; break;
+			case 'C': path += "common/"; break;
+			case 'F': path += "france/"; break;
+			case 'G': path += "germany/"; break;
+			case 'H': path += "netherlands/"; break;
+			case 'I': path += "italy/"; break;
+			case 'J': path += "japan/"; break;
+			case 'R': path += "russia/"; break;
+			case 'S': path += "spain/"; break;
+			case 'U': path += "commonwealth/"; break;
+			case 'V': path += "panamerica/"; break;
+			case 'W': path += "europe/"; break;
+			case 'X': path += "events/"; break;
+			case 'Z': path += "panasia/"; break;
+			default: return null;
+		}
+
+		path += "misc/";
+
+		var underscore = id.IndexOf('_', StringComparison.Ordinal);
+		if (underscore > -1) {
+			id = id[..underscore];
+		}
+
+		path += $"{id}/{id}.model";
+		return path;
+	}
 
 	public static bool ConvertSplash(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		var splash = new Splash(data);
@@ -275,7 +335,7 @@ public static class GeometryConverter {
 		var span = buffer.Span;
 		var first = span[0];
 
-		// bone handled elsewhere because remapping.
+		// bones not handled atm
 		using var positions = new MemoryBuffer<Vector3D<float>>(buffer.Length);
 		using var normals = new MemoryBuffer<Vector3D<float>>(buffer.Length);
 		using var uv1 = new MemoryBuffer<Vector2D<float>>(buffer.Length);
@@ -354,6 +414,7 @@ public static class GeometryConverter {
 		root.Name = Path.GetFileNameWithoutExtension(path);
 
 		var buffers = BuildGeometryBuffers(gltf, bufferStream, geometry);
+		var existingPrimitives = new PrimitiveCache();
 
 		foreach (var (vertexBuffer, indexBuffer) in geometry.SharedVertexBuffers.Values.Zip(geometry.SharedIndexBuffers.Values)) {
 			var name = vertexBuffer.Name.Text;
@@ -361,7 +422,12 @@ public static class GeometryConverter {
 				name = name[..^9];
 			}
 
-			CreateMesh(gltf, root, name, buffers, vertexBuffer, indexBuffer, geometry);
+			var (meshNode, _) = root.CreateNode(gltf);
+
+			(var mesh, meshNode.Mesh) = gltf.CreateMesh();
+			mesh.Name = meshNode.Name = name;
+
+			CreatePrimitive(gltf, mesh, buffers, existingPrimitives, vertexBuffer, indexBuffer, geometry);
 		}
 
 		var thicknessMaterial = new Dictionary<int, int>();
@@ -386,8 +452,7 @@ public static class GeometryConverter {
 		return true;
 	}
 
-
-	private static GL.Node CreateArmor(GL.Root gltf, GL.Node node, Stream stream, GeometryArmor armor, Dictionary<int, int> thicknessMaterial) {
+	private static void CreateArmor(GL.Root gltf, GL.Node node, Stream stream, GeometryArmor armor, Dictionary<int, int> thicknessMaterial) {
 		var (meshNode, _) = node.CreateNode(gltf);
 		(var mesh, meshNode.Mesh) = gltf.CreateMesh();
 		mesh.Name = meshNode.Name = armor.Name;
@@ -435,18 +500,11 @@ public static class GeometryConverter {
 
 			mesh.Primitives.Add(primitive);
 		}
-
-		return meshNode;
 	}
 
-	private static GL.Node CreateMesh(GL.Root gltf, GL.Node node, string name,
+	private static GL.Primitive CreatePrimitive(GL.Root gltf, GL.Mesh mesh,
 		Dictionary<(bool IsVertexBuffer, int GeometryBufferId), Dictionary<string, int>> buffers,
-		GeometryName vertexBuffer, GeometryName indexBuffer, Geometry geometry) {
-		var (meshNode, _) = node.CreateNode(gltf);
-
-		(var mesh, meshNode.Mesh) = gltf.CreateMesh();
-		mesh.Name = meshNode.Name = name;
-
+		PrimitiveCache existingPrimitives, GeometryName vertexBuffer, GeometryName indexBuffer, Geometry geometry) {
 		var mergedVbo = buffers[(true, vertexBuffer.BufferIndex)];
 		var mergedIbo = buffers[(false, indexBuffer.BufferIndex)];
 
@@ -454,40 +512,50 @@ public static class GeometryConverter {
 			Mode = GL.PrimitiveMode.Triangles,
 		};
 
-		var iboStride = geometry.MergedIndexBuffers[indexBuffer.BufferIndex].Stride;
+		if (!existingPrimitives.TryGetValue((vertexBuffer, indexBuffer), out var pair)) {
+			var iboStride = geometry.MergedIndexBuffers[indexBuffer.BufferIndex].Stride;
 
-		primitive.Indices = gltf.CreateAccessor(mergedIbo["INDEX"], indexBuffer.BufferLength,
-			indexBuffer.BufferOffset * iboStride, GL.AccessorType.SCALAR,
-			iboStride == 2 ? GL.AccessorComponentType.UnsignedShort : GL.AccessorComponentType.UnsignedInt).Id;
+			primitive.Indices = gltf.CreateAccessor(mergedIbo["INDEX"], indexBuffer.BufferLength,
+				indexBuffer.BufferOffset * iboStride, GL.AccessorType.SCALAR,
+				iboStride == 2 ? GL.AccessorComponentType.UnsignedShort : GL.AccessorComponentType.UnsignedInt).Id;
 
-		foreach (var (type, bufferIndex) in mergedVbo) {
-			var vboStride = gltf.BufferViews![bufferIndex].ByteStride!.Value;
-			var (accessorType, accessorComponentType) = type switch {
-				"POSITION" => (GL.AccessorType.VEC3, GL.AccessorComponentType.Float),
-				"NORMAL" => (GL.AccessorType.VEC3, GL.AccessorComponentType.Float),
-				"TEXCOORD_0" => (GL.AccessorType.VEC2, GL.AccessorComponentType.Float),
-				"TEXCOORD_1" => (GL.AccessorType.VEC2, GL.AccessorComponentType.Float),
-				"TANGENT" => (GL.AccessorType.VEC4, GL.AccessorComponentType.Float),
-				"COLOR_0" => (GL.AccessorType.VEC4, GL.AccessorComponentType.Float),
-				_ => throw new NotImplementedException(),
-			};
+			foreach (var (type, bufferIndex) in mergedVbo) {
+				var vboStride = gltf.BufferViews![bufferIndex].ByteStride!.Value;
+				var (accessorType, accessorComponentType) = type switch {
+					"POSITION" => (GL.AccessorType.VEC3, GL.AccessorComponentType.Float),
+					"NORMAL" => (GL.AccessorType.VEC3, GL.AccessorComponentType.Float),
+					"TEXCOORD_0" => (GL.AccessorType.VEC2, GL.AccessorComponentType.Float),
+					"TEXCOORD_1" => (GL.AccessorType.VEC2, GL.AccessorComponentType.Float),
+					"TANGENT" => (GL.AccessorType.VEC4, GL.AccessorComponentType.Float),
+					"COLOR_0" => (GL.AccessorType.VEC4, GL.AccessorComponentType.Float),
+					_ => throw new NotImplementedException(),
+				};
 
-			var (_, accessorId) = gltf.CreateAccessor(bufferIndex, vertexBuffer.BufferLength,
-				vertexBuffer.BufferOffset * vboStride, accessorType, accessorComponentType);
+				var (_, accessorId) = gltf.CreateAccessor(bufferIndex, vertexBuffer.BufferLength,
+					vertexBuffer.BufferOffset * vboStride, accessorType, accessorComponentType);
 
-			primitive.Attributes[type] = accessorId;
+				primitive.Attributes[type] = accessorId;
 
-			/*
-				if (type == "POSITION") {
-					accessor.Max = [double.MinValue, double.MinValue, double.MinValue];
-					accessor.Min = [double.MaxValue, double.MaxValue, double.MaxValue];
-					// todo: calculate bounds
-				}
-				*/
+				/*
+					if (type == "POSITION") {
+						accessor.Max = [double.MinValue, double.MinValue, double.MinValue];
+						accessor.Min = [double.MaxValue, double.MaxValue, double.MaxValue];
+						// todo: calculate bounds
+					}
+					*/
+			}
+
+			existingPrimitives[(vertexBuffer, indexBuffer)] = (primitive.Attributes, primitive.Indices.Value);
+		} else {
+			primitive.Indices = pair.Indices;
+			primitive.Attributes = pair.Attributes;
 		}
 
 		mesh.Primitives.Add(primitive);
-
-		return meshNode;
+		return primitive;
 	}
+
+	public static void ConvertShip(ResourceManager manager, string outputPath,
+		string hullMesh, Dictionary<string, string> hardpoints,
+		IConversionOptions flags) { }
 }

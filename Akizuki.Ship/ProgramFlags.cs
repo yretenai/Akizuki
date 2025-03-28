@@ -16,17 +16,14 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("install-directory", Positional = 1, IsRequired = true, Category = "Akizuki")]
 	public string InstallDirectory { get; set; } = null!;
 
-	[Flag("ship-name", Positional = 2, IsRequired = true, Category = "Akizuki")]
-	public string ShipName { get; set; } = null!;
+	[Flag("ship-name", Positional = 2, Category = "Akizuki")]
+	public string? ShipName { get; set; }
 
 	[Flag("ship-parts", Positional = 3, Category = "Akizuki")]
-	public List<string> ShipParts { get; set; } = null!;
+	public HashSet<string> ShipParts { get; set; } = [];
 
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
 	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
-
-	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
-	public TextureFormat Format { get; set; } = TextureFormat.Auto;
 
 #if DEBUG
 	[Flag("verbose", Help = "Set log level to the highest possible level", Category = "Akizuki")]
@@ -38,6 +35,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 
 	[Flag("validate", Help = "Verify if package data is corrupt or not", Category = "Akizuki")]
 	public bool Validate { get; set; }
+
+	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
+	public TextureFormat Format { get; set; } = TextureFormat.Auto;
 
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
