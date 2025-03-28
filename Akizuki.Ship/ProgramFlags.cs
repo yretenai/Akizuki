@@ -16,11 +16,8 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("install-directory", Positional = 1, IsRequired = true, Category = "Akizuki")]
 	public string InstallDirectory { get; set; } = null!;
 
-	[Flag("ship-name", Positional = 2, Category = "Akizuki")]
-	public string? ShipName { get; set; }
-
-	[Flag("ship-parts", Positional = 3, Category = "Akizuki")]
-	public HashSet<string> ShipParts { get; set; } = [];
+	[Flag("ship", Help = "List of ships to convert", Positional = 2, Category = "Akizuki")]
+	public HashSet<string> ShipSetups { get; set; } = [];
 
 	[Flag("log-level", Help = "Log level to output at", Category = "Akizuki")]
 	public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;

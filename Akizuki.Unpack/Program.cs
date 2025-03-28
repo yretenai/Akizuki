@@ -120,7 +120,7 @@ internal static class Program {
 			case ".dd1": // 4x
 			case ".dd0": // 8x
 			case ".dds": // 1x
-				return GeometryConverter.ConvertTexture(path, flags, data);
+				return GeometryConverter.ConvertTexture(path, flags, data) != null;
 			case ".splash":
 				return GeometryConverter.ConvertSplash(path, flags, data);
 			case ".geometry":

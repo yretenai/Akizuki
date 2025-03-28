@@ -10,4 +10,6 @@ namespace Akizuki.Structs.Data;
 public readonly record struct StringId(uint Hash) {
 	public string Text => ResourceManager.Instance?.Database?.GetString(Hash) ?? Hash.ToString("x8");
 	public override string ToString() => Text;
+	public override int GetHashCode() => Hash.GetHashCode();
+	public bool Equals(StringId? other) => other?.Hash == Hash;
 }

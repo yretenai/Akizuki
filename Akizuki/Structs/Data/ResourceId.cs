@@ -10,4 +10,6 @@ namespace Akizuki.Structs.Data;
 public readonly record struct ResourceId(ulong Hash) {
 	public string Path => ResourceManager.Instance?.Database?.GetPath(Hash) ?? Hash.ToString("x16");
 	public override string ToString() => Path;
+	public override int GetHashCode() => Hash.GetHashCode();
+	public bool Equals(ResourceId? other) => other?.Hash == Hash;
 }

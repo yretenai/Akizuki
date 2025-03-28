@@ -5,7 +5,7 @@
 namespace Akizuki.Conversion;
 
 public static class ColorTheory {
-	public static double[] ArmorStart = [68 / 255.0, 206 / 255.0, 27 / 255.0, 1.0];
+	public static double[] ArmorStart = [68 / 255.0, 27 / 255.0, 206 / 255.0, 1.0];
 	public static double[] ArmorEnd = [229 / 255.0, 31 / 255.0, 31 / 255.0, 1.0];
 
 	public static List<double> LerpColor(double[] a, double[] b, double t) => [

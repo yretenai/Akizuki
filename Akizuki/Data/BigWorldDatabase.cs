@@ -209,6 +209,10 @@ public class BigWorldDatabase {
 	public IPrototype? Resolve(ResourceId id) => Resolve(id.Hash);
 
 	public IPrototype? Resolve(ulong id) {
+		if (id is 0 or 0xFFFFFFFFFFFFFFFF) {
+			return null;
+		}
+
 		if (ResourceToPrototype.TryGetValue(id, out var info)) {
 			return Resolve(info);
 		}

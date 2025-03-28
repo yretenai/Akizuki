@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Diagnostics;
+using Akizuki.Conversion;
 using Akizuki.Data.Params;
 using DragonLib.CommandLine;
 using Serilog;
@@ -15,7 +15,17 @@ internal static class Program {
 	internal static ProgramFlags Flags { get; private set; } = null!;
 
 	private static void Main() {
-		var flags = Flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>();
+		var options = CommandLineOptions.Default with {
+			HelpDelegate = (flags, instance, options, invoked) => {
+				CommandLineOptions.Default.HelpDelegate(flags, instance, options, invoked);
+				Console.WriteLine("Ships follow the param identifier format (PXXX####).");
+				Console.WriteLine("Can specify modules by adding + followed by the module name.");
+				Console.WriteLine("For example: PJSD108_Akizuki+PJUH705_D8_HULL_TOP_2+PJUS804_D8_SUO_TOP_2");
+				Console.WriteLine("Not providing any ship will list all ships present.");
+				Console.WriteLine("Providing \"list\" as a module will list all modules present.");
+			},
+		};
+		var flags = Flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>(options);
 
 		AkizukiLog.Logger = new LoggerConfiguration()
 							.MinimumLevel.Is(flags.Verbose ? LogEventLevel.Verbose : flags.Quiet ? LogEventLevel.Fatal : flags.LogLevel)
@@ -28,7 +38,7 @@ internal static class Program {
 			return;
 		}
 
-		if (string.IsNullOrEmpty(flags.ShipName)) {
+		if (flags.ShipSetups.Count == 0 || flags.ShipSetups.Contains("list")) {
 			AkizukiLog.Information("Available ships:");
 
 			foreach (var (key, value) in manager.GameParams.Values.OrderBy(x => x.Key)) {
@@ -43,64 +53,76 @@ internal static class Program {
 			return;
 		}
 
-		if (!manager.GameParams.Values.TryGetValue(flags.ShipName, out var shipData)) {
-			AkizukiLog.Error("Could not find {Name}", flags.ShipName);
-			return;
-		}
-
-		if (TypeInfo.GetTypeName(shipData) != "Ship") {
-			AkizukiLog.Error("{Name} is not a ship!", flags.ShipName);
-			return;
-		}
-
-		var ship = new ShipParam(shipData);
-
-		var selectedParts = new Dictionary<ShipUpgradeType, ShipUpgrade>();
-		foreach (var (_, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
-			if (string.IsNullOrEmpty(upgrade.Prev)) {
-				selectedParts[upgrade.UpgradeType] = upgrade;
-			}
-		}
-
-		if (flags.ShipParts.Count == 1 && flags.ShipParts.First() == "list") {
-			AkizukiLog.Information("Available parts:");
-			foreach (var (upgradeName, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
-				AkizukiLog.Information("\t{Name} ({Type}, {TranslatedName})", upgradeName, upgrade.UpgradeType, manager.Text.GetTranslation(upgradeName));
+		foreach (var shipSetup in flags.ShipSetups) {
+			if (shipSetup.Length == 0) {
+				continue;
 			}
 
-			return;
-		}
-
-		var selectedComponents = ship.ShipUpgradeInfo.Upgrades
-									 .Where(x => flags.ShipParts.Contains(x.Key))
-									 .Select(x => x.Value).DistinctBy(x => x);
-		foreach (var selectedComponent in selectedComponents) {
-			selectedParts[selectedComponent.UpgradeType] = selectedComponent;
-		}
-
-		AkizukiLog.Information("Selected parts: {Parts}", string.Join(", ", selectedParts.Values.Select(x => x.Name)));
-
-		var hullModel = string.Empty;
-		var hardpoints = new Dictionary<string, string>();
-		foreach (var selectedComponent in selectedParts.Values.SelectMany(x => x.Components.Values).SelectMany(x => x)) {
-			if (ship.ModelPaths.TryGetValue(selectedComponent, out var componentModel)) {
-				hullModel = componentModel;
+			var splitParts = shipSetup.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+			var shipName = splitParts[0];
+			var shipParts = splitParts.Length > 1 ? splitParts[1..].ToHashSet() : [];
+			if (!manager.GameParams.Values.TryGetValue(shipName, out var shipData)) {
+				AkizukiLog.Error("Could not find ship {Name}", shipName);
+				continue;
 			}
 
-			if (ship.HardpointModelPaths.TryGetValue(selectedComponent, out var componentHardpoints)) {
-				foreach (var (key, value) in componentHardpoints) {
-					hardpoints[key] = value;
+			if (TypeInfo.GetTypeName(shipData) != "Ship") {
+				AkizukiLog.Error("{Name} is not a ship type", shipName);
+				continue;
+			}
+
+			var ship = new ShipParam(shipData);
+
+			var selectedParts = new Dictionary<ShipUpgradeType, ShipUpgrade>();
+			foreach (var (_, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
+				if (string.IsNullOrEmpty(upgrade.Prev)) {
+					selectedParts[upgrade.UpgradeType] = upgrade;
 				}
 			}
-		}
 
-		if (string.IsNullOrEmpty(hullModel)) {
-			throw new UnreachableException();
-		}
+			if (shipParts.Count == 1 && shipParts.Contains("list")) {
+				AkizukiLog.Information("Available parts for ship {Name}:", shipName);
+				foreach (var (upgradeName, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
+					AkizukiLog.Information("\t{Name} ({Type}, {TranslatedName})", upgradeName, upgrade.UpgradeType, manager.Text.GetTranslation(upgradeName));
+				}
 
-		AkizukiLog.Debug("{Hardpoint}: {ModelPath}", "HP_Full", hullModel);
-		foreach (var (key, value) in hardpoints) {
-			AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
+				continue;
+			}
+
+			var selectedComponents = ship.ShipUpgradeInfo.Upgrades
+										 .Where(x => shipParts.Contains(x.Key))
+										 .Select(x => x.Value).DistinctBy(x => x);
+			foreach (var selectedComponent in selectedComponents) {
+				selectedParts[selectedComponent.UpgradeType] = selectedComponent;
+			}
+
+			AkizukiLog.Information("Selected parts for {Name}: {Parts}", shipName, string.Join(", ", selectedParts.Values.Select(x => x.Name)));
+
+			var hullModel = string.Empty;
+			var hardpoints = new Dictionary<string, string>();
+			foreach (var selectedComponent in selectedParts.Values.SelectMany(x => x.Components.Values).SelectMany(x => x)) {
+				if (ship.ModelPaths.TryGetValue(selectedComponent, out var componentModel)) {
+					hullModel = componentModel;
+				}
+
+				if (ship.HardpointModelPaths.TryGetValue(selectedComponent, out var componentHardpoints)) {
+					foreach (var (key, value) in componentHardpoints) {
+						hardpoints[key] = value;
+					}
+				}
+			}
+
+			if (string.IsNullOrEmpty(hullModel)) {
+				AkizukiLog.Error("Ship {Mame} does not have a hull model?", shipName);
+				continue;
+			}
+
+			AkizukiLog.Debug("{Hardpoint}: {ModelPath}", "HP_Full", hullModel);
+			foreach (var (key, value) in hardpoints) {
+				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
+			}
+
+			GeometryConverter.ConvertShip(manager, shipName, flags.OutputDirectory, hullModel, hardpoints, flags);
 		}
 	}
 }

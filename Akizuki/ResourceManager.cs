@@ -95,9 +95,11 @@ public sealed class ResourceManager : IDisposable {
 		Instance = null;
 	}
 
+	public IPrototype? OpenPrototype(ResourceId id) => Database?.Resolve(id);
 	public IPrototype? OpenPrototype(string path) => Database?.Resolve(path);
 
 	public IPrototype? OpenPrototype(ulong id) => Database?.Resolve(id);
+	public IMemoryBuffer<byte>? OpenFile(ResourceId id) => OpenFile(id.Hash);
 
 	public IMemoryBuffer<byte>? OpenFile(string path) {
 		path = path.TrimStart('/');
@@ -114,7 +116,21 @@ public sealed class ResourceManager : IDisposable {
 		return null;
 	}
 
+	public bool HasFile(string path) {
+		path = path.TrimStart('/');
+
+		if (!path.StartsWith("res/")) {
+			path = "res/" + path;
+		}
+
+		return PathLookup.ContainsKey(path);
+	}
+
 	public IMemoryBuffer<byte>? OpenFile(ulong id) {
+		if (id is 0 or 0xFFFFFFFFFFFFFFFF) {
+			return null;
+		}
+
 		if (IdLookup.TryGetValue(id, out var pair)) {
 			return Packages[pair.Index].OpenFile(pair.File);
 		}
