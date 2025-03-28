@@ -67,9 +67,11 @@ public static class GeometryConverter {
 	}
 
 	public static string? LocateMiscObject(string id) {
-		if (id.StartsWith("MP_")) {
-			id = id[3..];
+		if (!id.StartsWith("MP_")) {
+			return null;
 		}
+
+		id = id[3..];
 
 		if (id.Length < 5 || id[1] != 'M') {
 			return null;
