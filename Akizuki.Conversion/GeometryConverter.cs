@@ -869,9 +869,8 @@ public static class GeometryConverter {
 			}
 		}
 
-		var thicknessMaterial = new Dictionary<int, int>();
 		foreach (var armor in geometry.Armors) {
-			CreateArmor(gltf, node, context.BufferStream, armor, thicknessMaterial);
+			CreateArmor(gltf, node, context.BufferStream, armor, context.ThicknessMaterialCache);
 		}
 	}
 
@@ -1019,5 +1018,7 @@ public static class GeometryConverter {
 		Dictionary<ResourceId, PrimitiveCache> PrimCache,
 		Dictionary<ResourceId, GeometryCache> GeometryCache,
 		Dictionary<ResourceId, int> MaterialCache,
-		Dictionary<ResourceId, int> TextureCache);
+		Dictionary<ResourceId, int> TextureCache) {
+		public Dictionary<int, int> ThicknessMaterialCache { get; } = [];
+	}
 }
