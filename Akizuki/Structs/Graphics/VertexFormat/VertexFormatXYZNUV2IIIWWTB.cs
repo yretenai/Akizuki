@@ -27,6 +27,7 @@ public record struct VertexFormatXYZNUV2IIIWWTB : IUV2Vertex, IBoneVertex, ITang
 	public Vector3D<float> Binormal => VertexHelper.UnpackNormal(PackedBinormal);
 	public Vector2D<float> UV => VertexHelper.UnpackUV(PackedUV);
 	public Vector2D<float> UV2 => VertexHelper.UnpackUV(PackedUV2);
+
 	public static VertexInfo VertexInfo => new() {
 		UV2 = 20,
 		BoneIndex = 24,

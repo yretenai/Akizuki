@@ -25,6 +25,7 @@ public record struct VertexFormatXYZNUVIIIWWTB : IBoneVertex, ITangentVertex {
 	public Vector3D<float> Tangent => VertexHelper.UnpackNormal(PackedTangent);
 	public Vector3D<float> Binormal => VertexHelper.UnpackNormal(PackedBinormal);
 	public Vector2D<float> UV => VertexHelper.UnpackUV(PackedUV);
+
 	public static VertexInfo VertexInfo => new() {
 		BoneIndex = 20,
 		BoneWeight = 24,

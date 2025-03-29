@@ -45,6 +45,13 @@ public static class GeometryConverter {
 	private static StringId NormalMapId { get; } = new(0x4858745d);
 	private static StringId MetalMapId { get; } = new(0x89babfe7);
 
+	// most meshes are flipped on the Z axis when skinned, except a few.
+	// this is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
+	// todo: populate me with problematic meshes
+	public static HashSet<string> FlipBlocklist { get; } = [
+		"JGM055_100mm65_Type98",
+	];
+
 
 	public static Dictionary<string, (string Mesh, string Ports)> ResolveShipParts(VisualPrototype prototype, string path) {
 		var skeleton = prototype.Skeleton;
@@ -490,13 +497,6 @@ public static class GeometryConverter {
 
 		return result;
 	}
-
-	// most meshes are flipped on the Z axis when skinned, except a few.
-	// this is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
-	// todo: populate me with problematic meshes
-	public static HashSet<string> FlipBlocklist { get; } = [
-		"JGM055_100mm65_Type98",
-	];
 
 	public static bool ConvertLooseGeometry(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		using var geometry = new Geometry(data);

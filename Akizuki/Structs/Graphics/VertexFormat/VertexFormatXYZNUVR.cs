@@ -18,6 +18,7 @@ public record struct VertexFormatXYZNUVR : IRadiusVertex {
 
 	public Vector3D<float> Normal => VertexHelper.UnpackNormal(PackedNormal);
 	public Vector2D<float> UV => VertexHelper.UnpackUV(PackedUV);
+
 	public static VertexInfo VertexInfo => new() {
 		Radius = 20,
 	};

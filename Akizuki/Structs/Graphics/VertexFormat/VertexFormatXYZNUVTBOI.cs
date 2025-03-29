@@ -23,6 +23,7 @@ public record struct VertexFormatXYZNUVTBOI : ITangentVertex, IColorVertex {
 	public Vector3D<float> Binormal => VertexHelper.UnpackNormal(PackedBinormal);
 	public Vector4D<float> Color => VertexHelper.UnpackColor(PackedColor);
 	public Vector2D<float> UV => VertexHelper.UnpackUV(PackedUV);
+
 	public static VertexInfo VertexInfo => new() {
 		Tangent = 20,
 		Binormal = 24,

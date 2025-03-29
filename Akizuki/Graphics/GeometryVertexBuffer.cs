@@ -38,16 +38,6 @@ public sealed class GeometryVertexBuffer : IDisposable {
 	public GeometryVertexBufferHeader Header { get; set; }
 	public IMemoryBuffer<byte> Buffer { get; set; }
 
-	public void Dispose() => Buffer.Dispose();
-
-	public IMemoryBuffer<T> DecodeBuffer<T>() where T : struct, IStandardVertex {
-		if (Unsafe.SizeOf<T>() != Stride) {
-			throw new InvalidOperationException("Vertex size mismatched");
-		}
-
-		return new CastMemoryBuffer<T, byte>(Buffer, true);
-	}
-
 	public VertexInfo Info =>
 		FormatName switch {
 			"set3/xyznuvpc" => VertexFormatXYZNUV.VertexInfo,
@@ -63,4 +53,14 @@ public sealed class GeometryVertexBuffer : IDisposable {
 			"set3/xyznuvtboi" => VertexFormatXYZNUVTBOI.VertexInfo,
 			_ => throw new NotSupportedException($"Format {FormatName} is not supported"),
 		};
+
+	public void Dispose() => Buffer.Dispose();
+
+	public IMemoryBuffer<T> DecodeBuffer<T>() where T : struct, IStandardVertex {
+		if (Unsafe.SizeOf<T>() != Stride) {
+			throw new InvalidOperationException("Vertex size mismatched");
+		}
+
+		return new CastMemoryBuffer<T, byte>(Buffer, true);
+	}
 }

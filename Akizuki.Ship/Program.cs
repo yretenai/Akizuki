@@ -145,6 +145,7 @@ internal static class Program {
 			foreach (var (key, value) in hardpoints) {
 				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
 			}
+
 			foreach (var (key, value) in planes) {
 				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
 			}
