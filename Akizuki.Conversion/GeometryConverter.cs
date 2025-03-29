@@ -354,7 +354,7 @@ public static class GeometryConverter {
 		return SaveTexture(path, flags, encoder, [converted]);
 	}
 
-	private static string? SaveTexture(string path, IConversionOptions flags, IEncoder encoder, ImageCollection frames) {
+	private static string SaveTexture(string path, IConversionOptions flags, IEncoder encoder, ImageCollection frames) {
 		if (flags.Dry) {
 			return path;
 		}
@@ -459,11 +459,7 @@ public static class GeometryConverter {
 				var nor = tangentVert.Normal;
 				var tan = tangentVert.Tangent;
 				var bin = tangentVert.Binormal;
-				var sysNor = new Vector3(nor.X, nor.Y, nor.Z);
-				var sysTan = new Vector3(tan.X, tan.Y, tan.Z);
-				var sysBin = new Vector3(bin.X, bin.Y, bin.Z);
-				var w = Vector3.Dot(Vector3.Cross(sysNor, sysTan), sysBin) < 0 ? -1.0f : 1.0f;
-
+				var w = Math.Sign(Vector3D.Dot(Vector3D.Cross(nor, tan), bin));
 				tangentsSpan[index] = new Vector4D<float>(tan, w);
 			}
 
