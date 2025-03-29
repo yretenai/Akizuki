@@ -47,5 +47,5 @@ public partial class EffectMetadataPrototype : IPrototype {
 	public static uint Version { get; }
 	public static uint Id { get; } = MurmurHash3Algorithm.Hash32_32("EffectMetadataPrototype"u8);
 	public static string PrototypeName => "EffectMetadataPrototype";
-	public static int Size => 0x10;
+	public static int Size => 0; // disabled until EffectPrototype is implemented, size is 0x10
 }

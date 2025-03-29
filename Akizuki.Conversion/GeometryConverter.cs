@@ -137,11 +137,8 @@ public static class GeometryConverter {
 		}
 
 		var ext = Path.GetExtension(path);
-		if (ext != ".dds") {
-			path = Path.ChangeExtension(path, $".{ext[^1]}.{imageFormat.ToString().ToLowerInvariant()}");
-		} else {
-			path = Path.ChangeExtension(path, $".{imageFormat.ToString().ToLowerInvariant()}");
-		}
+		path = Path.ChangeExtension(path,
+			ext != ".dds" ? $".{ext[^1]}.{imageFormat.ToString().ToLowerInvariant()}" : $".{imageFormat.ToString().ToLowerInvariant()}");
 
 		if (skipExisting && File.Exists(path)) {
 			return path;
@@ -175,6 +172,7 @@ public static class GeometryConverter {
 				var frameBuffer = new MemoryBuffer<byte>(width * height * 16);
 				try {
 					var frameBufferMem = frameBuffer.Memory;
+					// ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
 					switch (texture.Format) {
 						case DXGIFormat.BC1_UNORM:
 						case DXGIFormat.BC1_UNORM_SRGB:
@@ -226,6 +224,7 @@ public static class GeometryConverter {
 				throw new UnreachableException();
 			}
 
+			// ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
 			switch (texture.Format) {
 				case DXGIFormat.A8_UNORM:
 				case DXGIFormat.R8_UNORM:
@@ -938,6 +937,8 @@ public static class GeometryConverter {
 		gltf.ExtensionsUsed.Add(CHRONOVOREMaterialAttributes.EXT_NAME);
 
 		var (mat, matId) = gltf.CreateMaterial();
+
+		mat.Name = Path.GetFileNameWithoutExtension(material.Path);
 
 		foreach (var (name, value) in mfm.BoolValues) {
 			materialAttributes.Scalars[name.Text] = value ? 1 : 0;

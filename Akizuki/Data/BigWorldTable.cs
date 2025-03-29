@@ -16,9 +16,9 @@ public class BigWorldTable {
 		[PointLightPrototype.Id] = CheckRecords<PointLightPrototype>,
 		[VelocityFieldPrototype.Id] = CheckRecords<VelocityFieldPrototype>,
 		[AtlasContourPrototype.Id] = CheckRecords<AtlasContourPrototype>,
-		// [EffectPrototype.Id] = CheckRecords<EffectPrototype>,
-		// [EffectPresetPrototype.Id] = CheckRecords<EffectPresetPrototype>,
-		// [EffectMetadataPrototype.Id] = CheckRecords<EffectMetadataPrototype>,
+		[EffectPrototype.Id] = CheckRecords<EffectPrototype>,
+		[EffectPresetPrototype.Id] = CheckRecords<EffectPresetPrototype>,
+		[EffectMetadataPrototype.Id] = CheckRecords<EffectMetadataPrototype>,
 	};
 
 	public BigWorldTable(MemoryReader data, BWDBTableHeader header, BigWorldDatabase db) {

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Diagnostics.CodeAnalysis;
 using Akizuki.Conversion;
 using DragonLib.CommandLine;
 using DragonLib.IO;
@@ -115,6 +116,7 @@ internal static class Program {
 		return !hasAnyFilters;
 	}
 
+	[SuppressMessage("ReSharper", "DuplicatedSwitchSectionBodies")]
 	private static bool Convert(string path, ProgramFlags flags, IMemoryBuffer<byte> data) {
 		var ext = Path.GetExtension(path).ToLowerInvariant();
 		var name = Path.GetFileName(path).ToLowerInvariant();

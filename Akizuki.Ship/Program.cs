@@ -116,7 +116,7 @@ internal static class Program {
 			AkizukiLog.Information("Selected parts for {Name}: {Parts}", shipName, string.Join(", ", selectedParts.Values.Select(x => x.Name)));
 
 			var hullModel = string.Empty;
-			var hardpoints = new Dictionary<string, string>();
+			var hardPoints = new Dictionary<string, string>();
 			var planes = new Dictionary<string, string>();
 			foreach (var selectedComponent in selectedParts.Values.SelectMany(x => x.Components.Values).SelectMany(x => x)) {
 				if (ship.ModelPaths.TryGetValue(selectedComponent, out var componentModel)) {
@@ -125,7 +125,7 @@ internal static class Program {
 
 				if (ship.HardpointModelPaths.TryGetValue(selectedComponent, out var componentHardpoints)) {
 					foreach (var (key, value) in componentHardpoints) {
-						hardpoints[key] = value;
+						hardPoints[key] = value;
 					}
 				}
 
@@ -142,7 +142,7 @@ internal static class Program {
 			}
 
 			AkizukiLog.Debug("{Hardpoint}: {ModelPath}", "HP_Full", hullModel);
-			foreach (var (key, value) in hardpoints) {
+			foreach (var (key, value) in hardPoints) {
 				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
 			}
 
@@ -150,10 +150,10 @@ internal static class Program {
 				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
 			}
 
-			GeometryConverter.ConvertVisual(manager, shipName, flags.OutputDirectory, hullModel, hardpoints, flags, ship.ParamTypeInfo);
+			GeometryConverter.ConvertVisual(manager, shipName, flags.OutputDirectory, hullModel, hardPoints, flags, ship.ParamTypeInfo);
 
 			foreach (var (planeName, planeModel) in planes) {
-				GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardpoints, flags, ship.ParamTypeInfo, "plane", shipName);
+				GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardPoints, flags, ship.ParamTypeInfo, "plane", shipName);
 			}
 		}
 	}

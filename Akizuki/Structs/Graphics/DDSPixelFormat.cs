@@ -9,8 +9,8 @@ namespace Akizuki.Structs.Graphics;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public record struct DDSPixelFormat() {
 	public uint Size { get; set; } = 32;
-	public DDSPixelFormatFlags Flags { get; set; } = DDSPixelFormatFlags.FourCC;
-	public uint FourCC { get; set; } = 0x30315844;
+	public DDSPixelFormatFlags Flags { get; set; } = DDSPixelFormatFlags.Identifier;
+	public uint Identifier { get; set; } = 0x30315844;
 	public uint RGBBitCount { get; set; }
 	public uint RBitMask { get; set; }
 	public uint GBitMask { get; set; }

@@ -5,7 +5,7 @@
 namespace Akizuki.Structs.Graphics;
 
 public enum DX10AlphaMode : uint {
-	none = 0x0,
+	None = 0x0,
 	Straight = 0x1,
 	PreMultiplied = 0x2,
 	Opaque = 0x3,

@@ -22,7 +22,7 @@ public sealed class DDSTexture : IDisposable {
 		Mips = (header.Caps & DDSCaps.MipMapped) != 0 ? header.MipMapCount : 1;
 		Surfaces = 1;
 
-		switch (header.PixelFormat.FourCC) {
+		switch (header.PixelFormat.Identifier) {
 			case 0x31545844: Format = DXGIFormat.BC1_UNORM; break;
 			case 0x32545844 or 0x33545844: Format = DXGIFormat.BC2_UNORM; break;
 			case 0x34545844 or 0x35545844: Format = DXGIFormat.BC3_UNORM; break;
@@ -39,7 +39,7 @@ public sealed class DDSTexture : IDisposable {
 				break;
 			}
 			case > 0: {
-				Format = (BWImageFormat) header.PixelFormat.FourCC switch {
+				Format = (BWImageFormat) header.PixelFormat.Identifier switch {
 					BWImageFormat.R16G16_FLOAT => DXGIFormat.R16G16_FLOAT,
 					BWImageFormat.R16G16B16A16_FLOAT => DXGIFormat.R16G16B16A16_FLOAT,
 					BWImageFormat.R32_UINT => DXGIFormat.R32_UINT,

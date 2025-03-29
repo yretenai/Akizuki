@@ -23,5 +23,5 @@ public enum DX10Flags : uint {
 	Guarded = 0x8000,
 	TilePool = 0x20000,
 	Tiled = 0x40000,
-	HWProtected = 0x80000,
+	HardwareProtected = 0x80000,
 }
