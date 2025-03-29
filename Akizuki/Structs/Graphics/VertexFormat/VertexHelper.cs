@@ -15,15 +15,15 @@ public static class VertexHelper {
 
 	public static float Norm(byte value) => value / 255.0f;
 
-	public static Vector2D<float> Unpack(Vector2D<Half> packed) => new((float) packed.X, (float) packed.Y);
+	public static Vector2D<float> UnpackUV(Vector2D<Half> packed) => new((float) packed.X + 0.5f, (float) packed.Y + 0.5f);
 
-	public static Vector3D<float> Unpack(Vector4D<sbyte> packed) {
+	public static Vector3D<float> UnpackNormal(Vector4D<sbyte> packed) {
 		Unsafe.As<Vector4D<sbyte>, uint>(ref packed) ^= uint.MaxValue;
 		var result = new Vector3D<float>(Norm(packed.X), Norm(packed.Y), Norm(packed.Z));
 		return result;
 	}
 
-	public static Vector4D<float> Unpack(Vector4D<byte> packed) {
+	public static Vector4D<float> UnpackColor(Vector4D<byte> packed) {
 		Unsafe.As<Vector4D<byte>, uint>(ref packed) ^= uint.MaxValue;
 		var result = new Vector4D<float>(Norm(packed.X), Norm(packed.Y), Norm(packed.Z), Norm(packed.W));
 		return result;

@@ -40,6 +40,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
 	public TextureFormat ImageFormat { get; set; } = TextureFormat.Auto;
 
+	[Flag("type-info", Help = "Insert type information in the resulting file path", Category = "Akizuki")]
+	public bool InsertTypeInfo { get; set; }
+
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
 

@@ -17,8 +17,12 @@ public record struct VertexFormatXYZNUVIIIWW : IBoneVertex {
 	public Vector4D<byte> PackedBoneIndex { get; set; }
 	public Vector4D<byte> PackedBoneWeight { get; set; }
 
-	public Vector3D<float> Normal => VertexHelper.Unpack(PackedNormal);
+	public Vector3D<float> Normal => VertexHelper.UnpackNormal(PackedNormal);
 	public Vector4D<byte> BoneIndex => VertexHelper.UnpackBoneIndex(PackedBoneIndex);
 	public Vector4D<float> BoneWeight => VertexHelper.UnpackBoneWeight(PackedBoneWeight);
-	public Vector2D<float> UV => VertexHelper.Unpack(PackedUV);
+	public Vector2D<float> UV => VertexHelper.UnpackUV(PackedUV);
+	public static VertexInfo VertexInfo => new() {
+		BoneIndex = 20,
+		BoneWeight = 24,
+	};
 }

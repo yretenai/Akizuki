@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Akizuki.Graphics.MeshCompression;
@@ -14,6 +13,7 @@ namespace Akizuki.Graphics;
 
 public sealed class GeometryVertexBuffer : IDisposable {
 	public GeometryVertexBuffer(GeometryVertexBufferHeader header, MemoryReader buffer) {
+		Header = header;
 		Stride = header.VertexStride;
 		var pos = buffer.Offset;
 		buffer.Offset = (int) (pos + header.VertexFormatPtr + 8);
@@ -35,6 +35,7 @@ public sealed class GeometryVertexBuffer : IDisposable {
 	public int Stride { get; set; }
 	public int VertexCount { get; set; }
 	public string FormatName { get; set; }
+	public GeometryVertexBufferHeader Header { get; set; }
 	public IMemoryBuffer<byte> Buffer { get; set; }
 
 	public void Dispose() => Buffer.Dispose();
@@ -47,19 +48,19 @@ public sealed class GeometryVertexBuffer : IDisposable {
 		return new CastMemoryBuffer<T, byte>(Buffer, true);
 	}
 
-	public MethodInfo CreateVertexGenetic(MethodInfo method) =>
+	public VertexInfo Info =>
 		FormatName switch {
-			"set3/xyznuvpc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUV)),
-			"set3/xyznuv2iiiwwtbpc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUV2IIIWWTB)),
-			"set3/xyznuv2tbpc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUV2TB)),
-			"set3/xyznuv2tbipc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUV2TBI)),
-			"set3/xyznuviiiwwpc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUVIIIWW)),
-			"set3/xyznuviiiwwr" => method.MakeGenericMethod(typeof(VertexFormatXYZNUVIIIWWR)),
-			"set3/xyznuviiiwwtbpc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUVIIIWWTB)),
-			"set3/xyznuvrpc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUVR)),
-			"set3/xyznuvtbpc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUVTB)),
-			"set3/xyznuvtbipc" => method.MakeGenericMethod(typeof(VertexFormatXYZNUVTBI)),
-			"set3/xyznuvtboi" => method.MakeGenericMethod(typeof(VertexFormatXYZNUVTBOI)),
+			"set3/xyznuvpc" => VertexFormatXYZNUV.VertexInfo,
+			"set3/xyznuv2iiiwwtbpc" => VertexFormatXYZNUV2IIIWWTB.VertexInfo,
+			"set3/xyznuv2tbpc" => VertexFormatXYZNUV2TB.VertexInfo,
+			"set3/xyznuv2tbipc" => VertexFormatXYZNUV2TBI.VertexInfo,
+			"set3/xyznuviiiwwpc" => VertexFormatXYZNUVIIIWW.VertexInfo,
+			"set3/xyznuviiiwwr" => VertexFormatXYZNUVIIIWWR.VertexInfo,
+			"set3/xyznuviiiwwtbpc" => VertexFormatXYZNUVIIIWWTB.VertexInfo,
+			"set3/xyznuvrpc" => VertexFormatXYZNUVR.VertexInfo,
+			"set3/xyznuvtbpc" => VertexFormatXYZNUVTB.VertexInfo,
+			"set3/xyznuvtbipc" => VertexFormatXYZNUVTBI.VertexInfo,
+			"set3/xyznuvtboi" => VertexFormatXYZNUVTBOI.VertexInfo,
 			_ => throw new NotSupportedException($"Format {FormatName} is not supported"),
 		};
 }

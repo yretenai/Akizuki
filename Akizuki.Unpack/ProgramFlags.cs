@@ -68,6 +68,8 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
 
+	public bool InsertTypeInfo => false;
+
 	public TextureFormat SelectedFormat {
 		get {
 			if (ImageFormat != TextureFormat.Auto) {

@@ -6,10 +6,10 @@ using System.Diagnostics;
 
 namespace Akizuki.Data.Params;
 
-public class ShipParam : ParamsObject {
+public class ShipParam : ParamObject {
 	public ShipParam() { }
 
-	public ShipParam(GameDataObject data) : base(data) {
+	public ShipParam(PickledData pickle, GameDataObject data) : base(data) {
 		Index = data.GetValue<string>("index");
 		Name = data.GetValue<string>("name");
 		ShipUpgradeInfo = data.GetParamOrDefault("ShipUpgradeInfo", ShipUpgradeInfo);
@@ -20,6 +20,27 @@ public class ShipParam : ParamsObject {
 			var componentData = data.GetValueOrDefault<GameDataObject>(component, []);
 			if (componentData.TryGetValue<string>("model", out var model) && !string.IsNullOrEmpty(model)) {
 				ModelPaths[component] = model;
+			}
+
+			{
+				if (componentData.TryGetValue<string>("planeName", out var planeName) && !string.IsNullOrEmpty(planeName)) {
+					if (pickle.Values.TryGetValue(planeName, out var planeData) && planeData.GetValueOrDefault<string>("model") is { } planeModel) {
+						if (!HardpointModelPaths.TryGetValue(component, out var componentHardpoints)) {
+							componentHardpoints = HardpointModelPaths[component] = [];
+						}
+
+						componentHardpoints["HP_Plane_Start"] = planeModel;
+					}
+				}
+			}
+
+			if (componentData.TryGetValue<object[]>("planes", out var planes) && planes.Length > 0 && planes[0] is string) {
+				var planeModels = PlaneModelPaths[component] = [];
+				foreach (var planeName in planes.OfType<string>()) {
+					if (planeName.Length > 0 && pickle.Values.TryGetValue(planeName, out var planeData) && planeData.GetValueOrDefault<string>("model") is { } planeModel) {
+						planeModels[planeName] = planeModel;
+					}
+				}
 			}
 
 			foreach (var (key, value) in componentData) {
@@ -60,4 +81,5 @@ public class ShipParam : ParamsObject {
 	public ShipUpgradeInfo ShipUpgradeInfo { get; set; } = new();
 	public Dictionary<string, string> ModelPaths { get; set; } = [];
 	public Dictionary<string, Dictionary<string, string>> HardpointModelPaths { get; set; } = [];
+	public Dictionary<string, Dictionary<string, string>> PlaneModelPaths { get; set; } = [];
 }

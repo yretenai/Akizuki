@@ -4,10 +4,10 @@
 
 namespace Akizuki.Data.Params;
 
-public class TypeInfo {
-	public TypeInfo() { }
+public class ParamTypeInfo {
+	public ParamTypeInfo() { }
 
-	public TypeInfo(GameDataObject data) {
+	public ParamTypeInfo(GameDataObject data) {
 		Type = data.GetValue<string>("type");
 		Species = data.GetValueOrDefault<string?>("species");
 		Nation = data.GetValueOrDefault<string?>("nation");

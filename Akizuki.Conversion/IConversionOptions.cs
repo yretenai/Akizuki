@@ -15,4 +15,5 @@ public interface IConversionOptions {
 	public CubemapStyle CubemapStyle { get; }
 	public bool ConvertTextures { get; }
 	public bool ConvertCubeMaps { get; }
+	public bool InsertTypeInfo { get; }
 }

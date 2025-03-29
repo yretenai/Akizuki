@@ -11,7 +11,7 @@ namespace Akizuki.Structs.Graphics;
 public record struct GeometryName {
 	public StringId Name { get; set; }
 	public ushort BufferIndex { get; set; }
-	public ushort MeshId { get; set; }
+	public ushort Flags { get; set; }
 	public int BufferOffset { get; set; }
 	public int BufferLength { get; set; }
 }

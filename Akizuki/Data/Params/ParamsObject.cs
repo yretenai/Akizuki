@@ -4,10 +4,10 @@
 
 namespace Akizuki.Data.Params;
 
-public class ParamsObject {
-	public ParamsObject() { }
+public class ParamObject {
+	public ParamObject() { }
 
-	public ParamsObject(GameDataObject data) => TypeInfo = data.GetParam<TypeInfo>("typeinfo");
+	public ParamObject(GameDataObject data) => ParamTypeInfo = data.GetParam<ParamTypeInfo>("typeinfo");
 
-	public TypeInfo TypeInfo { get; set; } = new();
+	public ParamTypeInfo ParamTypeInfo { get; set; } = new();
 }

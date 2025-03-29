@@ -4,13 +4,13 @@
 
 using System.Diagnostics;
 using System.Numerics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Akizuki.Data.Params;
 using Akizuki.Data.Tables;
 using Akizuki.Graphics;
 using Akizuki.Structs.Data;
@@ -41,9 +41,6 @@ public static class GeometryConverter {
 			NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
 			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		};
-
-	private static MethodInfo VertexMethod { get; } = typeof(GeometryConverter).GetMethod(nameof(BuildVertexBuffer), BindingFlags.Static | BindingFlags.Public)!;
-	private static MethodInfo SkinMethod { get; } = typeof(GeometryConverter).GetMethod(nameof(BuildSkinBuffer), BindingFlags.Static | BindingFlags.Public)!;
 
 	private static StringId NormalMapId { get; } = new(0x4858745d);
 	private static StringId MetalMapId { get; } = new(0x89babfe7);
@@ -365,7 +362,7 @@ public static class GeometryConverter {
 	}
 
 	public static GeometryCache
-		BuildGeometryBuffers(GL.Root gltf, Stream stream, Geometry geometry) {
+		BuildGeometryBuffers(GL.Root gltf, Stream stream, Geometry geometry, string name) {
 		var mapping = new Dictionary<(bool, int), Dictionary<string, int>>();
 
 		for (var index = 0; index < geometry.MergedIndexBuffers.Count; index++) {
@@ -379,8 +376,8 @@ public static class GeometryConverter {
 
 		for (var index = 0; index < geometry.MergedVertexBuffers.Count; index++) {
 			var vertexBuffer = geometry.MergedVertexBuffers[index];
-			var id = vertexBuffer.CreateVertexGenetic(VertexMethod).Invoke(null, [gltf, stream, vertexBuffer])! as Dictionary<string, int>;
-			if (id == null || id.Count == 0) {
+			var id = BuildVertexBuffer(gltf, stream, vertexBuffer, name);
+			if (id.Count == 0) {
 				continue;
 			}
 
@@ -390,14 +387,15 @@ public static class GeometryConverter {
 		return mapping;
 	}
 
-	public static void BuildSkinBuffer<T>(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, GeometryName vertexBufferName,
-		Dictionary<string, int> attributes, RenderSetPrototype renderSet, VisualPrototype visual) where T : struct, IBoneVertex {
-		using var buffer = vertexBuffer.DecodeBuffer<T>();
-		if (buffer.Length == 0 || renderSet.Nodes.Count == 1) {
+	public static void BuildSkinBuffer(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, GeometryName vertexBufferName,
+		Dictionary<string, int> attributes, RenderSetPrototype renderSet, VisualPrototype visual) {
+		var buffer = vertexBuffer.Buffer.Span;
+		var info = vertexBuffer.Info;
+		if (renderSet.Nodes.Count == 1 || info.BoneIndex == -1 || info.BoneWeight == -1) {
 			return;
 		}
 
-		var span = buffer.Span.Slice(vertexBufferName.BufferOffset, vertexBufferName.BufferLength);
+		var span = buffer.Slice(vertexBufferName.BufferOffset * vertexBuffer.Stride, vertexBufferName.BufferLength * vertexBuffer.Stride);
 		using var indices = new MemoryBuffer<Vector4D<ushort>>(buffer.Length);
 		using var weights = new MemoryBuffer<Vector4D<float>>(buffer.Length);
 		var indicesSpan = indices.Span;
@@ -405,11 +403,11 @@ public static class GeometryConverter {
 
 		var renderBones = renderSet.Nodes;
 
-		for (var index = 0; index < span.Length; index++) {
-			var vertex = span[index];
-			var bones = vertex.BoneIndex;
+		for (var index = 0; index < vertexBufferName.BufferLength; index++) {
+			var vertex = span.Slice(index * vertexBuffer.Stride, vertexBuffer.Stride);
+			var bones = VertexHelper.UnpackBoneIndex(MemoryMarshal.Read<Vector4D<byte>>(vertex[info.BoneIndex..]));
 			indicesSpan[index] = new Vector4D<ushort>(RemapBone(bones.X), RemapBone(bones.Y), RemapBone(bones.Z), 0);
-			weightsSpan[index] = vertex.BoneWeight;
+			weightsSpan[index] = VertexHelper.UnpackBoneWeight(MemoryMarshal.Read<Vector4D<byte>>(vertex[info.BoneWeight..]));
 			continue;
 
 			ushort RemapBone(byte boneIndex) => (ushort) (boneIndex >= renderBones.Count ? 0 : visual.Skeleton.NameMap[renderBones[boneIndex]]);
@@ -419,22 +417,17 @@ public static class GeometryConverter {
 		attributes["WEIGHTS_0"] = gltf.CreateAccessor(weightsSpan, stream, GL.BufferViewTarget.ArrayBuffer, GL.AccessorType.VEC4, GL.AccessorComponentType.Float).Id;
 	}
 
-	public static Dictionary<string, int> BuildVertexBuffer<T>(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer) where T : struct, IStandardVertex {
-		using var buffer = vertexBuffer.DecodeBuffer<T>();
-		if (buffer.Length == 0) {
-			return [];
-		}
+	public static Dictionary<string, int> BuildVertexBuffer(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, string name) {
+		var buffer = vertexBuffer.Buffer.Span;
+		var info = vertexBuffer.Info;
 
-		var span = buffer.Span;
-		var first = span[0];
-
-		// bones not handled atm
+		// bones not handled here
 		using var positions = new MemoryBuffer<Vector3D<float>>(buffer.Length);
 		using var normals = new MemoryBuffer<Vector3D<float>>(buffer.Length);
 		using var uv1 = new MemoryBuffer<Vector2D<float>>(buffer.Length);
-		using IMemoryBuffer<Vector2D<float>> uv2 = first is IUV2Vertex ? new MemoryBuffer<Vector2D<float>>(buffer.Length) : IMemoryBuffer<Vector2D<float>>.Empty;
-		using IMemoryBuffer<Vector4D<float>> tangents = first is ITangentVertex ? new MemoryBuffer<Vector4D<float>>(buffer.Length) : IMemoryBuffer<Vector4D<float>>.Empty;
-		using IMemoryBuffer<Vector4D<float>> colors = first is IColorVertex ? new MemoryBuffer<Vector4D<float>>(buffer.Length) : IMemoryBuffer<Vector4D<float>>.Empty;
+		using IMemoryBuffer<Vector2D<float>> uv2 = info.UV2 > -1 ? new MemoryBuffer<Vector2D<float>>(buffer.Length) : IMemoryBuffer<Vector2D<float>>.Empty;
+		using IMemoryBuffer<Vector4D<float>> tangents = info.Tangent > -1 ? new MemoryBuffer<Vector4D<float>>(buffer.Length) : IMemoryBuffer<Vector4D<float>>.Empty;
+		using IMemoryBuffer<Vector4D<float>> colors = info.Color > -1 ? new MemoryBuffer<Vector4D<float>>(buffer.Length) : IMemoryBuffer<Vector4D<float>>.Empty;
 
 		var positionsSpan = positions.Span;
 		var normalsSpan = normals.Span;
@@ -443,28 +436,36 @@ public static class GeometryConverter {
 		var tangentsSpan = tangents.Span;
 		var colorsSpan = colors.Span;
 
-		for (var index = 0; index < span.Length; index++) {
-			var vertex = span[index];
+		var shouldFlip = vertexBuffer.Header.IsSkinned && !FlipBlocklist.Contains(name);
+		for (var index = 0; index < vertexBuffer.VertexCount; index += 1) {
+			var vertex = buffer.Slice(index * vertexBuffer.Stride, vertexBuffer.Stride);
 
-			positionsSpan[index] = vertex.Position;
-			normalsSpan[index] = vertex.Normal;
-			uv1Span[index] = vertex.UV + new Vector2D<float>(0.5f, 0.5f);
-
-		#pragma warning disable CA1508
-			if (vertex is IUV2Vertex uv2Vert) {
-				uv2Span[index] = uv2Vert.UV2 + new Vector2D<float>(0.5f, 0.5f);
+			var pos = MemoryMarshal.Read<Vector3D<float>>(vertex[info.Position..]);
+			var nor = VertexHelper.UnpackNormal(MemoryMarshal.Read<Vector4D<sbyte>>(vertex[info.Normal..]));
+			if (shouldFlip) {
+				pos *= new Vector3D<float>(1, 1, -1);
+				nor *= -1;
 			}
 
-			if (vertex is ITangentVertex tangentVert) {
-				var nor = tangentVert.Normal;
-				var tan = tangentVert.Tangent;
-				var bin = tangentVert.Binormal;
+			positionsSpan[index] = pos;
+			normals[index] = nor;
+			uv1Span[index] = VertexHelper.UnpackUV(MemoryMarshal.Read<Vector2D<Half>>(vertex[info.UV1..]));
+
+		#pragma warning disable CA1508
+			if (info.UV2 > -1) {
+				uv2Span[index] = VertexHelper.UnpackUV(MemoryMarshal.Read<Vector2D<Half>>(vertex[info.UV2..]));
+			}
+
+			if (info.Tangent > -1) {
+				var tan = VertexHelper.UnpackNormal(MemoryMarshal.Read<Vector4D<sbyte>>(vertex[info.Tangent..]));
+				var bin = VertexHelper.UnpackNormal(MemoryMarshal.Read<Vector4D<sbyte>>(vertex[info.Binormal..]));
+				// todo: should we flip here too?
 				var w = Math.Sign(Vector3D.Dot(Vector3D.Cross(nor, tan), bin));
 				tangentsSpan[index] = new Vector4D<float>(tan, w);
 			}
 
-			if (vertex is IColorVertex color) {
-				colorsSpan[index] = color.Color;
+			if (info.Color > -1) {
+				colorsSpan[index] = VertexHelper.UnpackColor(MemoryMarshal.Read<Vector4D<byte>>(vertex[info.Color..]));
 			}
 		#pragma warning restore CA1508
 		}
@@ -490,6 +491,13 @@ public static class GeometryConverter {
 		return result;
 	}
 
+	// most meshes are flipped on the Z axis when skinned, except a few.
+	// this is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
+	// todo: populate me with problematic meshes
+	public static HashSet<string> FlipBlocklist { get; } = [
+		"JGM055_100mm65_Type98",
+	];
+
 	public static bool ConvertLooseGeometry(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		using var geometry = new Geometry(data);
 
@@ -502,13 +510,18 @@ public static class GeometryConverter {
 		var root = gltf.CreateNode().Node;
 		root.Name = Path.GetFileNameWithoutExtension(path);
 
-		var buffers = BuildGeometryBuffers(gltf, bufferStream, geometry);
+		var buffers = BuildGeometryBuffers(gltf, bufferStream, geometry, root.Name);
 		var existingPrimitives = new PrimitiveCache();
 
-		foreach (var (vertexBuffer, indexBuffer) in geometry.SharedVertexBuffers.Values.Zip(geometry.SharedIndexBuffers.Values)) {
-			var name = vertexBuffer.Name.Text;
-			if (name.EndsWith(".vertices")) {
-				name = name[..^9];
+		var indexBuffers = geometry.SharedIndexBuffers
+								   .Where(x => x.Key.Text.EndsWith(".indices"))
+								   .ToDictionary(x => x.Key.Text[..^8], x => x.Value);
+
+		foreach (var vertexBuffer in geometry.SharedVertexBuffers.Values.Where(x => x.Name.Text.EndsWith(".vertices"))) {
+			var name = vertexBuffer.Name.Text[..^9];
+
+			if (!indexBuffers.TryGetValue(name, out var indexBuffer)) {
+				continue;
 			}
 
 			var (meshNode, _) = root.CreateNode(gltf);
@@ -607,19 +620,18 @@ public static class GeometryConverter {
 				iboStride == 2 ? GL.AccessorComponentType.UnsignedShort : GL.AccessorComponentType.UnsignedInt).Id;
 
 			foreach (var (type, bufferIndex) in mergedVbo) {
-				var vboStride = gltf.BufferViews![bufferIndex].ByteStride!.Value;
-				var (accessorType, accessorComponentType) = type switch {
-					"POSITION" => (GL.AccessorType.VEC3, GL.AccessorComponentType.Float),
-					"NORMAL" => (GL.AccessorType.VEC3, GL.AccessorComponentType.Float),
-					"TEXCOORD_0" => (GL.AccessorType.VEC2, GL.AccessorComponentType.Float),
-					"TEXCOORD_1" => (GL.AccessorType.VEC2, GL.AccessorComponentType.Float),
-					"TANGENT" => (GL.AccessorType.VEC4, GL.AccessorComponentType.Float),
-					"COLOR_0" => (GL.AccessorType.VEC4, GL.AccessorComponentType.Float),
+				var (accessorType, accessorComponentType, stride) = type switch {
+					"POSITION" => (GL.AccessorType.VEC3, GL.AccessorComponentType.Float, 12),
+					"NORMAL" => (GL.AccessorType.VEC3, GL.AccessorComponentType.Float, 12),
+					"TEXCOORD_0" => (GL.AccessorType.VEC2, GL.AccessorComponentType.Float, 8),
+					"TEXCOORD_1" => (GL.AccessorType.VEC2, GL.AccessorComponentType.Float, 8),
+					"TANGENT" => (GL.AccessorType.VEC4, GL.AccessorComponentType.Float, 16),
+					"COLOR_0" => (GL.AccessorType.VEC4, GL.AccessorComponentType.Float, 16),
 					_ => throw new NotImplementedException(),
 				};
 
 				var (_, accessorId) = gltf.CreateAccessor(bufferIndex, vertexBuffer.BufferLength,
-					vertexBuffer.BufferOffset * vboStride, accessorType, accessorComponentType);
+					vertexBuffer.BufferOffset * stride, accessorType, accessorComponentType);
 
 				primitive.Attributes[type] = accessorId;
 
@@ -659,34 +671,49 @@ public static class GeometryConverter {
 		return null;
 	}
 
-	public static void ConvertShip(ResourceManager manager, string name, string path,
-		string hullMesh, Dictionary<string, string> hardPoints,
-		IConversionOptions flags) {
-		var builtVisual = FindVisualPrototype(manager, hullMesh);
+	public static void ConvertVisual(ResourceManager manager, string fileName, string path,
+		string rootModelPath, Dictionary<string, string> hardPoints,
+		IConversionOptions flags, ParamTypeInfo? info,
+		string? subdir = null, string? parentName = null) {
+		var builtVisual = FindVisualPrototype(manager, rootModelPath);
 		if (builtVisual == null) {
 			return;
 		}
 
-		var resolvedParts = ResolveShipParts(builtVisual, hullMesh);
+		var resolvedParts = ResolveShipParts(builtVisual, rootModelPath);
 		var portPoints = new Dictionary<string, string>();
 		foreach (var (hardpoint, (resolvedPart, portsPart)) in resolvedParts) {
 			portPoints[hardpoint] = portsPart;
 			hardPoints[hardpoint] = resolvedPart;
 		}
 
-		var modelPath = Path.Combine(path, name);
+		string modelPath;
+		parentName ??= fileName;
+		if (flags.InsertTypeInfo && info != null) {
+			modelPath = Path.Combine(path,
+				info.Type.TrimStart('/', '.').ToLowerInvariant(),
+				info.Nation?.TrimStart('/', '.').ToLowerInvariant() ?? "unknown",
+				info.Species?.TrimStart('/', '.').ToLowerInvariant() ?? "unknown", parentName);
+		} else {
+			modelPath = Path.Combine(path, parentName);
+		}
+
+		if (!string.IsNullOrEmpty(subdir)) {
+			modelPath = Path.Combine(modelPath, subdir);
+		}
+
 		var texturesPath = Path.Combine(path, "textures");
 		Directory.CreateDirectory(modelPath);
 		Directory.CreateDirectory(texturesPath);
 
-		var gltfPath = Path.Combine(modelPath, name + ".gltf");
+		var gltfPath = Path.Combine(modelPath, fileName + ".gltf");
 		var bufferPath = Path.ChangeExtension(gltfPath, ".glbin");
 		using Stream bufferStream = flags.Dry ? new MemoryStream() : new FileStream(bufferPath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
 
 		var gltf = new GL.Root();
 
 		var root = gltf.CreateNode().Node;
-		root.Name = name;
+		root.Name = fileName;
 
 		var primCache = new Dictionary<ResourceId, PrimitiveCache>();
 		var geoCache = new Dictionary<ResourceId, GeometryCache>();
@@ -695,7 +722,7 @@ public static class GeometryConverter {
 		var context = new BuilderContext(
 			flags, manager, bufferStream, modelPath, texturesPath,
 			hardPoints, portPoints, primCache, geoCache, materialCache, textureCache);
-		BuildShipPart(context, gltf, root, builtVisual);
+		BuildModelPart(context, gltf, root, builtVisual);
 
 		gltf.Buffers = [
 			new GL.Buffer {
@@ -713,17 +740,17 @@ public static class GeometryConverter {
 		file.Write(Encoding.UTF8.GetBytes(Environment.NewLine));
 	}
 
-	private static void BuildShipPart(BuilderContext context, GL.Root gltf, GL.Node parent, string modelPath) {
+	private static void BuildModelPart(BuilderContext context, GL.Root gltf, GL.Node parent, string modelPath) {
 		AkizukiLog.Information("Building part {Path}", modelPath);
 		var builtVisual = FindVisualPrototype(context.Manager, modelPath);
 		if (builtVisual == null) {
 			return;
 		}
 
-		BuildShipPart(context, gltf, parent, builtVisual);
+		BuildModelPart(context, gltf, parent, builtVisual);
 	}
 
-	private static void BuildShipPart(BuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual) {
+	private static void BuildModelPart(BuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual) {
 		var name = Path.GetFileNameWithoutExtension(visual.MergedGeometryPath.Path);
 		var (node, rootId) = parent.CreateNode(gltf);
 		node.Name = name;
@@ -758,25 +785,21 @@ public static class GeometryConverter {
 				nodeMap[nodeName] = skeletonNode;
 
 				if (context.HardPoints.TryGetValue(realName, out var hardPart)) {
-					BuildShipPart(context, gltf, skeletonNode, hardPart);
+					BuildModelPart(context, gltf, skeletonNode, hardPart);
 				}
 
 				if (context.PortPoints.TryGetValue(realName, out var portPart)) {
-					BuildShipPart(context, gltf, skeletonNode, portPart);
+					BuildModelPart(context, gltf, skeletonNode, portPart);
 				}
 
 				if (LocateMiscObject(realName) is { } miscObject) {
-					BuildShipPart(context, gltf, skeletonNode, miscObject);
+					BuildModelPart(context, gltf, skeletonNode, miscObject);
 				}
 
 				if (isSkinned) {
 					var parentMatrix = nodeParent == ushort.MaxValue ? Matrix4x4.Identity : worldMatrices[nodeParent];
 					worldMatrices[nodeIndex] = nodeMatrix.ToSystem() * parentMatrix;
 					skin!.Joints.Add(skeletonId);
-				}
-
-				if (nodeMatrix.IsIdentity) {
-					continue;
 				}
 
 				var doubleMatrix = nodeMatrix.As<double>();
@@ -807,7 +830,7 @@ public static class GeometryConverter {
 		using var geometry = new Geometry(geometryData);
 
 		if (!context.GeometryCache.TryGetValue(visual.MergedGeometryPath, out var buffers)) {
-			buffers = context.GeometryCache[visual.MergedGeometryPath] = BuildGeometryBuffers(gltf, context.BufferStream, geometry);
+			buffers = context.GeometryCache[visual.MergedGeometryPath] = BuildGeometryBuffers(gltf, context.BufferStream, geometry, name);
 		}
 
 		if (!context.PrimCache.TryGetValue(visual.MergedGeometryPath, out var primCache)) {
@@ -826,7 +849,9 @@ public static class GeometryConverter {
 			var material = renderSet.MaterialResource;
 
 			if (primaryNode.Mesh is not { } meshId) {
-				meshId = gltf.CreateMesh().Id;
+				var pair = gltf.CreateMesh();
+				pair.Mesh.Name = node.Name + "_" + renderSet.Name.Text;
+				meshId = pair.Id;
 				primaryNode.Mesh = meshId;
 			}
 
@@ -853,7 +878,7 @@ public static class GeometryConverter {
 		}
 
 		var vertexBuffer = geometry.MergedVertexBuffers[vertexBufferName.BufferIndex];
-		vertexBuffer.CreateVertexGenetic(SkinMethod).Invoke(null, [gltf, context.BufferStream, vertexBuffer, vertexBufferName, prim.Attributes, renderSet, visual]);
+		BuildSkinBuffer(gltf, context.BufferStream, vertexBuffer, vertexBufferName, prim.Attributes, renderSet, visual);
 	}
 
 	private static int CreateTexture(BuilderContext context, GL.Root gltf, ResourceId id, StringId slotName) {

@@ -18,9 +18,14 @@ public record struct VertexFormatXYZNUV2TB : IUV2Vertex, ITangentVertex {
 	public Vector4D<sbyte> PackedTangent { get; set; }
 	public Vector4D<sbyte> PackedBinormal { get; set; }
 
-	public Vector3D<float> Normal => VertexHelper.Unpack(PackedNormal);
-	public Vector3D<float> Tangent => VertexHelper.Unpack(PackedTangent);
-	public Vector3D<float> Binormal => VertexHelper.Unpack(PackedBinormal);
-	public Vector2D<float> UV => VertexHelper.Unpack(PackedUV);
-	public Vector2D<float> UV2 => VertexHelper.Unpack(PackedUV2);
+	public Vector3D<float> Normal => VertexHelper.UnpackNormal(PackedNormal);
+	public Vector3D<float> Tangent => VertexHelper.UnpackNormal(PackedTangent);
+	public Vector3D<float> Binormal => VertexHelper.UnpackNormal(PackedBinormal);
+	public Vector2D<float> UV => VertexHelper.UnpackUV(PackedUV);
+	public Vector2D<float> UV2 => VertexHelper.UnpackUV(PackedUV2);
+	public static VertexInfo VertexInfo => new() {
+		UV2 = 20,
+		Tangent = 24,
+		Binormal = 28,
+	};
 }

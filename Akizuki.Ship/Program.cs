@@ -43,11 +43,11 @@ internal static class Program {
 			AkizukiLog.Information("Available ships:");
 
 			foreach (var (key, value) in manager.GameParams.Values.OrderBy(x => x.Key)) {
-				if (TypeInfo.GetTypeName(value) != "Ship") {
+				if (ParamTypeInfo.GetTypeName(value) != "Ship") {
 					continue;
 				}
 
-				var avail = new ShipParam(value);
+				var avail = new ShipParam(manager.GameParams, value);
 				AkizukiLog.Information("\t{Name} ({TranslatedName})", key, manager.Text.GetTranslation(avail.Index + "_FULL", avail.Index));
 			}
 
@@ -58,7 +58,7 @@ internal static class Program {
 			var newSetups = new HashSet<string>();
 			var regexes = flags.ShipSetups.Select(x => new Regex(x)).ToList();
 			foreach (var (key, value) in manager.GameParams.Values.OrderBy(x => x.Key)) {
-				if (TypeInfo.GetTypeName(value) != "Ship") {
+				if (ParamTypeInfo.GetTypeName(value) != "Ship") {
 					continue;
 				}
 
@@ -83,12 +83,12 @@ internal static class Program {
 				continue;
 			}
 
-			if (TypeInfo.GetTypeName(shipData) != "Ship") {
+			if (ParamTypeInfo.GetTypeName(shipData) != "Ship") {
 				AkizukiLog.Error("{Name} is not a ship type", shipName);
 				continue;
 			}
 
-			var ship = new ShipParam(shipData);
+			var ship = new ShipParam(manager.GameParams, shipData);
 
 			var selectedParts = new Dictionary<ShipUpgradeType, ShipUpgrade>();
 			foreach (var (_, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
@@ -117,6 +117,7 @@ internal static class Program {
 
 			var hullModel = string.Empty;
 			var hardpoints = new Dictionary<string, string>();
+			var planes = new Dictionary<string, string>();
 			foreach (var selectedComponent in selectedParts.Values.SelectMany(x => x.Components.Values).SelectMany(x => x)) {
 				if (ship.ModelPaths.TryGetValue(selectedComponent, out var componentModel)) {
 					hullModel = componentModel;
@@ -125,6 +126,12 @@ internal static class Program {
 				if (ship.HardpointModelPaths.TryGetValue(selectedComponent, out var componentHardpoints)) {
 					foreach (var (key, value) in componentHardpoints) {
 						hardpoints[key] = value;
+					}
+				}
+
+				if (ship.PlaneModelPaths.TryGetValue(selectedComponent, out var componentPlanes)) {
+					foreach (var (key, value) in componentPlanes) {
+						planes[key] = value;
 					}
 				}
 			}
@@ -138,8 +145,15 @@ internal static class Program {
 			foreach (var (key, value) in hardpoints) {
 				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
 			}
+			foreach (var (key, value) in planes) {
+				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
+			}
 
-			GeometryConverter.ConvertShip(manager, shipName, flags.OutputDirectory, hullModel, hardpoints, flags);
+			GeometryConverter.ConvertVisual(manager, shipName, flags.OutputDirectory, hullModel, hardpoints, flags, ship.ParamTypeInfo);
+
+			foreach (var (planeName, planeModel) in planes) {
+				GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardpoints, flags, ship.ParamTypeInfo, "plane", shipName);
+			}
 		}
 	}
 }
