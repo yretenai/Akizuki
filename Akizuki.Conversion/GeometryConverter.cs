@@ -868,6 +868,11 @@ public static class GeometryConverter {
 				prim.Material = materialId;
 			}
 		}
+
+		var thicknessMaterial = new Dictionary<int, int>();
+		foreach (var armor in geometry.Armors) {
+			CreateArmor(gltf, node, context.BufferStream, armor, thicknessMaterial);
+		}
 	}
 
 	private static void BuildBoneMap(BuilderContext context, GL.Root gltf, GL.Primitive prim, GeometryName vertexBufferName, Geometry geometry,
