@@ -24,7 +24,7 @@ internal static class Program {
 
 		using var manager = new ResourceManager(flags.InstallDirectory, flags.Validate);
 
-		if (manager.GameParams != null && flags.Convert) {
+		if (manager.GameParams != null && flags is { Convert: true, ConvertGameParams: true }) {
 			var path = Path.Combine(flags.OutputDirectory, "res/content/GameParams.data");
 			var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 			if (!flags.Dry) {
@@ -42,23 +42,27 @@ internal static class Program {
 					Directory.CreateDirectory(dir);
 				}
 
-				if (ShouldProcess("res/content/assets.json")) {
+				if (flags.SaveAssetList && ShouldProcess("res/content/assets.json")) {
 					AkizukiLog.Information("{Path}", "res/content/assets.json");
 					AssetPaths.Save(path, flags, manager.Database);
 				}
 
-				Assets.Save(flags.OutputDirectory, flags, ShouldProcess, manager.Database);
+				if (flags.ConvertAssetDB) {
+					Assets.Save(flags.OutputDirectory, flags, ShouldProcess, manager.Database);
+				}
 			}
 
-			foreach (var pfs in manager.Packages) {
-				var path = Path.Combine(flags.OutputDirectory, "idx", Path.GetFileName(pfs.Name));
-				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
-				if (!flags.Dry) {
-					Directory.CreateDirectory(dir);
-				}
+			if (flags.SaveAssetList) {
+				foreach (var pfs in manager.Packages) {
+					var path = Path.Combine(flags.OutputDirectory, "idx", Path.GetFileName(pfs.Name));
+					var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
+					if (!flags.Dry) {
+						Directory.CreateDirectory(dir);
+					}
 
-				AkizukiLog.Information("{Value}", $"idx/{pfs.Name}.json");
-				AssetPaths.Save(path, flags, pfs);
+					AkizukiLog.Information("{Value}", $"idx/{pfs.Name}.json");
+					AssetPaths.Save(path, flags, pfs);
+				}
 			}
 		}
 
@@ -116,14 +120,14 @@ internal static class Program {
 		var name = Path.GetFileName(path).ToLowerInvariant();
 
 		switch (ext) {
-			case ".dd2": // 2x
-			case ".dd1": // 4x
-			case ".dd0": // 8x
-			case ".dds": // 1x
+			case ".dd2" when flags.ConvertTextures || flags.ConvertCubeMaps: // 2x
+			case ".dd1" when flags.ConvertTextures || flags.ConvertCubeMaps: // 4x
+			case ".dd0" when flags.ConvertTextures || flags.ConvertCubeMaps: // 8x
+			case ".dds" when flags.ConvertTextures || flags.ConvertCubeMaps: // 1x
 				return GeometryConverter.ConvertTexture(path, flags, data) != null;
 			case ".splash":
 				return GeometryConverter.ConvertSplash(path, flags, data);
-			case ".geometry":
+			case ".geometry" when flags.ConvertGeometry:
 				return GeometryConverter.ConvertLooseGeometry(path, flags, data);
 			case ".prefab":
 				// todo

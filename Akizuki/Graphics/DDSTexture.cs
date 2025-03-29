@@ -5,6 +5,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Akizuki.Structs.Graphics;
+using DragonLib;
 using DragonLib.IO;
 
 namespace Akizuki.Graphics;
@@ -37,34 +38,34 @@ public sealed class DDSTexture : IDisposable {
 				Format = dx10.Format;
 				break;
 			}
-			case var _ when header.PixelFormat.FourCC > 0: Format = (DXGIFormat) header.PixelFormat.FourCC; break;
+			case > 0: {
+				Format = (BWImageFormat) header.PixelFormat.FourCC switch {
+					BWImageFormat.R16G16_FLOAT => DXGIFormat.R16G16_FLOAT,
+					BWImageFormat.R16G16B16A16_FLOAT => DXGIFormat.R16G16B16A16_FLOAT,
+					BWImageFormat.R32_UINT => DXGIFormat.R32_UINT,
+					_ => DXGIFormat.UNKNOWN,
+				};
+				break;
+			}
 			default: {
 				if ((header.PixelFormat.Flags & (DDSPixelFormatFlags.RGB | DDSPixelFormatFlags.Luminance)) == 0) {
 					throw new NotSupportedException();
 				}
 
-				switch (header.PixelFormat.RGBBitCount) {
-					case 8:
-						Format = DXGIFormat.R8_UNORM;
-						break;
-					case 16:
-						Format = DXGIFormat.R8G8_UNORM;
-						break;
-					case 24:
-						Format = DXGIFormat.R8G8B8_UNORM;
-						break;
-					case 32:
-						Format = DXGIFormat.R8G8B8A8_UNORM;
-						break;
-					default:
-						throw new NotSupportedException();
-				}
+				Format = header.PixelFormat.RGBBitCount switch {
+					8 => DXGIFormat.R8_UNORM,
+					16 => DXGIFormat.R8G8_UNORM,
+					24 => DXGIFormat.R8G8B8_UNORM,
+					32 => DXGIFormat.R8G8B8A8_UNORM,
+					_ => throw new NotSupportedException(),
+				};
 
 				break;
 			}
 		}
 
 		if ((header.Caps2 & DDSCaps2.CubeMapAll) == DDSCaps2.CubeMapAll) {
+			IsCubeMap = true;
 			Surfaces *= 6;
 		}
 
@@ -80,6 +81,7 @@ public sealed class DDSTexture : IDisposable {
 	public int OneSurfaceSize { get; }
 	public int OneMipSize { get; }
 	private int StartOffset { get; }
+	public bool IsCubeMap { get; }
 	public DXGIFormat Format { get; }
 
 	private (uint BitsPerBlock, uint PixelsPerBlock) PitchFactor =>
@@ -117,6 +119,7 @@ public sealed class DDSTexture : IDisposable {
 			mask >>= 2;
 		}
 
+		oneSurface = oneSurface.Align(bitsPerBlock / 8);
 		return oneSurface;
 	}
 }

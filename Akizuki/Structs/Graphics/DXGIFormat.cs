@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+// ReSharper disable InconsistentNaming
+
 namespace Akizuki.Structs.Graphics;
 
 public enum DXGIFormat : uint {
+	UNKNOWN = 0,
 	R32G32B32A32_TYPELESS = 1,
 	R32G32B32A32_FLOAT = 2,
 	R32G32B32A32_UINT = 3,

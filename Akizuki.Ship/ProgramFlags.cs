@@ -5,6 +5,7 @@
 using Akizuki.Conversion;
 using DragonLib.CommandLine;
 using Serilog.Events;
+using Triton;
 using Triton.Encoder;
 
 namespace Akizuki.Ship;
@@ -37,26 +38,30 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	public bool Wildcard { get; set; }
 
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
-	public TextureFormat Format { get; set; } = TextureFormat.Auto;
+	public TextureFormat ImageFormat { get; set; } = TextureFormat.Auto;
 
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
 
+	public CubemapStyle CubemapStyle => CubemapStyle.Equirectangular;
+	public bool ConvertTextures => true;
+	public bool ConvertCubeMaps => true;
+
 	public TextureFormat SelectedFormat {
 		get {
-			if (Format != TextureFormat.Auto) {
-				return Format;
+			if (ImageFormat != TextureFormat.Auto) {
+				return ImageFormat;
 			}
 
 			if (TIFFEncoder.IsAvailable) {
-				Format = TextureFormat.TIF;
+				ImageFormat = TextureFormat.TIF;
 			} else if (PNGEncoder.IsAvailable) {
-				Format = TextureFormat.PNG;
+				ImageFormat = TextureFormat.PNG;
 			} else {
-				Format = TextureFormat.None;
+				ImageFormat = TextureFormat.None;
 			}
 
-			return Format;
+			return ImageFormat;
 		}
 	}
 
