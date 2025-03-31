@@ -389,10 +389,8 @@ public static class GeometryConverter {
 		}
 
 		var texturesPath = Path.Combine(path, "textures");
-		var buffersPath = Path.Combine(path, "models");
 		Directory.CreateDirectory(modelPath);
 		Directory.CreateDirectory(texturesPath);
-		Directory.CreateDirectory(buffersPath);
 
 		var gltfPath = Path.Combine(modelPath, fileName + ".gltf");
 		var bufferPath = Path.ChangeExtension(gltfPath, ".glbin");
