@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Runtime.CompilerServices;
 using Akizuki.Conversion.Utility;
 using Akizuki.Space;
 using DragonLib.IO;
@@ -12,6 +13,7 @@ using Triton.Pixel.Formats;
 namespace Akizuki.Conversion;
 
 public static class SpaceConverter {
+	[MethodImpl(MethodConstants.Optimize)]
 	public static bool ConvertTerrain(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		var imageFormat = flags.SelectedFormat;
 		if (imageFormat == TextureFormat.None) {

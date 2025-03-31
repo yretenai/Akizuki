@@ -33,6 +33,7 @@ public static class GeometryConverter {
 	];
 
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static Dictionary<string, (string Mesh, string Ports)> ResolveShipParts(VisualPrototype prototype, string path) {
 		var skeleton = prototype.Skeleton;
 		path = Path.ChangeExtension(path, null);
@@ -50,6 +51,7 @@ public static class GeometryConverter {
 		return result;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static string? LocateMiscObject(string id) {
 		if (!id.StartsWith("MP_")) {
 			return null;
@@ -92,6 +94,7 @@ public static class GeometryConverter {
 		return path;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static GeometryCache BuildGeometryBuffers(GL.Root gltf, Stream stream, Geometry geometry, string name) {
 		var mapping = new Dictionary<(bool, int), Dictionary<string, int>>();
 
@@ -117,6 +120,7 @@ public static class GeometryConverter {
 		return mapping;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void BuildSkinBuffer(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, GeometryName vertexBufferName, Dictionary<string, int> attributes, RenderSetPrototype renderSet, VisualPrototype visual) {
 		var buffer = vertexBuffer.Buffer.Span;
 		var info = vertexBuffer.Info;
@@ -146,6 +150,7 @@ public static class GeometryConverter {
 		attributes["WEIGHTS_0"] = gltf.CreateAccessor(weightsSpan, stream, GL.BufferViewTarget.ArrayBuffer, GL.AccessorType.VEC4, GL.AccessorComponentType.Float).Id;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static Dictionary<string, int> BuildVertexBuffer(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, string name) {
 		var buffer = vertexBuffer.Buffer.Span;
 		var info = vertexBuffer.Info;
@@ -220,6 +225,7 @@ public static class GeometryConverter {
 		return result;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static bool ConvertLooseGeometry(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		using var geometry = new Geometry(data);
 
@@ -276,6 +282,7 @@ public static class GeometryConverter {
 		return true;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static GL.Primitive CreatePrimitive(GL.Root gltf, GL.Mesh mesh,
 		GeometryCache buffers, PrimitiveCache existingPrimitives, GeometryName vertexBuffer, GeometryName indexBuffer, Geometry geometry) {
 		var mergedVbo = buffers[(true, vertexBuffer.BufferIndex)];
@@ -327,6 +334,7 @@ public static class GeometryConverter {
 		return primitive;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static VisualPrototype? FindVisualPrototype(ResourceManager manager, string path) {
 		var prototype = manager.OpenPrototype(path);
 		while (prototype is not null) {
@@ -344,6 +352,7 @@ public static class GeometryConverter {
 		return null;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void ConvertVisual(ResourceManager manager, string fileName, string path,
 		string rootModelPath, Dictionary<string, HashSet<string>> hardPoints,
 		IConversionOptions flags, ParamTypeInfo? info,
@@ -413,6 +422,7 @@ public static class GeometryConverter {
 		file.Write(Encoding.UTF8.GetBytes(Environment.NewLine));
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath) {
 		AkizukiLog.Information("Building part {Path}", modelPath);
 		var builtVisual = FindVisualPrototype(context.Manager, modelPath);
@@ -423,6 +433,7 @@ public static class GeometryConverter {
 		BuildModelPart(context, gltf, parent, builtVisual);
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual) {
 		var name = Path.GetFileNameWithoutExtension(visual.MergedGeometryPath.Path);
 		var (node, rootId) = parent.CreateNode(gltf);
@@ -551,6 +562,7 @@ public static class GeometryConverter {
 		}
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void BuildBoneMap(ModelBuilderContext context, GL.Root gltf, GL.Primitive prim, GeometryName vertexBufferName, Geometry geometry,
 		RenderSetPrototype renderSet, VisualPrototype visual) {
 		if (prim.Attributes.ContainsKey("JOINTS_0")) {
@@ -561,6 +573,7 @@ public static class GeometryConverter {
 		BuildSkinBuffer(gltf, context.BufferStream, vertexBuffer, vertexBufferName, prim.Attributes, renderSet, visual);
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static int CreateMaterial(ModelBuilderContext context, GL.Root gltf, ResourceId material) {
 		AkizukiLog.Information("Converting material {Path}", material);
 		if (context.Manager.OpenPrototype(material) is not MaterialPrototype mfm) {

@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace Akizuki;
 
-internal static class MethodConstants {
+public static class MethodConstants {
 	public const MethodImplOptions Inline = MethodImplOptions.AggressiveInlining;
 #if DEBUG
 	public const MethodImplOptions Optimize = 0;

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Akizuki.Conversion.Utility;
 using Akizuki.Data;
@@ -9,6 +10,7 @@ using Akizuki.Data;
 namespace Akizuki.Conversion;
 
 public static class AssetConverter {
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void SavePaths(string path, IConversionOptions flags, PackageFileSystem list) {
 		if (flags.Dry) {
 			return;
@@ -19,6 +21,7 @@ public static class AssetConverter {
 		stream.WriteByte((byte) '\n');
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void SavePaths(string path, IConversionOptions flags, BigWorldDatabase list) {
 		if (flags.Dry) {
 			return;
@@ -29,6 +32,7 @@ public static class AssetConverter {
 		stream.WriteByte((byte) '\n');
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void Save(string outputDirectory, IConversionOptions flags, Func<string?, bool> check, BigWorldDatabase assets) {
 		foreach (var (assetId, prototypeId) in assets.ResourceToPrototype) {
 			if (assets.Resolve(prototypeId) is not { } prototype) {
@@ -62,6 +66,7 @@ public static class AssetConverter {
 		}
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void SaveLocale(string outputDirectory, IConversionOptions flags, string locale, MessageObject text) {
 		var name = $"res/texts/{locale}.json";
 		var path = Path.Combine(outputDirectory, name);
@@ -80,6 +85,7 @@ public static class AssetConverter {
 		stream.WriteByte((byte) '\n');
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static bool SaveData(string path, IConversionOptions flags, Func<string?, bool> check, PickledData pickled) {
 		if (flags.Dry) {
 			return false;

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Akizuki.Conversion.Utility;
 using Akizuki.Graphics;
 using Akizuki.Structs.Data;
@@ -18,6 +19,7 @@ public static class TextureConverter {
 	public static StringId NormalMapId { get; } = new(0x4858745d);
 	public static StringId MetalMapId { get; } = new(0x89babfe7);
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static string? ConvertTexture(string path, IConversionOptions flags, IMemoryBuffer<byte> data, bool skipExisting = false, bool isNormalMap = false, bool isMetalGlossMap = false) {
 		var imageFormat = flags.SelectedFormat;
 		if (imageFormat == TextureFormat.None) {
@@ -250,6 +252,7 @@ public static class TextureConverter {
 		return SaveTexture(path, flags, encoder, [converted]);
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static string SaveTexture(string path, IConversionOptions flags, IEncoder encoder, ImageCollection frames) {
 		if (flags.Dry) {
 			return path;
@@ -260,6 +263,7 @@ public static class TextureConverter {
 		return path;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static int CreateTexture(ModelBuilderContext context, Root gltf, ResourceId id, StringId slotName) {
 		AkizukiLog.Information("Converting texture {Path}", id);
 		if (context.TextureCache.TryGetValue(id, out var texId)) {

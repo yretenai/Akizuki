@@ -11,6 +11,7 @@ using GL = GLTF.Scaffold;
 namespace Akizuki.Conversion;
 
 public static class ArmorConverter {
+	[MethodImpl(MethodConstants.Optimize)]
 	public static bool ConvertSplash(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
 		var splash = new Splash(data);
 
@@ -24,6 +25,7 @@ public static class ArmorConverter {
 		return true;
 	}
 
+	[MethodImpl(MethodConstants.Optimize)]
 	public static void CreateArmor(GL.Root gltf, GL.Node node, Stream stream, GeometryArmor armor, Dictionary<int, int> thicknessMaterial) {
 		var (meshNode, _) = node.CreateNode(gltf);
 		(var mesh, meshNode.Mesh) = gltf.CreateMesh();
