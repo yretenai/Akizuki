@@ -5,7 +5,7 @@
 using Triton;
 using Triton.Encoder;
 
-namespace Akizuki.Conversion;
+namespace Akizuki.Conversion.Utility;
 
 public interface IConversionOptions {
 	public bool Dry { get; }

@@ -94,13 +94,6 @@ internal static class Program {
 
 			var ship = new ShipParam(manager.GameParams, shipData);
 
-			var selectedParts = new Dictionary<ShipUpgradeType, ShipUpgrade>();
-			foreach (var (_, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
-				if (string.IsNullOrEmpty(upgrade.Prev)) {
-					selectedParts[upgrade.UpgradeType] = upgrade;
-				}
-			}
-
 			if (shipParts.Count == 1 && shipParts.Contains("list")) {
 				AkizukiLog.Information("Available parts for ship {Name}:", shipName);
 				foreach (var (upgradeName, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
@@ -110,26 +103,40 @@ internal static class Program {
 				continue;
 			}
 
-			var selectedComponents = ship.ShipUpgradeInfo.Upgrades
-										 .Where(x => shipParts.Contains(x.Key))
-										 .Select(x => x.Value).DistinctBy(x => x);
-			foreach (var selectedComponent in selectedComponents) {
-				selectedParts[selectedComponent.UpgradeType] = selectedComponent;
+			var selectedParts = new List<ShipUpgrade>();
+			if (shipParts.Count == 0) {
+				// assuming A_Name, B_Name, this will sort it to most upgrades.
+				// this is only necessary for the hull.
+				var sorted = ship.ShipUpgradeInfo.Upgrades.OrderBy(x => x.Key);
+				if (flags.AllModules) {
+					selectedParts.AddRange(sorted.Select(x => x.Value));
+				} else {
+					var grouped = sorted.GroupBy(x => x.Value.UpgradeType);
+					selectedParts.AddRange(grouped.Select(group => group.Last().Value));
+				}
+			} else {
+				selectedParts.AddRange(ship.ShipUpgradeInfo.Upgrades
+										   .Where(x => shipParts.Contains(x.Key))
+										   .Select(x => x.Value).DistinctBy(x => x));
 			}
 
-			AkizukiLog.Information("Selected parts for {Name}: {Parts}", shipName, string.Join(", ", selectedParts.Values.Select(x => x.Name)));
+			AkizukiLog.Information("Selected parts for {Name}: {Parts}", shipName, string.Join(", ", selectedParts.Select(x => x.Name)));
 
 			var hullModel = string.Empty;
-			var hardPoints = new Dictionary<string, string>();
+			var hardPoints = new Dictionary<string, HashSet<string>>();
 			var planes = new Dictionary<string, string>();
-			foreach (var selectedComponent in selectedParts.Values.SelectMany(x => x.Components.Values).SelectMany(x => x)) {
+			foreach (var selectedComponent in selectedParts.SelectMany(x => x.Components.Values).SelectMany(x => x)) {
 				if (ship.ModelPaths.TryGetValue(selectedComponent, out var componentModel)) {
 					hullModel = componentModel;
 				}
 
 				if (ship.HardpointModelPaths.TryGetValue(selectedComponent, out var componentHardpoints)) {
 					foreach (var (key, value) in componentHardpoints) {
-						hardPoints[key] = value;
+						if (!hardPoints.TryGetValue(key, out var hardpoints)) {
+							hardpoints = hardPoints[key] = [];
+						}
+
+						hardpoints.Add(value);
 					}
 				}
 

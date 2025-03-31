@@ -28,7 +28,7 @@ internal static class Program {
 		if (flags.Convert) {
 			if (flags.ConvertText && manager.Texts.Count > 0) {
 				foreach (var (lang, text) in manager.Texts) {
-					Assets.SaveLocale(flags.OutputDirectory, flags, lang, text);
+					AssetConverter.SaveLocale(flags.OutputDirectory, flags, lang, text);
 				}
 			}
 
@@ -39,7 +39,7 @@ internal static class Program {
 					Directory.CreateDirectory(dir);
 				}
 
-				Assets.SaveData(path, flags, ShouldProcess, manager.GameParams);
+				AssetConverter.SaveData(path, flags, ShouldProcess, manager.GameParams);
 			}
 
 			if (manager.Database != null) {
@@ -51,11 +51,11 @@ internal static class Program {
 
 				if (flags.SaveAssetList && ShouldProcess("res/content/assets.json")) {
 					AkizukiLog.Information("{Path}", "res/content/assets.json");
-					AssetPaths.Save(path, flags, manager.Database);
+					AssetConverter.SavePaths(path, flags, manager.Database);
 				}
 
 				if (flags.ConvertAssetDB) {
-					Assets.Save(flags.OutputDirectory, flags, ShouldProcess, manager.Database);
+					AssetConverter.Save(flags.OutputDirectory, flags, ShouldProcess, manager.Database);
 				}
 			}
 
@@ -68,7 +68,7 @@ internal static class Program {
 					}
 
 					AkizukiLog.Information("{Value}", $"idx/{pfs.Name}.json");
-					AssetPaths.Save(path, flags, pfs);
+					AssetConverter.SavePaths(path, flags, pfs);
 				}
 			}
 		}
@@ -132,9 +132,9 @@ internal static class Program {
 			case ".dd1" when flags.ConvertTextures || flags.ConvertCubeMaps: // 4x
 			case ".dd0" when flags.ConvertTextures || flags.ConvertCubeMaps: // 8x
 			case ".dds" when flags.ConvertTextures || flags.ConvertCubeMaps: // 1x
-				return GeometryConverter.ConvertTexture(path, flags, data) != null;
+				return TextureConverter.ConvertTexture(path, flags, data) != null;
 			case ".splash":
-				return GeometryConverter.ConvertSplash(path, flags, data);
+				return ArmorConverter.ConvertSplash(path, flags, data);
 			case ".geometry" when flags.ConvertGeometry:
 				return GeometryConverter.ConvertLooseGeometry(path, flags, data);
 			case ".prefab":

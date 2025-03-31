@@ -8,23 +8,16 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
+using Akizuki.Conversion.Utility;
 using Akizuki.Data.Params;
 using Akizuki.Data.Tables;
 using Akizuki.Graphics;
 using Akizuki.Structs.Data;
 using Akizuki.Structs.Graphics;
 using Akizuki.Structs.Graphics.VertexFormat;
-using BCDecNet;
 using DragonLib.IO;
 using GLTF.Scaffold.Extensions;
 using Silk.NET.Maths;
-using Triton;
-using Triton.Encoder;
-using Triton.Pixel;
-using Triton.Pixel.Channels;
-using Triton.Pixel.Formats;
 using GL = GLTF.Scaffold;
 using GeometryCache = System.Collections.Generic.Dictionary<(bool IsVertexBuffer, int GeometryBufferId), System.Collections.Generic.Dictionary<string, int>>;
 using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Graphics.GeometryName Vertex, Akizuki.Structs.Graphics.GeometryName Index), (System.Collections.Generic.Dictionary<string, int> Attributes, int Indices)>;
@@ -32,19 +25,6 @@ using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Gr
 namespace Akizuki.Conversion;
 
 public static class GeometryConverter {
-	private static JsonSerializerOptions GltfOptions =>
-		new() {
-			WriteIndented = true,
-			DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-			IgnoreReadOnlyFields = true,
-			IgnoreReadOnlyProperties = true,
-			NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		};
-
-	private static StringId NormalMapId { get; } = new(0x4858745d);
-	private static StringId MetalMapId { get; } = new(0x89babfe7);
-
 	// most meshes are flipped on the Z axis when skinned, except a few.
 	// this is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
 	// todo: populate me with problematic meshes
@@ -96,7 +76,7 @@ public static class GeometryConverter {
 			case 'U': path += "commonwealth/"; break;
 			case 'V': path += "panamerica/"; break;
 			case 'W': path += "europe/"; break;
-			// case 'X': path += "events/"; break;
+			case 'X': path += "events/"; break;
 			case 'Z': path += "panasia/"; break;
 			default: return null;
 		}
@@ -112,263 +92,7 @@ public static class GeometryConverter {
 		return path;
 	}
 
-	public static bool ConvertSplash(string path, IConversionOptions flags, IMemoryBuffer<byte> data) {
-		var splash = new Splash(data);
-
-		if (flags.Dry) {
-			return true;
-		}
-
-		using var stream = new FileStream(path + ".json", FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-		JsonSerializer.Serialize(stream, splash, JsonOptions.Options);
-		stream.WriteByte((byte) '\n');
-		return true;
-	}
-
-	public static string? ConvertTexture(string path, IConversionOptions flags, IMemoryBuffer<byte> data, bool skipExisting = false, bool isNormalMap = false, bool isMetalGlossMap = false) {
-		var imageFormat = flags.SelectedFormat;
-		if (imageFormat == TextureFormat.None) {
-			return null;
-		}
-
-		var encoder = flags.FormatEncoder;
-		if (encoder == null) {
-			return null;
-		}
-
-		var ext = Path.GetExtension(path);
-		path = Path.ChangeExtension(path,
-			ext != ".dds" ? $".{ext[^1]}.{imageFormat.ToString().ToLowerInvariant()}" : $".{imageFormat.ToString().ToLowerInvariant()}");
-
-		if (skipExisting && File.Exists(path)) {
-			return path;
-		}
-
-		using var texture = new DDSTexture(data);
-		if (texture.OneMipSize == 0) {
-			return null;
-		}
-
-		var isCubemap = texture.IsCubeMap;
-
-		if (!flags.ConvertTextures && !isCubemap) {
-			return null;
-		}
-
-		if (!flags.ConvertCubeMaps && isCubemap) {
-			return null;
-		}
-
-		using var frames = new ImageCollection();
-
-		var width = texture.Width;
-		var height = texture.Height;
-
-		var numSurfaces = imageFormat == TextureFormat.TIF ? texture.Surfaces : 1;
-		for (var index = 0; index < numSurfaces; ++index) {
-			var chunk = texture.GetSurface(index);
-			var chunkMem = chunk.Memory;
-			if (texture.Format is >= DXGIFormat.BC1_TYPELESS and <= DXGIFormat.BC5_SNORM or >= DXGIFormat.BC6H_TYPELESS and <= DXGIFormat.BC7_UNORM_SRGB) {
-				var frameBuffer = new MemoryBuffer<byte>(width * height * 16);
-				try {
-					var frameBufferMem = frameBuffer.Memory;
-					// ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
-					switch (texture.Format) {
-						case DXGIFormat.BC1_UNORM:
-						case DXGIFormat.BC1_UNORM_SRGB:
-							BCDec.DecompressBC1(chunkMem, frameBufferMem, width, height);
-							frames.Add(new ImageBuffer<ColorRGBA<byte>, byte>(frameBuffer, width, height));
-							continue;
-						case DXGIFormat.BC2_UNORM:
-						case DXGIFormat.BC2_UNORM_SRGB:
-							BCDec.DecompressBC2(chunkMem, frameBufferMem, width, height);
-							frames.Add(new ImageBuffer<ColorRGBA<byte>, byte>(frameBuffer, width, height));
-							continue;
-						case DXGIFormat.BC3_UNORM:
-						case DXGIFormat.BC3_UNORM_SRGB:
-							BCDec.DecompressBC3(chunkMem, frameBufferMem, width, height);
-							frames.Add(new ImageBuffer<ColorRGBA<byte>, byte>(frameBuffer, width, height));
-							continue;
-						case DXGIFormat.BC4_UNORM:
-						case DXGIFormat.BC4_SNORM:
-							BCDec.DecompressBC4(chunkMem, frameBufferMem, width, height, texture.Format == DXGIFormat.BC4_SNORM);
-							frames.Add(new ImageBuffer<ColorR<byte>, byte>(frameBuffer, width, height));
-							continue;
-						case DXGIFormat.BC5_SNORM:
-							BCDec.DecompressBC5(chunkMem, frameBufferMem, width, height, true);
-							frames.Add(new ImageBuffer<ColorRG<sbyte>, sbyte>(frameBuffer, width, height));
-							continue;
-						case DXGIFormat.BC5_UNORM:
-							BCDec.DecompressBC5(chunkMem, frameBufferMem, width, height, false);
-							frames.Add(new ImageBuffer<ColorRG<byte>, byte>(frameBuffer, width, height));
-							continue;
-						case DXGIFormat.BC6H_SF16:
-						case DXGIFormat.BC6H_UF16: {
-							var isSigned = texture.Format == DXGIFormat.BC6H_SF16;
-							BCDec.DecompressBC6HFloat(chunkMem, frameBufferMem, width, height, isSigned);
-							frames.Add(new ImageBuffer<ColorRGB<float>, float>(frameBuffer, width, height, isSigned));
-							continue;
-						}
-						case DXGIFormat.BC7_UNORM:
-						case DXGIFormat.BC7_UNORM_SRGB:
-							BCDec.DecompressBC7(chunkMem, frameBufferMem, width, height);
-							frames.Add(new ImageBuffer<ColorRGBA<byte>, byte>(frameBuffer, width, height));
-							continue;
-					}
-				} catch {
-					frameBuffer.Dispose();
-					throw;
-				}
-
-				frameBuffer.Dispose();
-				throw new UnreachableException();
-			}
-
-			// ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
-			switch (texture.Format) {
-				case DXGIFormat.A8_UNORM:
-				case DXGIFormat.R8_UNORM:
-				case DXGIFormat.R8_SNORM:
-				case DXGIFormat.P8:
-				case DXGIFormat.IA44: // what are these formats 😭
-					frames.Add(new ImageBuffer<ColorR<byte>, byte>(chunk, width, height));
-					continue;
-				case DXGIFormat.R8G8_SINT:
-				case DXGIFormat.R8G8_SNORM:
-					frames.Add(new ImageBuffer<ColorRG<sbyte>, sbyte>(chunk, width, height));
-					continue;
-				case DXGIFormat.R8G8_UNORM:
-				case DXGIFormat.R8G8_UINT:
-				case DXGIFormat.A8P8:
-					frames.Add(new ImageBuffer<ColorRG<byte>, byte>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16_SINT:
-				case DXGIFormat.R16_SNORM:
-					frames.Add(new ImageBuffer<ColorR<short>, short>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16_UINT:
-				case DXGIFormat.R16_UNORM:
-					frames.Add(new ImageBuffer<ColorR<ushort>, ushort>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16_FLOAT:
-					frames.Add(new ImageBuffer<ColorR<Half>, Half>(chunk, width, height));
-					continue;
-				case DXGIFormat.R8G8B8A8_UNORM:
-				case DXGIFormat.R8G8B8A8_UNORM_SRGB:
-				case DXGIFormat.R8G8B8A8_UINT:
-					frames.Add(new ImageBuffer<ColorRGBA<byte>, byte>(chunk, width, height));
-					continue;
-				case DXGIFormat.R8G8B8A8_SNORM:
-				case DXGIFormat.R8G8B8A8_SINT:
-					frames.Add(new ImageBuffer<ColorRGBA<sbyte>, sbyte>(chunk, width, height));
-					continue;
-				case DXGIFormat.R32_FLOAT:
-					frames.Add(new ImageBuffer<ColorR<float>, float>(chunk, width, height));
-					continue;
-				case DXGIFormat.R32_SINT:
-					frames.Add(new ImageBuffer<ColorR<int>, int>(chunk, width, height));
-					continue;
-				case DXGIFormat.R32_UINT:
-					frames.Add(new ImageBuffer<ColorR<uint>, uint>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16G16_FLOAT:
-					frames.Add(new ImageBuffer<ColorRG<Half>, Half>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16G16_UNORM:
-				case DXGIFormat.R16G16_UINT:
-					frames.Add(new ImageBuffer<ColorRG<ushort>, ushort>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16G16_SNORM:
-				case DXGIFormat.R16G16_SINT:
-					frames.Add(new ImageBuffer<ColorRG<short>, short>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16G16B16A16_FLOAT:
-					frames.Add(new ImageBuffer<ColorRGBA<Half>, Half>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16G16B16A16_SINT:
-				case DXGIFormat.R16G16B16A16_SNORM:
-					frames.Add(new ImageBuffer<ColorRGBA<short>, short>(chunk, width, height));
-					continue;
-				case DXGIFormat.R16G16B16A16_UINT:
-				case DXGIFormat.R16G16B16A16_UNORM:
-					frames.Add(new ImageBuffer<ColorRGBA<ushort>, ushort>(chunk, width, height));
-					continue;
-				case DXGIFormat.R32G32_FLOAT:
-					frames.Add(new ImageBuffer<ColorRG<float>, float>(chunk, width, height));
-					continue;
-				case DXGIFormat.R32G32_SINT:
-					frames.Add(new ImageBuffer<ColorRG<int>, int>(chunk, width, height));
-					continue;
-				case DXGIFormat.R32G32_UINT:
-					frames.Add(new ImageBuffer<ColorRG<uint>, uint>(chunk, width, height));
-					continue;
-				case DXGIFormat.R32G32B32A32_FLOAT:
-					frames.Add(new ImageBuffer<ColorRGBA<float>, float>(chunk, width, height));
-					continue;
-				case DXGIFormat.B8G8R8A8_UNORM:
-				case DXGIFormat.B8G8R8A8_UNORM_SRGB:
-					frames.Add(new ImageBuffer<Color<byte, B, G, R, A>, byte>(chunk, width, height));
-					continue;
-				case DXGIFormat.R8G8B8_UNORM:
-					frames.Add(new ImageBuffer<ColorRGB<byte>, byte>(chunk, width, height));
-					continue;
-				default:
-					throw new NotSupportedException();
-			}
-		}
-
-		if (isMetalGlossMap || isNormalMap) {
-			for (var index = 0; index < frames.Count; index++) {
-				var image = frames[index];
-				var oldImage = default(IImageBuffer);
-				ImageBuffer<ColorRGBA<byte>, byte> newImage;
-				if (image is ImageBuffer<ColorRGBA<byte>, byte> rgba) {
-					newImage = rgba;
-				} else {
-					oldImage = image;
-					newImage = (ImageBuffer<ColorRGBA<byte>, byte>) image.Cast<ColorRGBA<byte>, byte>();
-					frames[index] = newImage;
-				}
-
-				foreach (ref var pixel in newImage.ColorData.Memory.Span[..(newImage.Width * newImage.Height)]) {
-					if (isMetalGlossMap) {
-						var roughness = (byte) (0xFF - pixel.R);
-						var metalness = pixel.B;
-						pixel = new ColorRGBA<byte>(pixel.G, roughness, metalness, pixel.A);
-					} else if (isNormalMap) {
-						// why
-						pixel.R ^= 0xFF;
-						pixel.G ^= 0xFF;
-						pixel.A = pixel.B; // waterline.
-						pixel.B = 0xFF;
-					}
-				}
-
-				oldImage?.Dispose();
-			}
-		}
-
-		if (!isCubemap) {
-			return SaveTexture(path, flags, encoder, frames);
-		}
-
-		using var cubemap = new IBLImage(frames, CubemapOrder.DXGIOrder);
-		using var converted = cubemap.Convert(flags.CubemapStyle);
-		return SaveTexture(path, flags, encoder, [converted]);
-	}
-
-	private static string SaveTexture(string path, IConversionOptions flags, IEncoder encoder, ImageCollection frames) {
-		if (flags.Dry) {
-			return path;
-		}
-
-		using var stream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-		encoder.Write(stream, EncoderWriteOptions.Default, frames);
-		return path;
-	}
-
-	public static GeometryCache
-		BuildGeometryBuffers(GL.Root gltf, Stream stream, Geometry geometry, string name) {
+	public static GeometryCache BuildGeometryBuffers(GL.Root gltf, Stream stream, Geometry geometry, string name) {
 		var mapping = new Dictionary<(bool, int), Dictionary<string, int>>();
 
 		for (var index = 0; index < geometry.MergedIndexBuffers.Count; index++) {
@@ -393,8 +117,7 @@ public static class GeometryConverter {
 		return mapping;
 	}
 
-	public static void BuildSkinBuffer(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, GeometryName vertexBufferName,
-		Dictionary<string, int> attributes, RenderSetPrototype renderSet, VisualPrototype visual) {
+	public static void BuildSkinBuffer(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, GeometryName vertexBufferName, Dictionary<string, int> attributes, RenderSetPrototype renderSet, VisualPrototype visual) {
 		var buffer = vertexBuffer.Buffer.Span;
 		var info = vertexBuffer.Info;
 		if (renderSet.Nodes.Count == 1 || info.BoneIndex == -1 || info.BoneWeight == -1) {
@@ -533,7 +256,7 @@ public static class GeometryConverter {
 
 		var thicknessMaterial = new Dictionary<int, int>();
 		foreach (var armor in geometry.Armors) {
-			CreateArmor(gltf, root, bufferStream, armor, thicknessMaterial);
+			ArmorConverter.CreateArmor(gltf, root, bufferStream, armor, thicknessMaterial);
 		}
 
 		gltf.Buffers = [
@@ -548,61 +271,12 @@ public static class GeometryConverter {
 		}
 
 		using var file = new FileStream(gltfPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-		JsonSerializer.Serialize(file, gltf, GltfOptions);
+		JsonSerializer.Serialize(file, gltf, JsonOptions.GltfOptions);
 		file.Write(Encoding.UTF8.GetBytes(Environment.NewLine));
 		return true;
 	}
 
-	private static void CreateArmor(GL.Root gltf, GL.Node node, Stream stream, GeometryArmor armor, Dictionary<int, int> thicknessMaterial) {
-		var (meshNode, _) = node.CreateNode(gltf);
-		(var mesh, meshNode.Mesh) = gltf.CreateMesh();
-		mesh.Name = meshNode.Name = armor.Name;
-
-		foreach (var plate in armor.Plates) {
-			using var indexBuffer = new MemoryBuffer<ushort>(plate.Vertices.Length);
-			var view = gltf.CreateBufferView(MemoryMarshal.AsBytes(plate.Vertices.Span), stream, Unsafe.SizeOf<GeometryArmorVertex>(), GL.BufferViewTarget.ArrayBuffer).Id;
-			var accessorId = gltf.CreateAccessor(view, plate.Vertices.Length, 0, GL.AccessorType.VEC3, GL.AccessorComponentType.Float).Id;
-
-			if (!thicknessMaterial.TryGetValue(plate.Thickness, out var materialId)) {
-				var material = gltf.CreateMaterial();
-				material.Material.Name = $"{plate.Thickness}mm Armor";
-				materialId = thicknessMaterial[plate.Thickness] = material.Id;
-				material.Material.Extensions = new Dictionary<string, JsonValue> {
-					["KHR_materials_unlit"] = JsonValue.Create(new object())!,
-				};
-				gltf.ExtensionsUsed ??= [];
-				gltf.ExtensionsUsed.Add("KHR_materials_unlit");
-				material.Material.PBR = new GL.PBRMaterial {
-					BaseColorFactor = ColorTheory.LerpColor(ColorTheory.ArmorStart, ColorTheory.ArmorEnd, plate.Thickness / 400.0),
-				};
-			}
-
-			var primitive = new GL.Primitive {
-				Mode = GL.PrimitiveMode.Triangles,
-				Material = materialId,
-				Attributes = {
-					["POSITION"] = accessorId,
-				},
-			};
-
-			if (plate.Vertices.Length % 3 != 0) {
-				throw new InvalidOperationException();
-			}
-
-			for (var index = 0; index < plate.Vertices.Length / 3; index += 1) {
-				var vert1 = index * 3;
-				indexBuffer[vert1] = (ushort) vert1;
-				indexBuffer[vert1 + 1] = (ushort) (vert1 + 1);
-				indexBuffer[vert1 + 2] = (ushort) (vert1 + 2);
-			}
-
-			primitive.Indices = gltf.CreateAccessor(indexBuffer.Span, stream, GL.BufferViewTarget.ElementArrayBuffer, GL.AccessorType.SCALAR, GL.AccessorComponentType.UnsignedShort).Id;
-
-			mesh.Primitives.Add(primitive);
-		}
-	}
-
-	private static GL.Primitive CreatePrimitive(GL.Root gltf, GL.Mesh mesh,
+	public static GL.Primitive CreatePrimitive(GL.Root gltf, GL.Mesh mesh,
 		GeometryCache buffers, PrimitiveCache existingPrimitives, GeometryName vertexBuffer, GeometryName indexBuffer, Geometry geometry) {
 		var mergedVbo = buffers[(true, vertexBuffer.BufferIndex)];
 		var mergedIbo = buffers[(false, indexBuffer.BufferIndex)];
@@ -671,7 +345,7 @@ public static class GeometryConverter {
 	}
 
 	public static void ConvertVisual(ResourceManager manager, string fileName, string path,
-		string rootModelPath, Dictionary<string, string> hardPoints,
+		string rootModelPath, Dictionary<string, HashSet<string>> hardPoints,
 		IConversionOptions flags, ParamTypeInfo? info,
 		string? subdir = null, string? parentName = null) {
 		var builtVisual = FindVisualPrototype(manager, rootModelPath);
@@ -683,7 +357,11 @@ public static class GeometryConverter {
 		var portPoints = new Dictionary<string, string>();
 		foreach (var (hardpoint, (resolvedPart, portsPart)) in resolvedParts) {
 			portPoints[hardpoint] = portsPart;
-			hardPoints[hardpoint] = resolvedPart;
+			if (!hardPoints.TryGetValue(hardpoint, out var hardpoints)) {
+				hardpoints = hardPoints[hardpoint] = [];
+			}
+
+			hardpoints.Add(resolvedPart);
 		}
 
 		string modelPath;
@@ -702,8 +380,10 @@ public static class GeometryConverter {
 		}
 
 		var texturesPath = Path.Combine(path, "textures");
+		var buffersPath = Path.Combine(path, "models");
 		Directory.CreateDirectory(modelPath);
 		Directory.CreateDirectory(texturesPath);
+		Directory.CreateDirectory(buffersPath);
 
 		var gltfPath = Path.Combine(modelPath, fileName + ".gltf");
 		var bufferPath = Path.ChangeExtension(gltfPath, ".glbin");
@@ -714,13 +394,7 @@ public static class GeometryConverter {
 		var root = gltf.CreateNode().Node;
 		root.Name = fileName;
 
-		var primCache = new Dictionary<ResourceId, PrimitiveCache>();
-		var geoCache = new Dictionary<ResourceId, GeometryCache>();
-		var materialCache = new Dictionary<ResourceId, int>();
-		var textureCache = new Dictionary<ResourceId, int>();
-		var context = new BuilderContext(
-			flags, manager, bufferStream, modelPath, texturesPath,
-			hardPoints, portPoints, primCache, geoCache, materialCache, textureCache);
+		var context = new ModelBuilderContext(flags, manager, bufferStream, modelPath, texturesPath, hardPoints, portPoints);
 		BuildModelPart(context, gltf, root, builtVisual);
 
 		gltf.Buffers = [
@@ -735,11 +409,11 @@ public static class GeometryConverter {
 		}
 
 		using var file = new FileStream(gltfPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-		JsonSerializer.Serialize(file, gltf, GltfOptions);
+		JsonSerializer.Serialize(file, gltf, JsonOptions.GltfOptions);
 		file.Write(Encoding.UTF8.GetBytes(Environment.NewLine));
 	}
 
-	private static void BuildModelPart(BuilderContext context, GL.Root gltf, GL.Node parent, string modelPath) {
+	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath) {
 		AkizukiLog.Information("Building part {Path}", modelPath);
 		var builtVisual = FindVisualPrototype(context.Manager, modelPath);
 		if (builtVisual == null) {
@@ -749,7 +423,7 @@ public static class GeometryConverter {
 		BuildModelPart(context, gltf, parent, builtVisual);
 	}
 
-	private static void BuildModelPart(BuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual) {
+	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual) {
 		var name = Path.GetFileNameWithoutExtension(visual.MergedGeometryPath.Path);
 		var (node, rootId) = parent.CreateNode(gltf);
 		node.Name = name;
@@ -784,8 +458,11 @@ public static class GeometryConverter {
 				nodeMap[nodeName] = skeletonNode;
 
 				if (context.HardPoints.TryGetValue(realName, out var hardPart)) {
-					BuildModelPart(context, gltf, skeletonNode, hardPart);
+					foreach (var part in hardPart) {
+						BuildModelPart(context, gltf, skeletonNode, part);
+					}
 				}
+
 
 				if (context.PortPoints.TryGetValue(realName, out var portPart)) {
 					BuildModelPart(context, gltf, skeletonNode, portPart);
@@ -870,11 +547,11 @@ public static class GeometryConverter {
 		}
 
 		foreach (var armor in geometry.Armors) {
-			CreateArmor(gltf, node, context.BufferStream, armor, context.ThicknessMaterialCache);
+			ArmorConverter.CreateArmor(gltf, node, context.BufferStream, armor, context.ThicknessMaterialCache);
 		}
 	}
 
-	private static void BuildBoneMap(BuilderContext context, GL.Root gltf, GL.Primitive prim, GeometryName vertexBufferName, Geometry geometry,
+	public static void BuildBoneMap(ModelBuilderContext context, GL.Root gltf, GL.Primitive prim, GeometryName vertexBufferName, Geometry geometry,
 		RenderSetPrototype renderSet, VisualPrototype visual) {
 		if (prim.Attributes.ContainsKey("JOINTS_0")) {
 			return;
@@ -884,48 +561,7 @@ public static class GeometryConverter {
 		BuildSkinBuffer(gltf, context.BufferStream, vertexBuffer, vertexBufferName, prim.Attributes, renderSet, visual);
 	}
 
-	private static int CreateTexture(BuilderContext context, GL.Root gltf, ResourceId id, StringId slotName) {
-		AkizukiLog.Information("Converting texture {Path}", id);
-		if (context.TextureCache.TryGetValue(id, out var texId)) {
-			return texId;
-		}
-
-		var texturePkgPath = id.Path;
-		var isDDS = texturePkgPath.EndsWith(".dds");
-		if (isDDS) {
-			for (var hdIndex = 0; hdIndex < 2; ++hdIndex) {
-				var hdPath = id.Path[..^1] + hdIndex.ToString("D");
-				if (!context.Manager.HasFile(hdPath)) {
-					continue;
-				}
-
-				texturePkgPath = hdPath;
-				break;
-			}
-		}
-
-		using var buffer = context.Manager.OpenFile(texturePkgPath);
-		if (buffer == null) {
-			return context.TextureCache[id] = -1;
-		}
-
-		var texturePath = Path.Combine(context.TexturesPath, $"{id.Hash:x16}-" + Path.GetFileName(texturePkgPath));
-		if (context.Flags.SelectedFormat is not TextureFormat.None && isDDS) {
-			if (ConvertTexture(texturePath, context.Flags, buffer, true, slotName == NormalMapId, slotName == MetalMapId) is not { } newTexturePath) {
-				return context.TextureCache[id] = -1;
-			}
-
-			texturePath = Path.GetRelativePath(context.ModelPath, newTexturePath);
-		} else if (!context.Flags.Dry) {
-			using var stream = new FileStream(texturePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-			stream.Write(buffer.Span);
-		}
-
-
-		return context.TextureCache[id] = gltf.CreateTexture(texturePath, GL.WrapMode.Repeat, GL.WrapMode.Repeat, null, null).Id;
-	}
-
-	private static int CreateMaterial(BuilderContext context, GL.Root gltf, ResourceId material) {
+	public static int CreateMaterial(ModelBuilderContext context, GL.Root gltf, ResourceId material) {
 		AkizukiLog.Information("Converting material {Path}", material);
 		if (context.Manager.OpenPrototype(material) is not MaterialPrototype mfm) {
 			return -1;
@@ -961,7 +597,7 @@ public static class GeometryConverter {
 		}
 
 		foreach (var (name, value) in mfm.TextureValues) {
-			var textureId = CreateTexture(context, gltf, value, name);
+			var textureId = TextureConverter.CreateTexture(context, gltf, value, name);
 			if (textureId == -1) {
 				continue;
 			}
@@ -1005,20 +641,5 @@ public static class GeometryConverter {
 		}
 
 		return matId;
-	}
-
-	private record BuilderContext(
-		IConversionOptions Flags,
-		ResourceManager Manager,
-		Stream BufferStream,
-		string ModelPath,
-		string TexturesPath,
-		Dictionary<string, string> HardPoints,
-		Dictionary<string, string> PortPoints,
-		Dictionary<ResourceId, PrimitiveCache> PrimCache,
-		Dictionary<ResourceId, GeometryCache> GeometryCache,
-		Dictionary<ResourceId, int> MaterialCache,
-		Dictionary<ResourceId, int> TextureCache) {
-		public Dictionary<int, int> ThicknessMaterialCache { get; } = [];
 	}
 }

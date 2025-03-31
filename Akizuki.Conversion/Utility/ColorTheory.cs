@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-namespace Akizuki.Conversion;
+namespace Akizuki.Conversion.Utility;
 
 public static class ColorTheory {
 	public static readonly double[] ArmorStart = [68 / 255.0, 27 / 255.0, 206 / 255.0, 1.0];

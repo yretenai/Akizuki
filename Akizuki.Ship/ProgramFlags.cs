@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using Akizuki.Conversion;
+using Akizuki.Conversion.Utility;
 using DragonLib.CommandLine;
 using Serilog.Events;
 using Triton;
@@ -36,6 +36,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 
 	[Flag("wildcard", Help = "Assume ship names are regexes (disables part selection)", Category = "Akizuki")]
 	public bool Wildcard { get; set; }
+
+	[Flag("all-modules", Help = "Export all possible modules instead of pinnacle when no modules are provided", Category = "Akizuki")]
+	public bool AllModules { get; set; }
 
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
 	public TextureFormat ImageFormat { get; set; } = TextureFormat.Auto;

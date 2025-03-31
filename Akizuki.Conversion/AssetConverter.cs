@@ -3,11 +3,32 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Text.Json;
+using Akizuki.Conversion.Utility;
 using Akizuki.Data;
 
 namespace Akizuki.Conversion;
 
-public static class Assets {
+public static class AssetConverter {
+	public static void SavePaths(string path, IConversionOptions flags, PackageFileSystem list) {
+		if (flags.Dry) {
+			return;
+		}
+
+		using var stream = new FileStream(Path.ChangeExtension(path, ".json"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+		JsonSerializer.Serialize(stream, list, JsonOptions.Options);
+		stream.WriteByte((byte) '\n');
+	}
+
+	public static void SavePaths(string path, IConversionOptions flags, BigWorldDatabase list) {
+		if (flags.Dry) {
+			return;
+		}
+
+		using var stream = new FileStream(Path.ChangeExtension(path, ".json"), FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+		JsonSerializer.Serialize(stream, list, JsonOptions.Options);
+		stream.WriteByte((byte) '\n');
+	}
+
 	public static void Save(string outputDirectory, IConversionOptions flags, Func<string?, bool> check, BigWorldDatabase assets) {
 		foreach (var (assetId, prototypeId) in assets.ResourceToPrototype) {
 			if (assets.Resolve(prototypeId) is not { } prototype) {

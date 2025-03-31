@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 using Akizuki.Json;
 using Akizuki.Json.Silk;
 
-namespace Akizuki.Conversion;
+namespace Akizuki.Conversion.Utility;
 
 internal static class JsonOptions {
 	internal static JsonSerializerOptions Options { get; } = new() {
@@ -42,4 +42,14 @@ internal static class JsonOptions {
 			new JsonVector4DConverterFactory(),
 		},
 	};
+
+	internal static JsonSerializerOptions GltfOptions =>
+		new() {
+			WriteIndented = true,
+			DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+			IgnoreReadOnlyFields = true,
+			IgnoreReadOnlyProperties = true,
+			NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
+			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+		};
 }

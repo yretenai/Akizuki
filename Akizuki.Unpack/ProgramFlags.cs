@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Text.RegularExpressions;
-using Akizuki.Conversion;
+using Akizuki.Conversion.Utility;
 using DragonLib.CommandLine;
 using Serilog.Events;
 using Triton;
