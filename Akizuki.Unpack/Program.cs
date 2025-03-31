@@ -25,17 +25,23 @@ internal static class Program {
 
 		using var manager = new ResourceManager(flags.InstallDirectory, flags.Validate);
 
-		if (manager.GameParams != null && flags is { Convert: true, ConvertGameParams: true }) {
-			var path = Path.Combine(flags.OutputDirectory, "res/content/GameParams.data");
-			var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
-			if (!flags.Dry) {
-				Directory.CreateDirectory(dir);
+		if (flags.Convert) {
+			if (flags.ConvertText && manager.Texts.Count > 0) {
+				foreach (var (lang, text) in manager.Texts) {
+					Assets.SaveLocale(flags.OutputDirectory, flags, lang, text);
+				}
 			}
 
-			Assets.SaveData(path, flags, ShouldProcess, manager.GameParams);
-		}
+			if (flags.ConvertGameParams && manager.GameParams != null) {
+				var path = Path.Combine(flags.OutputDirectory, "res/content/GameParams.data");
+				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
+				if (!flags.Dry) {
+					Directory.CreateDirectory(dir);
+				}
 
-		if (flags.Convert) {
+				Assets.SaveData(path, flags, ShouldProcess, manager.GameParams);
+			}
+
 			if (manager.Database != null) {
 				var path = Path.Combine(flags.OutputDirectory, "res/content/assets.bin");
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;

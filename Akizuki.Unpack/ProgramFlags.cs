@@ -47,6 +47,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("convert-assets", Help = "Convert AssetDB entries to JSON", Category = "Akizuki")]
 	public bool ConvertAssetDB { get; set; }
 
+	[Flag("convert-texts", Help = "Convert Locale Text entries to JSON", Category = "Akizuki")]
+	public bool ConvertText { get; set; }
+
 	[Flag("convert-params", Help = "Convert GameParams to JSON", Category = "Akizuki")]
 	public bool ConvertGameParams { get; set; }
 

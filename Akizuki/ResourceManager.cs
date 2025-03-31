@@ -10,16 +10,6 @@ using DragonLib.IO;
 namespace Akizuki;
 
 public sealed class ResourceManager : IDisposable {
-	public ResourceManager(BigWorldDatabase db) {
-		if (Instance != null) {
-			throw new InvalidOperationException("Only one instance of ResourceManager is allowed");
-		}
-
-		Instance = this;
-		Database = db;
-		Text = [];
-	}
-
 	public ResourceManager(string installDir, bool validate = false) {
 		if (Instance != null) {
 			throw new InvalidOperationException("Only one instance of ResourceManager is allowed");
@@ -29,7 +19,6 @@ public sealed class ResourceManager : IDisposable {
 
 		var idxDir = Path.Combine(installDir, "idx");
 		var pkgDir = Path.Combine(installDir, "../../res_packages");
-		var locFile = Path.Combine(installDir, "res/texts/en/LC_MESSAGES/global.mo");
 
 		AkizukiLog.Information("Loading Packages");
 		foreach (var idxFile in new FileEnumerator(idxDir, "*.idx")) {
@@ -49,12 +38,16 @@ public sealed class ResourceManager : IDisposable {
 			}
 		}
 
-		if (File.Exists(locFile)) {
-			AkizukiLog.Information("Loading Translation Messages");
-			using var stream = new FileStream(locFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
-			Text = new MessageObject(stream);
+		var locDir = Path.Combine(installDir, "res/texts");
+		if (Directory.Exists(locDir)) {
+			foreach (var locFile in new FileEnumerator(locDir, new EnumerationOptions { MatchType = MatchType.Simple, RecurseSubdirectories = true }, "*.mo")) {
+				var lang = Path.GetFileName(Path.GetDirectoryName(Path.GetFullPath(Path.Combine(locFile, "../../")))) ?? "xx";
+				AkizukiLog.Information("Loading Translation {Lang}", lang);
+				using var stream = new FileStream(locFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+				Texts[lang] = new MessageObject(stream);
+			}
 		} else {
-			Text = [];
+			AkizukiLog.Warning("Could not load languages");
 		}
 
 		if (OpenFile("res/content/assets.bin") is not { } assetsBin) {
@@ -84,7 +77,7 @@ public sealed class ResourceManager : IDisposable {
 	public IEnumerable<ulong> Files => IdLookup.Keys;
 	public BigWorldDatabase? Database { get; set; }
 	public PickledData? GameParams { get; set; }
-	public MessageObject Text { get; }
+	public Dictionary<string, MessageObject> Texts { get; } = new(StringComparer.OrdinalIgnoreCase);
 
 	public void Dispose() {
 		foreach (var package in Packages) {

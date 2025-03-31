@@ -46,6 +46,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
 
+	[Flag("language", Help = "Language locale to load", Category = "Akizuki")]
+	public string Language { get; set; } = "en";
+
 	public CubemapStyle CubemapStyle => CubemapStyle.Equirectangular;
 	public bool ConvertTextures => true;
 	public bool ConvertCubeMaps => true;

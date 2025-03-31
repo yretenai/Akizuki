@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Akizuki.Json;
@@ -13,6 +14,7 @@ internal static class JsonOptions {
 	internal static JsonSerializerOptions Options { get; } = new() {
 		WriteIndented = true,
 		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
+		Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
 		NewLine = "\n",
 		Converters = {
 			new JsonStringEnumConverter(),
@@ -30,6 +32,7 @@ internal static class JsonOptions {
 	internal static JsonSerializerOptions SafeOptions { get; } = new() {
 		WriteIndented = true,
 		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
+		Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
 		NewLine = "\n",
 		Converters = {
 			new JsonFauxDictionaryConverter(),

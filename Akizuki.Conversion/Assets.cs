@@ -41,6 +41,24 @@ public static class Assets {
 		}
 	}
 
+	public static void SaveLocale(string outputDirectory, IConversionOptions flags, string locale, MessageObject text) {
+		var name = $"res/texts/{locale}.json";
+		var path = Path.Combine(outputDirectory, name);
+
+		AkizukiLog.Information("{Value}", name);
+
+		if (flags.Dry) {
+			return;
+		}
+
+		var dir = Path.GetDirectoryName(path) ?? outputDirectory;
+		Directory.CreateDirectory(dir);
+
+		using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+		JsonSerializer.Serialize(stream, text, JsonOptions.Options);
+		stream.WriteByte((byte) '\n');
+	}
+
 	public static bool SaveData(string path, IConversionOptions flags, Func<string?, bool> check, PickledData pickled) {
 		if (flags.Dry) {
 			return false;

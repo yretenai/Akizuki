@@ -34,6 +34,10 @@ internal static class Program {
 							.CreateLogger();
 
 		using var manager = new ResourceManager(flags.InstallDirectory, flags.Validate);
+		if (!manager.Texts.TryGetValue(flags.Language, out var text)) {
+			text = manager.Texts.GetValueOrDefault("en", []);
+			AkizukiLog.Warning("Could not load language {Language}", flags.Language);
+		}
 
 		if (manager.GameParams == null || manager.Database == null) {
 			return;
@@ -48,7 +52,7 @@ internal static class Program {
 				}
 
 				var avail = new ShipParam(manager.GameParams, value);
-				AkizukiLog.Information("\t{Name} ({TranslatedName})", key, manager.Text.GetTranslation(avail.Index + "_FULL", avail.Index));
+				AkizukiLog.Information("\t{Name} ({TranslatedName})", key, text.GetTranslation(avail.Index + "_FULL", avail.Index));
 			}
 
 			return;
@@ -100,7 +104,7 @@ internal static class Program {
 			if (shipParts.Count == 1 && shipParts.Contains("list")) {
 				AkizukiLog.Information("Available parts for ship {Name}:", shipName);
 				foreach (var (upgradeName, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
-					AkizukiLog.Information("\t{Name} ({Type}, {TranslatedName})", upgradeName, upgrade.UpgradeType, manager.Text.GetTranslation(upgradeName));
+					AkizukiLog.Information("\t{Name} ({Type}, {TranslatedName})", upgradeName, upgrade.UpgradeType, text.GetTranslation(upgradeName));
 				}
 
 				continue;
