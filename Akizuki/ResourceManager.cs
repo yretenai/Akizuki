@@ -5,6 +5,7 @@
 using Akizuki.Data;
 using Akizuki.Data.Tables;
 using Akizuki.Structs.Data;
+using Akizuki.Structs.Data.Camouflage;
 using DragonLib.IO;
 
 namespace Akizuki;
@@ -50,6 +51,13 @@ public sealed class ResourceManager : IDisposable {
 			AkizukiLog.Warning("Could not load languages");
 		}
 
+		if (OpenFile("res/camouflages.xml") is { } camouflagesXml) {
+			AkizukiLog.Information("Loading Camouflage Data");
+			Camouflages = CamouflageData.Create(camouflagesXml);
+		} else {
+			AkizukiLog.Warning("Could not load Camouflage Data");
+		}
+
 		if (OpenFile("res/content/assets.bin") is not { } assetsBin) {
 			AkizukiLog.Warning("No assets database, ship building will be unavailable");
 			return;
@@ -64,7 +72,7 @@ public sealed class ResourceManager : IDisposable {
 		}
 
 		AkizukiLog.Information("Loading Game Params data");
-		GameParams = new PickledData(gameParamsData);
+		GameParams = PickledData.Create(gameParamsData);
 	}
 
 
@@ -76,7 +84,8 @@ public sealed class ResourceManager : IDisposable {
 	public Dictionary<ulong, (int Index, string Name, PFSFile File)> IdLookup { get; set; } = [];
 	public IEnumerable<ulong> Files => IdLookup.Keys;
 	public BigWorldDatabase? Database { get; set; }
-	public PickledData? GameParams { get; set; }
+	public PickleObject GameParams { get; set; } = [];
+	public CamouflageRoot? Camouflages { get; set; }
 	public Dictionary<string, MessageObject> Texts { get; } = new(StringComparer.OrdinalIgnoreCase);
 
 	public void Dispose() {

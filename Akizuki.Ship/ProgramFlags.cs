@@ -40,6 +40,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("all-modules", Help = "Export all possible modules instead of pinnacle when no modules are provided", Category = "Akizuki")]
 	public bool AllModules { get; set; }
 
+	[Flag("language", Help = "Language locale to load", Category = "Akizuki")]
+	public string Language { get; set; } = "en";
+
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
 	public TextureFormat ImageFormat { get; set; } = TextureFormat.Auto;
 
@@ -48,9 +51,6 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
-
-	[Flag("language", Help = "Language locale to load", Category = "Akizuki")]
-	public string Language { get; set; } = "en";
 
 	public CubemapStyle CubemapStyle => CubemapStyle.Equirectangular;
 	public bool ConvertTextures => true;

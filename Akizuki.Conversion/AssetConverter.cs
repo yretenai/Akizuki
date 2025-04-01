@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Akizuki.Conversion.Utility;
 using Akizuki.Data;
+using Akizuki.Structs.Data.Camouflage;
 
 namespace Akizuki.Conversion;
 
@@ -86,14 +87,33 @@ public static class AssetConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static bool SaveData(string path, IConversionOptions flags, Func<string?, bool> check, PickledData pickled) {
+	public static void SaveCamouflages(string outputDirectory, IConversionOptions flags, CamouflageRoot camouflages) {
+		const string Name = "res/camouflages.json";
+		var path = Path.Combine(outputDirectory, Name);
+
+		AkizukiLog.Information("{Value}", Name);
+
+		if (flags.Dry) {
+			return;
+		}
+
+		var dir = Path.GetDirectoryName(path) ?? outputDirectory;
+		Directory.CreateDirectory(dir);
+
+		using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+		JsonSerializer.Serialize(stream, camouflages, JsonOptions.FromXmlOptions);
+		stream.WriteByte((byte) '\n');
+	}
+
+	[MethodImpl(MethodConstants.Optimize)]
+	public static bool SaveData(string path, IConversionOptions flags, Func<string?, bool> check, PickleObject pickled) {
 		if (flags.Dry) {
 			return false;
 		}
 
 		path = Path.ChangeExtension(path, null);
 		Directory.CreateDirectory(path);
-		foreach (var (key, data) in pickled.Values) {
+		foreach (var (key, data) in pickled) {
 			var name = $"res/content/GameParams/{key}.json";
 			if (!check(name)) {
 				continue;

@@ -9,7 +9,7 @@ namespace Akizuki.Data.Params;
 public class ShipParam : ParamObject {
 	public ShipParam() { }
 
-	public ShipParam(PickledData pickle, GameDataObject data) : base(data) {
+	public ShipParam(PickleObject pickle, GameDataObject data) : base(data) {
 		Index = data.GetValue<string>("index");
 		Name = data.GetValue<string>("name");
 		ShipUpgradeInfo = data.GetParamOrDefault("ShipUpgradeInfo", ShipUpgradeInfo);
@@ -24,7 +24,7 @@ public class ShipParam : ParamObject {
 
 			{
 				if (componentData.TryGetValue<string>("planeName", out var planeName) && !string.IsNullOrEmpty(planeName)) {
-					if (pickle.Values.TryGetValue(planeName, out var planeData) && planeData.GetValueOrDefault<string>("model") is { } planeModel) {
+					if (pickle.TryGetValue(planeName, out var planeData) && planeData.GetValueOrDefault<string>("model") is { } planeModel) {
 						if (!HardpointModelPaths.TryGetValue(component, out var componentHardpoints)) {
 							componentHardpoints = HardpointModelPaths[component] = [];
 						}
@@ -37,7 +37,7 @@ public class ShipParam : ParamObject {
 			if (componentData.TryGetValue<object[]>("planes", out var planes) && planes.Length > 0 && planes[0] is string) {
 				var planeModels = PlaneModelPaths[component] = [];
 				foreach (var planeName in planes.OfType<string>()) {
-					if (planeName.Length > 0 && pickle.Values.TryGetValue(planeName, out var planeData) && planeData.GetValueOrDefault<string>("model") is { } planeModel) {
+					if (planeName.Length > 0 && pickle.TryGetValue(planeName, out var planeData) && planeData.GetValueOrDefault<string>("model") is { } planeModel) {
 						planeModels[planeName] = planeModel;
 					}
 				}

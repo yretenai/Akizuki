@@ -39,14 +39,14 @@ internal static class Program {
 			AkizukiLog.Warning("Could not load language {Language}", flags.Language);
 		}
 
-		if (manager.GameParams == null || manager.Database == null) {
+		if (manager.GameParams.Count == 0 || manager.Database == null) {
 			return;
 		}
 
 		if (flags.ShipSetups.Count == 0 || flags.ShipSetups.Contains("list")) {
 			AkizukiLog.Information("Available ships:");
 
-			foreach (var (key, value) in manager.GameParams.Values.OrderBy(x => x.Key)) {
+			foreach (var (key, value) in manager.GameParams.OrderBy(x => x.Key)) {
 				if (ParamTypeInfo.GetTypeName(value) != "Ship") {
 					continue;
 				}
@@ -61,7 +61,7 @@ internal static class Program {
 		if (flags.Wildcard) {
 			var newSetups = new HashSet<string>();
 			var regexes = flags.ShipSetups.Select(x => new Regex(x)).ToList();
-			foreach (var (key, value) in manager.GameParams.Values.OrderBy(x => x.Key)) {
+			foreach (var (key, value) in manager.GameParams.OrderBy(x => x.Key)) {
 				if (ParamTypeInfo.GetTypeName(value) != "Ship") {
 					continue;
 				}
@@ -82,7 +82,7 @@ internal static class Program {
 			var splitParts = shipSetup.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 			var shipName = splitParts[0];
 			var shipParts = splitParts.Length > 1 ? splitParts[1..].ToHashSet() : [];
-			if (!manager.GameParams.Values.TryGetValue(shipName, out var shipData)) {
+			if (!manager.GameParams.TryGetValue(shipName, out var shipData)) {
 				AkizukiLog.Error("Could not find ship {Name}", shipName);
 				continue;
 			}

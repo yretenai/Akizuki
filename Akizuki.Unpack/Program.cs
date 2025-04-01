@@ -32,7 +32,11 @@ internal static class Program {
 				}
 			}
 
-			if (flags.ConvertGameParams && manager.GameParams != null) {
+			if (flags.ConvertCamouflage && manager.Camouflages != null) {
+				AssetConverter.SaveCamouflages(flags.OutputDirectory, flags, manager.Camouflages);
+			}
+
+			if (flags.ConvertGameParams && manager.GameParams.Count > 0) {
 				var path = Path.Combine(flags.OutputDirectory, "res/content/GameParams.data");
 				var dir = Path.GetDirectoryName(path) ?? flags.OutputDirectory;
 				if (!flags.Dry) {

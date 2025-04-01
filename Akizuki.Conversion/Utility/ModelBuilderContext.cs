@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Legiayayana
+//
+// SPDX-License-Identifier: EUPL-1.2
+
 using Akizuki.Structs.Data;
 using GeometryCache = System.Collections.Generic.Dictionary<(bool IsVertexBuffer, int GeometryBufferId), System.Collections.Generic.Dictionary<string, int>>;
 using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Graphics.GeometryName Vertex, Akizuki.Structs.Graphics.GeometryName Index), (System.Collections.Generic.Dictionary<string, int> Attributes, int Indices)>;

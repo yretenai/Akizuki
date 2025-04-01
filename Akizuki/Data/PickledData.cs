@@ -9,8 +9,8 @@ using Ferment;
 
 namespace Akizuki.Data;
 
-public class PickledData {
-	public PickledData(IMemoryBuffer<byte> buffer, bool leaveOpen = false) {
+public static class PickledData {
+	public static PickleObject Create(IMemoryBuffer<byte> buffer, bool leaveOpen = false) {
 		using var deferred = new DeferredDisposable(() => {
 			if (!leaveOpen) {
 				buffer.Dispose();
@@ -24,6 +24,7 @@ public class PickledData {
 		var compressed = buffer.Memory[4..];
 		compressed.Span.Reverse();
 
+		var result = new PickleObject();
 		using var pinned = compressed.Pin();
 		unsafe {
 			using var stream = new UnmanagedMemoryStream((byte*) pinned.Pointer, compressed.Length);
@@ -44,10 +45,10 @@ public class PickledData {
 					throw new InvalidOperationException();
 				}
 
-				Values[key.ToString()!] = param;
+				result[key.ToString()!] = param;
 			}
 		}
-	}
 
-	public Dictionary<string, GameDataObject> Values { get; set; } = [];
+		return result;
+	}
 }

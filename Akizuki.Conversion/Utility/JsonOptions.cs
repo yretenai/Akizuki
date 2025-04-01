@@ -29,6 +29,26 @@ internal static class JsonOptions {
 		},
 	};
 
+	internal static JsonSerializerOptions FromXmlOptions { get; } = new() {
+		WriteIndented = true,
+		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
+		IgnoreReadOnlyProperties = false,
+		DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+		Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+		NewLine = "\n",
+		Converters = {
+			new JsonStringEnumConverter(),
+			new JsonBigWorldDatabaseConverter(),
+			new JsonPackageFileSystemConverter(),
+			new JsonStringIdConverter(),
+			new JsonResourceIdConverter(),
+			new JsonMatrix4X4ConverterFactory(),
+			new JsonVector2DConverterFactory(),
+			new JsonVector3DConverterFactory(),
+			new JsonVector4DConverterFactory(),
+		},
+	};
+
 	internal static JsonSerializerOptions SafeOptions { get; } = new() {
 		WriteIndented = true,
 		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
