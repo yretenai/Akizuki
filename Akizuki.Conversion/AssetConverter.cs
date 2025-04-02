@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Akizuki.Conversion.Utility;
 using Akizuki.Data;
-using Akizuki.Structs.Data.Camouflage;
 
 namespace Akizuki.Conversion;
 
@@ -87,7 +86,7 @@ public static class AssetConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static void SaveCamouflages(string outputDirectory, IConversionOptions flags, CamouflageRoot camouflages) {
+	public static void SaveCamouflages(string outputDirectory, IConversionOptions flags, CamouflageData camouflages) {
 		const string Name = "res/camouflages.json";
 		var path = Path.Combine(outputDirectory, Name);
 

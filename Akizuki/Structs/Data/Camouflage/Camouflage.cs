@@ -2,46 +2,69 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Text.Json.Serialization;
-using System.Xml.Serialization;
+using System.Xml.Linq;
 using Silk.NET.Maths;
 
 namespace Akizuki.Structs.Data.Camouflage;
 
 public record Camouflage {
-	[XmlElement("name")]
-	public string Name { get; set; } = string.Empty;
+	public Camouflage(XElement camouflage) {
+		Name = camouflage.Element("name")!.Value.Trim();
+		Annotation = camouflage.Element("annotation")?.Value.Trim();
+		Realm = camouflage.Element("realm")?.Value.Trim();
+		if (camouflage.Element("tiled") is { } xTiled &&
+			bool.TryParse(xTiled.Value, out var tiled)) {
+			Tiled = tiled;
+		}
 
-	[XmlElement("annotation")]
+		if (camouflage.Element("useColorScheme") is { } xUseColorScheme &&
+			bool.TryParse(xUseColorScheme.Value, out var useColorScheme)) {
+			UseColorScheme = useColorScheme;
+		}
+
+		foreach (var targetShip in camouflage.Elements("targetShip")) {
+			TargetShips ??= [];
+			TargetShips.Add(targetShip.Value.Trim());
+		}
+
+		foreach (var colorScheme in camouflage.Elements("colorSchemes")) {
+			ColorSchemes ??= [];
+			ColorSchemes.Add(colorScheme.Value.Trim());
+		}
+
+		if (camouflage.Element("shipGroups") is { } shipGroups) {
+			ShipGroups = shipGroups.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
+		}
+
+		if (camouflage.Element("Shaders") is { } shaders) {
+			Shaders = [];
+			foreach (var shader in shaders.Elements()) {
+				Shaders[shader.Name.LocalName] = shader.Value.Trim();
+			}
+		}
+
+		if (camouflage.Element("UV") is { } uvs) {
+			foreach (var uv in uvs.Elements()) {
+				UV[uv.Name.LocalName] = CamouflageHelpers.ConvertVec2(uv.Value);
+			}
+		}
+
+		if (camouflage.Element("Textures") is { } textures) {
+			foreach (var texture in textures.Elements()) {
+				Textures[texture.Name.LocalName] = new CamouflageTexture(texture);
+			}
+		}
+	}
+
+	public string Name { get; set; }
 	public string? Annotation { get; set; }
-
-	[XmlElement("realm")]
 	public string? Realm { get; set; }
-
-	[XmlElement("tiled")]
 	public bool Tiled { get; set; }
-
-	[XmlIgnore] // XmlSerializer can't handle "True", what a crap serializer.
 	public bool UseColorScheme { get; set; }
-
-	[XmlElement("targetShip")]
-	public List<string> TargetShips { get; set; } = [];
-
-	[XmlElement("colorSchemes")]
-	public List<string> ColorSchemes { get; set; } = [];
-
-	[XmlElement("shipGroups")] [JsonIgnore]
-	public string? ShipGroupsRaw { get; set; }
-
-	[XmlIgnore]
-	public HashSet<string>? ShipGroups => ShipGroupsRaw?.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
-
-	[XmlIgnore]
+	public List<string>? TargetShips { get; set; }
+	public List<string>? ColorSchemes { get; set; }
+	public HashSet<string>? ShipGroups { get; set; }
 	public Dictionary<string, Vector2D<float>> UV { get; set; } = [];
-
-	[XmlIgnore]
 	public Dictionary<string, string>? Shaders { get; set; }
-
-	[XmlIgnore]
 	public Dictionary<string, CamouflageTexture> Textures { get; set; } = [];
 }

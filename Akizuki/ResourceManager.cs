@@ -5,7 +5,6 @@
 using Akizuki.Data;
 using Akizuki.Data.Tables;
 using Akizuki.Structs.Data;
-using Akizuki.Structs.Data.Camouflage;
 using DragonLib.IO;
 
 namespace Akizuki;
@@ -53,7 +52,7 @@ public sealed class ResourceManager : IDisposable {
 
 		if (OpenFile("res/camouflages.xml") is { } camouflagesXml) {
 			AkizukiLog.Information("Loading Camouflage Data");
-			Camouflages = CamouflageData.Create(camouflagesXml);
+			Camouflages = new CamouflageData(camouflagesXml);
 		} else {
 			AkizukiLog.Warning("Could not load Camouflage Data");
 		}
@@ -85,7 +84,7 @@ public sealed class ResourceManager : IDisposable {
 	public IEnumerable<ulong> Files => IdLookup.Keys;
 	public BigWorldDatabase? Database { get; set; }
 	public PickleObject GameParams { get; set; } = [];
-	public CamouflageRoot? Camouflages { get; set; }
+	public CamouflageData? Camouflages { get; set; }
 	public Dictionary<string, MessageObject> Texts { get; } = new(StringComparer.OrdinalIgnoreCase);
 
 	public void Dispose() {

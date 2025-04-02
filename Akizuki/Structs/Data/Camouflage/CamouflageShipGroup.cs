@@ -2,18 +2,19 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Text.Json.Serialization;
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 namespace Akizuki.Structs.Data.Camouflage;
 
 public record CamouflageShipGroup {
-	[XmlElement("name")]
-	public string Name { get; set; } = string.Empty;
+	public CamouflageShipGroup(XElement shipGroup) {
+		Name = shipGroup.Element("name")!.Value.Trim();
+		if (shipGroup.Element("ships") is { } ships) {
+			Ships = ships.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
+		}
+	}
 
-	[XmlElement("ships")] [JsonIgnore]
-	public string ShipsRaw { get; set; } = string.Empty;
+	public string Name { get; set; }
 
-	[XmlIgnore]
-	public HashSet<string> Ships => ShipsRaw.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
+	public HashSet<string> Ships { get; set; } = [];
 }

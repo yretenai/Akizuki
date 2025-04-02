@@ -3,25 +3,11 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Globalization;
-using System.Xml.Serialization;
 using Silk.NET.Maths;
 
 namespace Akizuki.Structs.Data.Camouflage;
 
-[XmlRoot("data", IsNullable = false)]
-public record CamouflageRoot {
-	[XmlArray("ShipGroups")]
-	[XmlArrayItem("shipGroup")]
-	public List<CamouflageShipGroup> ShipGroups { get; set; } = [];
-
-	[XmlArray("ColorSchemes")]
-	[XmlArrayItem("colorScheme")]
-	public List<CamouflageColorScheme> ColorSchemes { get; set; } = [];
-
-	[XmlArray("Camouflages")]
-	[XmlArrayItem("camouflage")]
-	public List<Camouflage> Camouflages { get; set; } = [];
-
+public record CamouflageHelpers {
 	public static Vector2D<float> ConvertVec2(string value) {
 		var values = value.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
@@ -36,7 +22,11 @@ public record CamouflageRoot {
 		return new Vector2D<float>(u, v);
 	}
 
-	public static Vector4D<float> ConvertVec4(string value) {
+	public static Vector4D<float> ConvertVec4(string? value) {
+		if (value == null) {
+			return new Vector4D<float>(0, 0, 0, 1);
+		}
+
 		var values = value.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
 		if (values.Length < 1 || !float.TryParse(values[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var r)) {

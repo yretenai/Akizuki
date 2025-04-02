@@ -2,43 +2,31 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Text.Json.Serialization;
-using System.Xml.Serialization;
+using System.Xml.Linq;
 using Silk.NET.Maths;
 
 namespace Akizuki.Structs.Data.Camouflage;
 
 public record CamouflageColorScheme {
-	[XmlElement("name")]
-	public string Name { get; set; } = string.Empty;
+	public CamouflageColorScheme(XElement colorScheme) {
+		Name = colorScheme.Element("name")!.Value.Trim();
+		Color0 = CamouflageHelpers.ConvertVec4(colorScheme.Element("color0")?.Value);
+		Color1 = CamouflageHelpers.ConvertVec4(colorScheme.Element("color1")?.Value);
+		Color2 = CamouflageHelpers.ConvertVec4(colorScheme.Element("color2")?.Value);
+		Color3 = CamouflageHelpers.ConvertVec4(colorScheme.Element("color3")?.Value);
+		if (colorScheme.Element("colorUI")?.Value is { } colorUI) {
+			ColorUI = CamouflageHelpers.ConvertVec4(colorUI);
+		}
+	}
 
-	[XmlElement("color0")] [JsonIgnore]
-	public string Color0Raw { get; set; } = string.Empty;
+	public string Name { get; set; }
+	public Vector4D<float> Color0 { get; set; }
 
-	[XmlElement("color1")] [JsonIgnore]
-	public string Color1Raw { get; set; } = string.Empty;
+	public Vector4D<float> Color1 { get; set; }
 
-	[XmlElement("color2")] [JsonIgnore]
-	public string Color2Raw { get; set; } = string.Empty;
+	public Vector4D<float> Color2 { get; set; }
 
-	[XmlElement("color3")] [JsonIgnore]
-	public string Color3Raw { get; set; } = string.Empty;
+	public Vector4D<float> Color3 { get; set; }
 
-	[XmlElement("colorUI")] [JsonIgnore]
-	public string? ColorUIRaw { get; set; }
-
-	[XmlIgnore]
-	public Vector4D<float> Color0 => CamouflageRoot.ConvertVec4(Color0Raw);
-
-	[XmlIgnore]
-	public Vector4D<float> Color1 => CamouflageRoot.ConvertVec4(Color1Raw);
-
-	[XmlIgnore]
-	public Vector4D<float> Color2 => CamouflageRoot.ConvertVec4(Color2Raw);
-
-	[XmlIgnore]
-	public Vector4D<float> Color3 => CamouflageRoot.ConvertVec4(Color3Raw);
-
-	[XmlIgnore]
-	public Vector4D<float>? ColorUI => !string.IsNullOrEmpty(ColorUIRaw) ? CamouflageRoot.ConvertVec4(ColorUIRaw) : null;
+	public Vector4D<float>? ColorUI { get; set; }
 }
