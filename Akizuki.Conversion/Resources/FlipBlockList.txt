@@ -1,0 +1,7 @@
+; SPDX-FileCopyrightText: Nobody
+; SPDX-License-Identifier: CC0-1.0
+;
+; skinned meshes have inverted normals, some for some reason do not.
+; todo: find out if this is controlled somewhere.
+; todo: populate me with problematic meshes
+JGM055_100mm65_Type98

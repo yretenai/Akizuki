@@ -28,15 +28,15 @@ namespace Akizuki.Conversion;
 
 public static class GeometryConverter {
 	static GeometryConverter() {
-		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FlipAllowList.txt"), FlipAllowList);
+		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FlipBlockList.txt"), FlipBlockList);
 		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MiscBlockList.txt"), MiscBlockList);
 	}
 
-	// Most meshes are not flipped on the Z axis when attached to a skeleton, except a few.
-	// This is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
-	// Not being flipped seems to be a recent change, so hopefully eventually meshes will stop being flipped.
-	// Reads ./Resources/FlipAllowList.txt
-	public static HashSet<string> FlipAllowList { get; } = [];
+
+	// Skinned meshes have inverted normals, some for some reason do not.
+	// todo: find out if this is controlled somewhere.
+	// Reads ./Resources/FlipBlockList.txt
+	public static HashSet<string> FlipBlockList { get; } = [];
 
 	// I have no idea how the game resolves misc objects
 	// At the moment Akizuki tries to resolve the misc object based on heuristics, but sometimes invalid misc objects are found.
@@ -205,7 +205,7 @@ public static class GeometryConverter {
 		var tangentsSpan = tangents.Span;
 		var colorsSpan = colors.Span;
 
-		var shouldFlip = vertexBuffer.Header.IsSkinned && (FlipAllowList.Contains(name) || (name.Length > 2 && name[1] is 'D' or 'R' or 'F'));
+		var shouldFlip = vertexBuffer.Header.IsSkinned && !FlipBlockList.Contains(name);
 		for (var index = 0; index < vertexBuffer.VertexCount; index += 1) {
 			var vertex = buffer.Slice(index * vertexBuffer.Stride, vertexBuffer.Stride);
 
