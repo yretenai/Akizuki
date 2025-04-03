@@ -76,6 +76,8 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 
 	public bool InsertTypeInfo => false;
 
+	public bool BlenderSafe => false;
+
 	public TextureFormat SelectedFormat {
 		get {
 			if (ImageFormat != TextureFormat.Auto) {

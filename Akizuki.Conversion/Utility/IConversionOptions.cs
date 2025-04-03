@@ -16,4 +16,5 @@ public interface IConversionOptions {
 	public bool ConvertTextures { get; }
 	public bool ConvertCubeMaps { get; }
 	public bool InsertTypeInfo { get; }
+	public bool BlenderSafe { get; }
 }

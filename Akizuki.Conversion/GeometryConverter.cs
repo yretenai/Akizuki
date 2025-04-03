@@ -95,7 +95,7 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static GeometryCache BuildGeometryBuffers(GL.Root gltf, Stream stream, Geometry geometry, string name) {
+	public static GeometryCache BuildGeometryBuffers(IConversionOptions options, GL.Root gltf, Stream stream, Geometry geometry, string name) {
 		var mapping = new Dictionary<(bool, int), Dictionary<string, int>>();
 
 		for (var index = 0; index < geometry.MergedIndexBuffers.Count; index++) {
@@ -109,7 +109,7 @@ public static class GeometryConverter {
 
 		for (var index = 0; index < geometry.MergedVertexBuffers.Count; index++) {
 			var vertexBuffer = geometry.MergedVertexBuffers[index];
-			var id = BuildVertexBuffer(gltf, stream, vertexBuffer, name);
+			var id = BuildVertexBuffer(options, gltf, stream, vertexBuffer, name);
 			if (id.Count == 0) {
 				continue;
 			}
@@ -151,7 +151,7 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static Dictionary<string, int> BuildVertexBuffer(GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, string name) {
+	public static Dictionary<string, int> BuildVertexBuffer(IConversionOptions options, GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, string name) {
 		var buffer = vertexBuffer.Buffer.Span;
 		var info = vertexBuffer.Info;
 
@@ -218,7 +218,7 @@ public static class GeometryConverter {
 			result["TANGENT"] = gltf.CreateBufferView(MemoryMarshal.AsBytes(tangentsSpan), stream, Unsafe.SizeOf<Vector4D<float>>(), GL.BufferViewTarget.ArrayBuffer).Id;
 		}
 
-		if (colorsSpan.Length > 0) {
+		if (colorsSpan.Length > 0 && !options.BlenderSafe) {
 			result["COLOR_0"] = gltf.CreateBufferView(MemoryMarshal.AsBytes(colorsSpan), stream, Unsafe.SizeOf<Vector4D<float>>(), GL.BufferViewTarget.ArrayBuffer).Id;
 		}
 
@@ -238,7 +238,7 @@ public static class GeometryConverter {
 		var root = gltf.CreateNode().Node;
 		root.Name = Path.GetFileNameWithoutExtension(path);
 
-		var buffers = BuildGeometryBuffers(gltf, bufferStream, geometry, root.Name);
+		var buffers = BuildGeometryBuffers(flags, gltf, bufferStream, geometry, root.Name);
 		var existingPrimitives = new PrimitiveCache();
 
 		var indexBuffers = geometry.SharedIndexBuffers
@@ -515,7 +515,7 @@ public static class GeometryConverter {
 		using var geometry = new Geometry(geometryData);
 
 		if (!context.GeometryCache.TryGetValue(visual.MergedGeometryPath, out var buffers)) {
-			buffers = context.GeometryCache[visual.MergedGeometryPath] = BuildGeometryBuffers(gltf, context.BufferStream, geometry, name);
+			buffers = context.GeometryCache[visual.MergedGeometryPath] = BuildGeometryBuffers(context.Flags, gltf, context.BufferStream, geometry, name);
 		}
 
 		if (!context.PrimCache.TryGetValue(visual.MergedGeometryPath, out var primCache)) {
@@ -626,7 +626,7 @@ public static class GeometryConverter {
 					mat.PBR ??= new GL.PBRMaterial();
 					mat.PBR.MetallicRoughnessTexture = texInfo;
 					break;
-				case "ambientOcclusionMap":
+				case "ambientOcclusionMap" when context.Flags.BlenderSafe:
 					mat.OcclusionTexture = new GL.OcclusionTextureInfo {
 						Index = texInfo.Index,
 					};

@@ -216,7 +216,7 @@ public static class TextureConverter {
 			}
 		}
 
-		if (isMetalGlossMap || isNormalMap) {
+		if (flags.BlenderSafe && (isMetalGlossMap || isNormalMap)) {
 			for (var index = 0; index < frames.Count; index++) {
 				var image = frames[index];
 				var oldImage = default(IImageBuffer);

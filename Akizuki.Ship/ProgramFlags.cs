@@ -52,6 +52,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
 
+	[Flag("blender", Help = "Make glTF Materials safe for usage in blender", Category = "Akizuki")]
+	public bool BlenderSafe { get; set; }
+
 	public CubemapStyle CubemapStyle => CubemapStyle.Equirectangular;
 	public bool ConvertTextures => true;
 	public bool ConvertCubeMaps => true;
