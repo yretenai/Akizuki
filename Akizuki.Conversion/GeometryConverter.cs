@@ -28,12 +28,14 @@ namespace Akizuki.Conversion;
 public static class GeometryConverter {
 	static GeometryConverter() {
 		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MiscBlockList.txt"), MiscBlockList);
+		ReadRedirectMap(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MaterialRewrite.txt"), MaterialMapping);
 	}
 
 	// I have no idea how the game resolves misc objects
 	// At the moment Akizuki tries to resolve the misc object based on heuristics, but sometimes invalid misc objects are found.
 	// Reads ./Resources/MiscBlockList.txt
 	public static HashSet<string> MiscBlockList { get; } = [];
+	public static Dictionary<string, string> MaterialMapping { get; } = [];
 
 	private static void ReadBlockList(string path, HashSet<string> blockList) {
 		if (!File.Exists(path)) {
@@ -52,6 +54,31 @@ public static class GeometryConverter {
 			if (line.Length > 0) {
 				blockList.Add(line);
 			}
+		}
+	}
+
+	private static void ReadRedirectMap(string path, Dictionary<string, string> mapping) {
+		if (!File.Exists(path)) {
+			return;
+		}
+
+		using var reader = new StreamReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+		while (reader.ReadLine() is { } line) {
+			var semiColonIndex = line.IndexOf(';', StringComparison.Ordinal);
+			switch (semiColonIndex) {
+				case 0: continue;
+				case > -1: line = line[..semiColonIndex]; break;
+			}
+
+			line = line.Trim();
+			var comma = line.IndexOf(',', StringComparison.Ordinal);
+			if (comma == -1) {
+				continue;
+			}
+
+			var from = line[..comma];
+			var to = line[(comma + 1)..];
+			mapping[from] = to;
 		}
 	}
 
@@ -628,14 +655,9 @@ public static class GeometryConverter {
 			materialAttributes.Workflow = materialAttributes.Workflow[..^8];
 		}
 
-		materialAttributes.Workflow = materialAttributes.Workflow switch {
-			"ship_material" => "PBS_ship",
-			"wire_material" => "PBS_ship",
-			"PBS_wire" => "PBS_ship",
-			"grid_alpha" => "PBS_grid",
-			"glass_material" => "PBS_glass",
-			_ => materialAttributes.Workflow,
-		};
+		if (MaterialMapping.TryGetValue(materialAttributes.Workflow, out var redirected)) {
+			materialAttributes.Workflow = redirected;
+		}
 
 		gltf.ExtensionsUsed ??= [];
 		gltf.ExtensionsUsed.Add(CHRONOVOREMaterialAttributes.EXT_NAME);

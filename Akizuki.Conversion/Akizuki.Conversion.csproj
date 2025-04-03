@@ -23,6 +23,9 @@ SPDX-License-Identifier: EUPL-1.2
 		<None Update="Resources\MiscBlockList.txt">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<None Update="Resources\MaterialRewrite.txt">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 </Project>
