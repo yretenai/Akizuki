@@ -31,9 +31,8 @@ public static class ArmorConverter {
 
 	[MethodImpl(MethodConstants.Optimize)]
 	public static void CreateArmor(GL.Root gltf, GL.Node node, Stream stream, GeometryArmor armor, Dictionary<int, int> thicknessMaterial) {
-		var (meshNode, _) = node.CreateNode(gltf);
-		(var mesh, meshNode.Mesh) = gltf.CreateMesh();
-		mesh.Name = meshNode.Name = armor.Name;
+		var (meshNode, _) = node.CreateNode(gltf, armor.Name);
+		(var mesh, meshNode.Mesh) = gltf.CreateMesh(armor.Name);
 
 		foreach (var plate in armor.Plates) {
 			using var indexBuffer = new MemoryBuffer<ushort>(plate.Vertices.Length);
@@ -41,8 +40,7 @@ public static class ArmorConverter {
 			var accessorId = gltf.CreateAccessor(view, plate.Vertices.Length, 0, GL.AccessorType.VEC3, GL.AccessorComponentType.Float).Id;
 
 			if (!thicknessMaterial.TryGetValue(plate.Thickness, out var materialId)) {
-				var material = gltf.CreateMaterial();
-				material.Material.Name = $"{plate.Thickness}mm Armor";
+				var material = gltf.CreateMaterial($"{plate.Thickness}mm Armor");
 				materialId = thicknessMaterial[plate.Thickness] = material.Id;
 				material.Material.Extensions = new Dictionary<string, JsonValue> {
 					["KHR_materials_unlit"] = JsonValue.Create(new object())!,

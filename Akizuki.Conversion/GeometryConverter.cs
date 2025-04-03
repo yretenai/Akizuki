@@ -236,10 +236,9 @@ public static class GeometryConverter {
 
 		var gltf = new GL.Root();
 
-		var root = gltf.CreateNode().Node;
-		root.Name = Path.GetFileNameWithoutExtension(path);
+		var root = gltf.CreateNode(Path.GetFileNameWithoutExtension(path)).Node;
 
-		var buffers = BuildGeometryBuffers(flags, gltf, bufferStream, geometry, root.Name);
+		var buffers = BuildGeometryBuffers(flags, gltf, bufferStream, geometry, root.Name!);
 		var existingPrimitives = new PrimitiveCache();
 
 		var indexBuffers = geometry.SharedIndexBuffers
@@ -253,10 +252,8 @@ public static class GeometryConverter {
 				continue;
 			}
 
-			var (meshNode, _) = root.CreateNode(gltf);
-
-			(var mesh, meshNode.Mesh) = gltf.CreateMesh();
-			mesh.Name = meshNode.Name = name;
+			var (meshNode, _) = root.CreateNode(gltf, name);
+			(var mesh, meshNode.Mesh) = gltf.CreateMesh(name);
 
 			CreatePrimitive(gltf, mesh, buffers, existingPrimitives, vertexBuffer, indexBuffer, geometry);
 		}
@@ -268,6 +265,7 @@ public static class GeometryConverter {
 
 		gltf.Buffers = [
 			new GL.Buffer {
+				Name = null!,
 				Uri = Path.GetFileName(bufferPath),
 				ByteLength = bufferStream.Length,
 			},
@@ -401,14 +399,14 @@ public static class GeometryConverter {
 
 		var gltf = new GL.Root();
 
-		var root = gltf.CreateNode().Node;
-		root.Name = fileName;
+		var root = gltf.CreateNode(fileName).Node;
 
 		var context = new ModelBuilderContext(flags, manager, bufferStream, modelPath, texturesPath, hardPoints, portPoints);
 		BuildModelPart(context, gltf, root, builtVisual);
 
 		gltf.Buffers = [
 			new GL.Buffer {
+				Name = null!,
 				Uri = Path.GetFileName(bufferPath),
 				ByteLength = bufferStream.Length,
 			},
@@ -438,8 +436,7 @@ public static class GeometryConverter {
 	[MethodImpl(MethodConstants.Optimize)]
 	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual) {
 		var name = Path.GetFileNameWithoutExtension(visual.MergedGeometryPath.Path);
-		var (node, rootId) = parent.CreateNode(gltf);
-		node.Name = name;
+		var (node, rootId) = parent.CreateNode(gltf, name);
 
 		var nodeMap = new Dictionary<StringId, GL.Node>();
 		var boneCount = visual.Skeleton.Names.Count;
@@ -448,7 +445,7 @@ public static class GeometryConverter {
 			var worldMatrices = isSkinned ? stackalloc Matrix4x4[boneCount] : [];
 			GL.Skin? skin = null;
 			if (isSkinned) {
-				(skin, node.Skin) = gltf.CreateSkin();
+				(skin, node.Skin) = gltf.CreateSkin(name);
 			}
 
 			for (var nodeIndex = 0; nodeIndex < visual.Skeleton.Names.Count; nodeIndex++) {
@@ -464,8 +461,7 @@ public static class GeometryConverter {
 					skeletonNode = node;
 					skeletonId = rootId;
 				} else {
-					(skeletonNode, skeletonId) = parentNode.CreateNode(gltf);
-					skeletonNode.Name = realName;
+					(skeletonNode, skeletonId) = parentNode.CreateNode(gltf, realName);
 				}
 
 				nodeMap[nodeName] = skeletonNode;
@@ -538,8 +534,7 @@ public static class GeometryConverter {
 			var material = renderSet.MaterialResource;
 
 			if (primaryNode.Mesh is not { } meshId) {
-				var pair = gltf.CreateMesh();
-				pair.Mesh.Name = node.Name + "_" + renderSet.Name.Text;
+				var pair = gltf.CreateMesh(node.Name + "_" + renderSet.Name.Text);
 				meshId = pair.Id;
 				primaryNode.Mesh = meshId;
 			}
@@ -591,9 +586,7 @@ public static class GeometryConverter {
 		gltf.ExtensionsUsed ??= [];
 		gltf.ExtensionsUsed.Add(CHRONOVOREMaterialAttributes.EXT_NAME);
 
-		var (mat, matId) = gltf.CreateMaterial();
-
-		mat.Name = Path.GetFileNameWithoutExtension(material.Path);
+		var (mat, matId) = gltf.CreateMaterial(Path.GetFileNameWithoutExtension(material.Path));
 
 		foreach (var (name, value) in mfm.BoolValues) {
 			materialAttributes.Scalars[name.Text] = value ? 1 : 0;

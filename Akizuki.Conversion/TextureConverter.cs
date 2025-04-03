@@ -305,7 +305,6 @@ public static class TextureConverter {
 			stream.Write(buffer.Span);
 		}
 
-
-		return context.TextureCache[id] = gltf.CreateTexture(texturePath, WrapMode.Repeat, WrapMode.Repeat, null, null).Id;
+		return context.TextureCache[id] = gltf.CreateTexture(slotName.Text, texturePath, WrapMode.Repeat, WrapMode.Repeat, null, null).Id;
 	}
 }
