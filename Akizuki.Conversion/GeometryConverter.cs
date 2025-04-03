@@ -626,7 +626,7 @@ public static class GeometryConverter {
 					mat.PBR ??= new GL.PBRMaterial();
 					mat.PBR.MetallicRoughnessTexture = texInfo;
 					break;
-				case "ambientOcclusionMap" when context.Flags.BlenderSafe:
+				case "ambientOcclusionMap" when !context.Flags.BlenderSafe:
 					mat.OcclusionTexture = new GL.OcclusionTextureInfo {
 						Index = texInfo.Index,
 					};
