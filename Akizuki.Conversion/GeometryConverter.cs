@@ -25,12 +25,41 @@ using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Gr
 namespace Akizuki.Conversion;
 
 public static class GeometryConverter {
-	// most meshes are flipped on the Z axis when skinned, except a few.
-	// this is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
-	// todo: populate me with problematic meshes
-	public static HashSet<string> FlipBlocklist { get; } = [
-		"JGM055_100mm65_Type98",
-	];
+	// Most meshes are flipped on the Z axis when attached to a skeleton, except a few.
+	// This is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
+	// Not being flipped seems to be a recent change, so hopefully eventually meshes will stop being flipped.
+	// Reads ./Resources/FlipBlockList.txt
+	public static HashSet<string> FlipBlockList { get; } = [];
+
+	// I have no idea how the game resolves misc objects
+	// At the moment Akizuki tries to resolve the misc object based on heuristics, but sometimes invalid misc objects are found.
+	// Reads ./Resources/MiscBlockList.txt
+	public static HashSet<string> MiscBlockList { get; } = [];
+
+	static GeometryConverter() {
+		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FlipBlockList.txt"), FlipBlockList);
+		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MiscBlockList.txt"), MiscBlockList);
+	}
+
+	private static void ReadBlockList(string path, HashSet<string> blockList) {
+		if (!File.Exists(path)) {
+			return;
+		}
+
+		using var reader = new StreamReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+		while (reader.ReadLine() is { } line) {
+			var semiColonIndex = line.IndexOf(';', StringComparison.Ordinal);
+			switch (semiColonIndex) {
+				case 0: continue;
+				case > -1: line = line[..semiColonIndex]; break;
+			}
+
+			line = line.Trim();
+			if (line.Length > 0) {
+				blockList.Add(line);
+			}
+		}
+	}
 
 
 	[MethodImpl(MethodConstants.Optimize)]
@@ -53,13 +82,13 @@ public static class GeometryConverter {
 
 	[MethodImpl(MethodConstants.Optimize)]
 	public static string? LocateMiscObject(string id) {
-		if (!id.StartsWith("MP_")) {
+		if (!id.StartsWith("MP_") || MiscBlockList.Contains(id)) {
 			return null;
 		}
 
 		id = id[3..];
 
-		if (id.Length < 5 || id[1] != 'M') {
+		if (id.Length < 5 || id[1] != 'M' || MiscBlockList.Contains(id)) {
 			return null;
 		}
 
@@ -170,7 +199,7 @@ public static class GeometryConverter {
 		var tangentsSpan = tangents.Span;
 		var colorsSpan = colors.Span;
 
-		var shouldFlip = vertexBuffer.Header.IsSkinned && !FlipBlocklist.Contains(name);
+		var shouldFlip = vertexBuffer.Header.IsSkinned && !FlipBlockList.Contains(name);
 		for (var index = 0; index < vertexBuffer.VertexCount; index += 1) {
 			var vertex = buffer.Slice(index * vertexBuffer.Stride, vertexBuffer.Stride);
 
@@ -528,7 +557,7 @@ public static class GeometryConverter {
 			var vertexHasBones = geometry.MergedVertexBuffers[vertexBuffer.BufferIndex].FormatName.Contains("iii", StringComparison.Ordinal);
 			var setIsSkinned = isSkinned && renderSet is { IsSkinned: true, Nodes.Count: > 1 } && vertexHasBones;
 
-			var shouldUseRoot = setIsSkinned || renderSet.Nodes.Count == 0 || nodeMap.Count == 0;
+			var shouldUseRoot = renderSet.Nodes.Count == 0 || nodeMap.Count == 0;
 			var primaryNode = shouldUseRoot ? node : nodeMap[renderSet.Nodes[0]];
 			var indicesBuffer = geometry.SharedIndexBuffers[renderSet.IndicesName];
 			var material = renderSet.MaterialResource;

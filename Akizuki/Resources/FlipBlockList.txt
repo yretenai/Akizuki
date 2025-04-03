@@ -1,0 +1,7 @@
+; SPDX-FileCopyrightText: Nobody
+; SPDX-License-Identifier: CC0-1.0
+;
+; most meshes are flipped on the Z axis when skinned, except a few.
+; this is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
+; todo: populate me with problematic meshes
+JGM055_100mm65_Type98

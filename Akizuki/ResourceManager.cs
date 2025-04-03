@@ -43,7 +43,7 @@ public sealed class ResourceManager : IDisposable {
 			foreach (var locFile in new FileEnumerator(locDir, new EnumerationOptions { MatchType = MatchType.Simple, RecurseSubdirectories = true }, "*.mo")) {
 				var lang = Path.GetFileName(Path.GetDirectoryName(Path.GetFullPath(Path.Combine(locFile, "../../")))) ?? "xx";
 				AkizukiLog.Information("Loading Translation {Lang}", lang);
-				using var stream = new FileStream(locFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+				using var stream = new FileStream(locFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 				Texts[lang] = new MessageObject(stream);
 			}
 		} else {

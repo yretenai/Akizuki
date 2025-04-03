@@ -1,0 +1,6 @@
+; SPDX-FileCopyrightText: Nobody
+; SPDX-License-Identifier: CC0-1.0
+;
+; I have no idea how the game resolves misc objects
+; At the moment Akizuki tries to resolve the misc object based on heuristics, but sometimes invalid misc objects are found.
+; todo: populate me with misc objects
