@@ -20,9 +20,6 @@ SPDX-License-Identifier: EUPL-1.2
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="Resources\FlipBlockList.txt">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 		<None Update="Resources\MiscBlockList.txt">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -28,15 +27,8 @@ namespace Akizuki.Conversion;
 
 public static class GeometryConverter {
 	static GeometryConverter() {
-		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FlipBlockList.txt"), FlipBlockList);
 		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MiscBlockList.txt"), MiscBlockList);
 	}
-
-
-	// Skinned meshes have inverted normals, some for some reason do not.
-	// todo: find out if this is controlled somewhere.
-	// Reads ./Resources/FlipBlockList.txt
-	public static HashSet<string> FlipBlockList { get; } = [];
 
 	// I have no idea how the game resolves misc objects
 	// At the moment Akizuki tries to resolve the misc object based on heuristics, but sometimes invalid misc objects are found.
@@ -130,7 +122,7 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static GeometryCache BuildGeometryBuffers(IConversionOptions options, GL.Root gltf, Stream stream, Geometry geometry, string name) {
+	public static GeometryCache BuildGeometryBuffers(IConversionOptions options, GL.Root gltf, Stream stream, Geometry geometry, string name, List<Matrix4X4<float>> matrices) {
 		var mapping = new Dictionary<(bool, int), Dictionary<string, int>>();
 
 		for (var index = 0; index < geometry.MergedIndexBuffers.Count; index++) {
@@ -142,9 +134,11 @@ public static class GeometryConverter {
 			};
 		}
 
+		var shouldFlipNormals = matrices.Any(matrix => matrix.GetDeterminant() < 0);
+
 		for (var index = 0; index < geometry.MergedVertexBuffers.Count; index++) {
 			var vertexBuffer = geometry.MergedVertexBuffers[index];
-			var id = BuildVertexBuffer(options, gltf, stream, vertexBuffer, name);
+			var id = BuildVertexBuffer(options, gltf, stream, vertexBuffer, name, vertexBuffer.Header.IsSkinned && shouldFlipNormals);
 			if (id.Count == 0) {
 				continue;
 			}
@@ -186,7 +180,7 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static Dictionary<string, int> BuildVertexBuffer(IConversionOptions options, GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, string name) {
+	public static Dictionary<string, int> BuildVertexBuffer(IConversionOptions options, GL.Root gltf, Stream stream, GeometryVertexBuffer vertexBuffer, string name, bool flipNormals) {
 		var buffer = vertexBuffer.Buffer.Span;
 		var info = vertexBuffer.Info;
 
@@ -205,17 +199,14 @@ public static class GeometryConverter {
 		var tangentsSpan = tangents.Span;
 		var colorsSpan = colors.Span;
 
-		var shouldFlip = vertexBuffer.Header.IsSkinned && !FlipBlockList.Contains(name);
 		for (var index = 0; index < vertexBuffer.VertexCount; index += 1) {
 			var vertex = buffer.Slice(index * vertexBuffer.Stride, vertexBuffer.Stride);
 
-			var pos = MemoryMarshal.Read<Vector3D<float>>(vertex[info.Position..]);
+			positionsSpan[index] = MemoryMarshal.Read<Vector3D<float>>(vertex[info.Position..]);
 			var nor = VertexHelper.UnpackNormal(MemoryMarshal.Read<Vector4D<sbyte>>(vertex[info.Normal..]));
-			if (shouldFlip) {
+			if (flipNormals) {
 				nor *= -1;
 			}
-
-			positionsSpan[index] = pos;
 			normals[index] = nor;
 			uv1Span[index] = VertexHelper.UnpackUV(MemoryMarshal.Read<Vector2D<Half>>(vertex[info.UV1..]));
 
@@ -271,7 +262,7 @@ public static class GeometryConverter {
 
 		var root = gltf.CreateNode(Path.GetFileNameWithoutExtension(path)).Node;
 
-		var buffers = BuildGeometryBuffers(flags, gltf, bufferStream, geometry, root.Name!);
+		var buffers = BuildGeometryBuffers(flags, gltf, bufferStream, geometry, root.Name!, []);
 		var existingPrimitives = new PrimitiveCache();
 
 		var indexBuffers = geometry.SharedIndexBuffers
@@ -478,7 +469,7 @@ public static class GeometryConverter {
 		var isSkinned = visual.RenderSets.Values.Any(x => x is { IsSkinned: true, Nodes.Count: > 1 });
 
 		if (visual.Skeleton.Names.Count > 0) {
-			var worldMatrices = isSkinned ? stackalloc Matrix4x4[boneCount] : [];
+			var worldMatrices = isSkinned ? stackalloc Matrix4X4<float>[boneCount] : [];
 			GL.Skin? skin = null;
 			if (isSkinned) {
 				(skin, node.Skin) = gltf.CreateSkin(name);
@@ -517,8 +508,20 @@ public static class GeometryConverter {
 				}
 
 				if (isSkinned) {
-					var parentMatrix = nodeParent == ushort.MaxValue ? Matrix4x4.Identity : worldMatrices[nodeParent];
-					worldMatrices[nodeIndex] = nodeMatrix.ToSystem() * parentMatrix;
+					var worldMatrix = nodeMatrix;
+					if (nodeParent != ushort.MaxValue) {
+						worldMatrix *= worldMatrices[nodeParent];
+					}
+
+					// BendBones have inverted scale??
+					if (worldMatrix.GetDeterminant() < 0 && nodeName.Text.Contains("BlendBone", StringComparison.OrdinalIgnoreCase)) {
+						worldMatrix.M11 = Math.Abs(worldMatrix.M11);
+						worldMatrix.M22 = Math.Abs(worldMatrix.M22);
+						worldMatrix.M33 = Math.Abs(worldMatrix.M33);
+					}
+
+					worldMatrices[nodeIndex] = worldMatrix;
+
 					skin!.Joints.Add(skeletonId);
 				}
 
@@ -528,12 +531,12 @@ public static class GeometryConverter {
 			}
 
 			if (isSkinned) {
+				Span<Matrix4X4<float>> inverseMatrices = stackalloc Matrix4X4<float>[boneCount];
 				for (var index = 0; index < boneCount; ++index) {
-					Matrix4x4.Invert(worldMatrices[index], out var inverseMatrix);
-					worldMatrices[index] = inverseMatrix;
+					Matrix4X4.Invert(worldMatrices[index], out inverseMatrices[index]);
 				}
 
-				skin!.InverseBindMatrices = gltf.CreateAccessor(worldMatrices, context.BufferStream, GL.BufferViewTarget.ArrayBuffer, GL.AccessorType.MAT4, GL.AccessorComponentType.Float).Id;
+				skin!.InverseBindMatrices = gltf.CreateAccessor(inverseMatrices, context.BufferStream, GL.BufferViewTarget.ArrayBuffer, GL.AccessorType.MAT4, GL.AccessorComponentType.Float).Id;
 			}
 		}
 
@@ -550,7 +553,7 @@ public static class GeometryConverter {
 		using var geometry = new Geometry(geometryData);
 
 		if (!context.GeometryCache.TryGetValue(visual.MergedGeometryPath, out var buffers)) {
-			buffers = context.GeometryCache[visual.MergedGeometryPath] = BuildGeometryBuffers(context.Flags, gltf, context.BufferStream, geometry, name);
+			buffers = context.GeometryCache[visual.MergedGeometryPath] = BuildGeometryBuffers(context.Flags, gltf, context.BufferStream, geometry, name, visual.Skeleton.Matrices);
 		}
 
 		if (!context.PrimCache.TryGetValue(visual.MergedGeometryPath, out var primCache)) {
@@ -563,7 +566,7 @@ public static class GeometryConverter {
 			var vertexHasBones = geometry.MergedVertexBuffers[vertexBuffer.BufferIndex].FormatName.Contains("iii", StringComparison.Ordinal);
 			var setIsSkinned = isSkinned && renderSet is { IsSkinned: true, Nodes.Count: > 1 } && vertexHasBones;
 
-			var shouldUseRoot = renderSet.Nodes.Count == 0 || nodeMap.Count == 0;
+			var shouldUseRoot = setIsSkinned || renderSet.Nodes.Count == 0 || nodeMap.Count == 0;
 			var primaryNode = shouldUseRoot ? node : nodeMap[renderSet.Nodes[0]];
 			var indicesBuffer = geometry.SharedIndexBuffers[renderSet.IndicesName];
 			var material = renderSet.MaterialResource;
@@ -638,6 +641,7 @@ public static class GeometryConverter {
 		gltf.ExtensionsUsed.Add(CHRONOVOREMaterialAttributes.EXT_NAME);
 
 		var (mat, matId) = gltf.CreateMaterial(Path.GetFileNameWithoutExtension(material.Path));
+		mat.DoubleSided = true;
 
 		foreach (var (name, value) in mfm.BoolValues) {
 			materialAttributes.Scalars[name.Text] = value ? 1 : 0;
