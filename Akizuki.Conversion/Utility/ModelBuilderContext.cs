@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using Akizuki.Structs.Data;
+using Akizuki.Structs.Data.Camouflage;
 using GeometryCache = System.Collections.Generic.Dictionary<(bool IsVertexBuffer, int GeometryBufferId), System.Collections.Generic.Dictionary<string, int>>;
 using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Graphics.GeometryName Vertex, Akizuki.Structs.Graphics.GeometryName Index), (System.Collections.Generic.Dictionary<string, int> Attributes, int Indices)>;
 
@@ -22,3 +23,5 @@ public record ModelBuilderContext(
 	public Dictionary<ResourceId, int> MaterialCache { get; } = [];
 	public Dictionary<ResourceId, int> TextureCache { get; } = [];
 }
+
+public record CamouflageContext(CamouflageColorScheme ColorScheme, Camouflage Camouflage, CamouflagePart Part);

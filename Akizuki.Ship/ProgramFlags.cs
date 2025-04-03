@@ -43,17 +43,23 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("language", Help = "Language locale to load", Category = "Akizuki")]
 	public string Language { get; set; } = "en";
 
+	[Flag("permoflage", Help = "Use Permoflages on ships that do not have a native permoflage", Category = "Akizuki")]
+	public bool UsePermoflageRegardless { get; set; }
+
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
 	public TextureFormat ImageFormat { get; set; } = TextureFormat.Auto;
 
 	[Flag("type-info", Help = "Insert type information in the resulting file path", Category = "Akizuki")]
 	public bool InsertTypeInfo { get; set; }
 
+	[Flag("blender", Help = "Make glTF Materials safe for usage in blender", Category = "Akizuki")]
+	public bool BlenderSafe { get; set; }
+
 	[Flag("dry", Help = "Only load (and verify) packages, don't write data", Category = "Akizuki")]
 	public bool Dry { get; set; }
 
-	[Flag("blender", Help = "Make glTF Materials safe for usage in blender", Category = "Akizuki")]
-	public bool BlenderSafe { get; set; }
+	[Flag("convert-armor", Help = "Convert armor models with geometry to glTF", Category = "Akizuki")]
+	public bool ConvertArmor { get; set; }
 
 	public CubemapStyle CubemapStyle => CubemapStyle.Equirectangular;
 	public bool ConvertTextures => true;

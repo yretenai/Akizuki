@@ -117,15 +117,17 @@ public sealed class ResourceManager : IDisposable {
 		return null;
 	}
 
-	public bool HasFile(string path) {
+	public ResourceId FindFile(string path) {
 		path = path.TrimStart('/');
 
 		if (!path.StartsWith("res/")) {
 			path = "res/" + path;
 		}
 
-		return PathLookup.ContainsKey(path);
+		return new ResourceId(PathLookup.GetValueOrDefault(path, 0xFFFFFFFFFFFFFFFF));
 	}
+
+	public bool HasFile(string path) => FindFile(path).Hash != 0xFFFFFFFFFFFFFFFF;
 
 	public IMemoryBuffer<byte>? OpenFile(ulong id) {
 		if (id is 0 or 0xFFFFFFFFFFFFFFFF) {

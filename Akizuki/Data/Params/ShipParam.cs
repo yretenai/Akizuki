@@ -12,6 +12,15 @@ public class ShipParam : ParamObject {
 	public ShipParam(PickleObject pickle, GameDataObject data) : base(data) {
 		Index = data.GetValue<string>("index");
 		Name = data.GetValue<string>("name");
+
+		if (data.GetValueOrDefault<string>("nativePermoflage") is { Length: > 0 } nativePermoflage) {
+			NativePermoflage = nativePermoflage;
+		}
+
+		if (data.GetValueOrDefault<object[]>("permoflages") is { Length: > 0 } permoflages) {
+			Permoflages.AddRange(permoflages.OfType<string>());
+		}
+
 		ShipUpgradeInfo = data.GetParamOrDefault("ShipUpgradeInfo", ShipUpgradeInfo);
 
 		foreach (var component in ShipUpgradeInfo.Upgrades
@@ -20,6 +29,10 @@ public class ShipParam : ParamObject {
 			var componentData = data.GetValueOrDefault<GameDataObject>(component, []);
 			if (componentData.TryGetValue<string>("model", out var model) && !string.IsNullOrEmpty(model)) {
 				ModelPaths[component] = model;
+			}
+
+			if (componentData.TryGetValue<int>("unpeculiarCamouflageColorSchemeId", out var unpeculiarCamouflageColorSchemeId) && unpeculiarCamouflageColorSchemeId > 0) {
+				CamouflageColorSchemeId = unpeculiarCamouflageColorSchemeId;
 			}
 
 			{
@@ -78,6 +91,9 @@ public class ShipParam : ParamObject {
 	public string Name { get; set; } = "PXXX000";
 
 	public string Index { get; set; } = "PXXX000";
+	public string? NativePermoflage { get; set; }
+	public List<string> Permoflages { get; set; } = [];
+	public int CamouflageColorSchemeId { get; set; }
 	public ShipUpgradeInfo ShipUpgradeInfo { get; set; } = new();
 	public Dictionary<string, string> ModelPaths { get; set; } = [];
 	public Dictionary<string, Dictionary<string, string>> HardpointModelPaths { get; set; } = [];

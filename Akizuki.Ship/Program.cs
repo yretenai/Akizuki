@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Akizuki.Conversion;
+using Akizuki.Conversion.Utility;
 using Akizuki.Data.Params;
+using Akizuki.Structs.Data.Camouflage;
 using DragonLib.CommandLine;
 using Serilog;
 using Serilog.Events;
@@ -161,11 +164,52 @@ internal static class Program {
 				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
 			}
 
-			GeometryConverter.ConvertVisual(manager, shipName, flags.OutputDirectory, hullModel, hardPoints, flags, ship.ParamTypeInfo);
+			CamouflageContext? camouflageContext = default;
+			var permoflage = ship.NativePermoflage;
+			if (string.IsNullOrEmpty(permoflage) && flags.UsePermoflageRegardless) {
+				permoflage = ship.Permoflages.FirstOrDefault();
+			}
+
+			if (TryFindPermoflageTag(manager.GameParams, permoflage, out var permoflageTag)) {
+				var camouflage = manager.Camouflages?.Camouflages.FirstOrDefault(x => x.Name == permoflageTag && x is { UseColorScheme: true, Tiled: false } && x.TargetShips?.Contains(shipName) == true);
+				if (camouflage is { ColorSchemes.Count: > 0 }) {
+					var colorSchemeId = camouflage.ColorSchemes.ElementAtOrDefault(ship.CamouflageColorSchemeId) ?? camouflage.ColorSchemes[0];
+					var colorScheme = manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
+					if (colorScheme != null) {
+						camouflageContext = new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown);
+					}
+				}
+			}
+
+			GeometryConverter.ConvertVisual(manager, shipName, flags.OutputDirectory, hullModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext);
+
+			camouflageContext = camouflageContext != default ? camouflageContext with { Part = CamouflagePart.Plane } : default;
 
 			foreach (var (planeName, planeModel) in planes) {
-				GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardPoints, flags, ship.ParamTypeInfo, "plane", shipName);
+				GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext, "plane", shipName);
 			}
 		}
+	}
+
+	public static bool TryFindPermoflageTag(Dictionary<string, Dictionary<object, object>> pickle, string? permoflage, [MaybeNullWhen(false)] out string tag) {
+		if (string.IsNullOrEmpty(permoflage)) {
+			tag = null;
+			return false;
+		}
+
+		if (pickle.TryGetValue(permoflage, out var nativePermoflageParams)) {
+			if (nativePermoflageParams.GetValueOrDefault<string>("unpeculiarCamouflage") is { Length: > 0 } unpeculiarCamouflage) {
+				tag = unpeculiarCamouflage;
+				return true;
+			}
+
+			if (nativePermoflageParams.GetValueOrDefault<string>("camouflage") is { Length: > 0 } camouflage) {
+				tag = camouflage;
+				return true;
+			}
+		}
+
+		tag = null;
+		return false;
 	}
 }

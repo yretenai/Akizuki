@@ -4,6 +4,7 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Akizuki.Json;
 using Akizuki.Json.Silk;
@@ -72,4 +73,8 @@ internal static class JsonOptions {
 			NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
 			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		};
+
+	internal static JsonNodeOptions? GltfNodeOptions => new() {
+		PropertyNameCaseInsensitive = true,
+	};
 }

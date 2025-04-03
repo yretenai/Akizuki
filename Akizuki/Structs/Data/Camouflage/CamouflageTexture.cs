@@ -12,7 +12,7 @@ namespace Akizuki.Structs.Data.Camouflage;
 [XmlRoot("Texutre")]
 public record CamouflageTexture {
 	public CamouflageTexture(XElement texture) {
-		Path = texture.Value.Trim();
+		Path = texture.DescendantNodes().OfType<XText>().First().Value.Trim().Replace('\\', '/');
 
 		if (texture.Element("Influence_m") is not { } xInfluenceM ||
 			!float.TryParse(xInfluenceM.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var influenceM)) {
@@ -24,7 +24,7 @@ public record CamouflageTexture {
 			influenceG = 0f;
 		}
 
-		if (texture.Element("Influence_N") is not { } xInfluenceN ||
+		if (texture.Element("Influence_n") is not { } xInfluenceN ||
 			!float.TryParse(xInfluenceN.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var influenceN)) {
 			influenceN = 0f;
 		}

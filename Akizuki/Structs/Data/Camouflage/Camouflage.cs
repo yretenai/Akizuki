@@ -39,19 +39,26 @@ public record Camouflage {
 		if (camouflage.Element("Shaders") is { } shaders) {
 			Shaders = [];
 			foreach (var shader in shaders.Elements()) {
-				Shaders[shader.Name.LocalName] = shader.Value.Trim();
+				Shaders[Enum.Parse<CamouflageShader>(shader.Name.LocalName, true)] = shader.Value.Trim().Replace('\\', '/');
 			}
 		}
 
 		if (camouflage.Element("UV") is { } uvs) {
 			foreach (var uv in uvs.Elements()) {
-				UV[uv.Name.LocalName] = CamouflageHelpers.ConvertVec2(uv.Value);
+				UV[Enum.Parse<CamouflagePart>(uv.Name.LocalName, true)] = CamouflageHelpers.ConvertVec2(uv.Value);
 			}
 		}
 
 		if (camouflage.Element("Textures") is { } textures) {
 			foreach (var texture in textures.Elements()) {
-				Textures[texture.Name.LocalName] = new CamouflageTexture(texture);
+				var name = texture.Name.LocalName;
+				if (name.EndsWith("_mgn", StringComparison.OrdinalIgnoreCase)) {
+					MGNTextures[Enum.Parse<CamouflagePart>(texture.Name.LocalName[..^4], true)] = new CamouflageTexture(texture);
+				} else if (name.EndsWith("_animmap", StringComparison.OrdinalIgnoreCase)) {
+					AnimMapTextures[Enum.Parse<CamouflagePart>(texture.Name.LocalName[..^8], true)] = new CamouflageTexture(texture);
+				} else {
+					Textures[Enum.Parse<CamouflagePart>(texture.Name.LocalName, true)] = new CamouflageTexture(texture);
+				}
 			}
 		}
 	}
@@ -64,7 +71,9 @@ public record Camouflage {
 	public List<string>? TargetShips { get; set; }
 	public List<string>? ColorSchemes { get; set; }
 	public HashSet<string>? ShipGroups { get; set; }
-	public Dictionary<string, Vector2D<float>> UV { get; set; } = [];
-	public Dictionary<string, string>? Shaders { get; set; }
-	public Dictionary<string, CamouflageTexture> Textures { get; set; } = [];
+	public Dictionary<CamouflagePart, Vector2D<float>> UV { get; set; } = [];
+	public Dictionary<CamouflageShader, string>? Shaders { get; set; }
+	public Dictionary<CamouflagePart, CamouflageTexture> Textures { get; set; } = [];
+	public Dictionary<CamouflagePart, CamouflageTexture> MGNTextures { get; set; } = [];
+	public Dictionary<CamouflagePart, CamouflageTexture> AnimMapTextures { get; set; } = [];
 }

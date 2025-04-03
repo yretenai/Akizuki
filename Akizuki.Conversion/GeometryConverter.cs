@@ -8,11 +8,13 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Akizuki.Conversion.Utility;
 using Akizuki.Data.Params;
 using Akizuki.Data.Tables;
 using Akizuki.Graphics;
 using Akizuki.Structs.Data;
+using Akizuki.Structs.Data.Camouflage;
 using Akizuki.Structs.Graphics;
 using Akizuki.Structs.Graphics.VertexFormat;
 using DragonLib.IO;
@@ -25,21 +27,21 @@ using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Gr
 namespace Akizuki.Conversion;
 
 public static class GeometryConverter {
-	// Most meshes are flipped on the Z axis when attached to a skeleton, except a few.
+	static GeometryConverter() {
+		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FlipAllowList.txt"), FlipAllowList);
+		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MiscBlockList.txt"), MiscBlockList);
+	}
+
+	// Most meshes are not flipped on the Z axis when attached to a skeleton, except a few.
 	// This is controlled by SharedVertexBuffer[].Flags but it tends to apply to the entire buffer.
 	// Not being flipped seems to be a recent change, so hopefully eventually meshes will stop being flipped.
-	// Reads ./Resources/FlipBlockList.txt
-	public static HashSet<string> FlipBlockList { get; } = [];
+	// Reads ./Resources/FlipAllowList.txt
+	public static HashSet<string> FlipAllowList { get; } = [];
 
 	// I have no idea how the game resolves misc objects
 	// At the moment Akizuki tries to resolve the misc object based on heuristics, but sometimes invalid misc objects are found.
 	// Reads ./Resources/MiscBlockList.txt
 	public static HashSet<string> MiscBlockList { get; } = [];
-
-	static GeometryConverter() {
-		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "FlipBlockList.txt"), FlipBlockList);
-		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MiscBlockList.txt"), MiscBlockList);
-	}
 
 	private static void ReadBlockList(string path, HashSet<string> blockList) {
 		if (!File.Exists(path)) {
@@ -92,6 +94,10 @@ public static class GeometryConverter {
 			return null;
 		}
 
+		if (id[3] - '0' >= 5) {
+			return null;
+		}
+
 		var path = "res/content/gameplay/";
 		switch (id[0]) {
 			case 'A': path += "usa/"; break;
@@ -107,7 +113,7 @@ public static class GeometryConverter {
 			case 'U': path += "commonwealth/"; break;
 			case 'V': path += "panamerica/"; break;
 			case 'W': path += "europe/"; break;
-			case 'X': path += "events/"; break;
+			// case 'X': path += "events/"; break;
 			case 'Z': path += "panasia/"; break;
 			default: return null;
 		}
@@ -199,7 +205,7 @@ public static class GeometryConverter {
 		var tangentsSpan = tangents.Span;
 		var colorsSpan = colors.Span;
 
-		var shouldFlip = vertexBuffer.Header.IsSkinned && !FlipBlockList.Contains(name);
+		var shouldFlip = vertexBuffer.Header.IsSkinned && FlipAllowList.Contains(name);
 		for (var index = 0; index < vertexBuffer.VertexCount; index += 1) {
 			var vertex = buffer.Slice(index * vertexBuffer.Stride, vertexBuffer.Stride);
 
@@ -287,9 +293,11 @@ public static class GeometryConverter {
 			CreatePrimitive(gltf, mesh, buffers, existingPrimitives, vertexBuffer, indexBuffer, geometry);
 		}
 
-		var thicknessMaterial = new Dictionary<int, int>();
-		foreach (var armor in geometry.Armors) {
-			ArmorConverter.CreateArmor(gltf, root, bufferStream, armor, thicknessMaterial);
+		if (flags.ConvertArmor) {
+			var thicknessMaterial = new Dictionary<int, int>();
+			foreach (var armor in geometry.Armors) {
+				ArmorConverter.CreateArmor(gltf, root, bufferStream, armor, thicknessMaterial);
+			}
 		}
 
 		gltf.Buffers = [
@@ -385,7 +393,7 @@ public static class GeometryConverter {
 	public static void ConvertVisual(ResourceManager manager, string fileName, string path,
 		string rootModelPath, Dictionary<string, HashSet<string>> hardPoints,
 		IConversionOptions flags, ParamTypeInfo? info,
-		string? subdir = null, string? parentName = null) {
+		CamouflageContext? camouflage, string? subdir = null, string? parentName = null) {
 		var builtVisual = FindVisualPrototype(manager, rootModelPath);
 		if (builtVisual == null) {
 			return;
@@ -431,7 +439,7 @@ public static class GeometryConverter {
 		var root = gltf.CreateNode(fileName).Node;
 
 		var context = new ModelBuilderContext(flags, manager, bufferStream, modelPath, texturesPath, hardPoints, portPoints);
-		BuildModelPart(context, gltf, root, builtVisual);
+		BuildModelPart(context, gltf, root, builtVisual, camouflage);
 
 		gltf.Buffers = [
 			new GL.Buffer {
@@ -452,24 +460,25 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath) {
+	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath, CamouflageContext? camouflage) {
 		AkizukiLog.Information("Building part {Path}", modelPath);
 		var builtVisual = FindVisualPrototype(context.Manager, modelPath);
 		if (builtVisual == null) {
 			return;
 		}
 
-		BuildModelPart(context, gltf, parent, builtVisual);
+		BuildModelPart(context, gltf, parent, builtVisual, camouflage);
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual) {
+	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual, CamouflageContext? camouflage) {
 		var name = Path.GetFileNameWithoutExtension(visual.MergedGeometryPath.Path);
 		var (node, rootId) = parent.CreateNode(gltf, name);
 
 		var nodeMap = new Dictionary<StringId, GL.Node>();
 		var boneCount = visual.Skeleton.Names.Count;
 		var isSkinned = visual.RenderSets.Values.Any(x => x is { IsSkinned: true, Nodes.Count: > 1 });
+
 		if (visual.Skeleton.Names.Count > 0) {
 			var worldMatrices = isSkinned ? stackalloc Matrix4x4[boneCount] : [];
 			GL.Skin? skin = null;
@@ -497,17 +506,16 @@ public static class GeometryConverter {
 
 				if (context.HardPoints.TryGetValue(realName, out var hardPart)) {
 					foreach (var part in hardPart) {
-						BuildModelPart(context, gltf, skeletonNode, part);
+						BuildModelPart(context, gltf, skeletonNode, part, camouflage);
 					}
 				}
 
-
 				if (context.PortPoints.TryGetValue(realName, out var portPart)) {
-					BuildModelPart(context, gltf, skeletonNode, portPart);
+					BuildModelPart(context, gltf, skeletonNode, portPart, camouflage);
 				}
 
 				if (LocateMiscObject(realName) is { } miscObject) {
-					BuildModelPart(context, gltf, skeletonNode, miscObject);
+					BuildModelPart(context, gltf, skeletonNode, miscObject, camouflage);
 				}
 
 				if (isSkinned) {
@@ -575,7 +583,7 @@ public static class GeometryConverter {
 			}
 
 			if (!context.MaterialCache.TryGetValue(material, out var materialId)) {
-				materialId = context.MaterialCache[material] = CreateMaterial(context, gltf, material);
+				materialId = context.MaterialCache[material] = CreateMaterial(context, gltf, material, camouflage);
 			}
 
 			if (materialId >= 0) {
@@ -583,8 +591,10 @@ public static class GeometryConverter {
 			}
 		}
 
-		foreach (var armor in geometry.Armors) {
-			ArmorConverter.CreateArmor(gltf, node, context.BufferStream, armor, context.ThicknessMaterialCache);
+		if (context.Flags.ConvertArmor) {
+			foreach (var armor in geometry.Armors) {
+				ArmorConverter.CreateArmor(gltf, node, context.BufferStream, armor, context.ThicknessMaterialCache);
+			}
 		}
 	}
 
@@ -600,7 +610,7 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static int CreateMaterial(ModelBuilderContext context, GL.Root gltf, ResourceId material) {
+	public static int CreateMaterial(ModelBuilderContext context, GL.Root gltf, ResourceId material, CamouflageContext? camouflage) {
 		AkizukiLog.Information("Converting material {Path}", material);
 		if (context.Manager.OpenPrototype(material) is not MaterialPrototype mfm) {
 			return -1;
@@ -610,6 +620,7 @@ public static class GeometryConverter {
 			Scalars = [],
 			Textures = [],
 			Colors = [],
+			Workflow = Path.GetFileNameWithoutExtension(mfm.FxPath.Path),
 		};
 
 		gltf.ExtensionsUsed ??= [];
@@ -677,6 +688,81 @@ public static class GeometryConverter {
 			materialAttributes.Colors[name.Text] = [value.X, value.Y, value.Z, value.W];
 		}
 
+		if (camouflage is { Camouflage.Tiled: false }) {
+			BuildCamouflage(context, gltf, mat.Name!, materialAttributes, camouflage);
+		}
+
+		mat.Extensions ??= [];
+		mat.Extensions[CHRONOVOREMaterialAttributes.EXT_NAME] = JsonValue.Create(materialAttributes, JsonOptions.GltfNodeOptions)!;
+
 		return matId;
+	}
+
+	private static void BuildCamouflage(ModelBuilderContext context, GL.Root gltf, string name, CHRONOVOREMaterialAttributes materialAttributes, CamouflageContext camouflage) {
+		var part = camouflage.Part;
+		if (name.Length > 2 && camouflage.Camouflage.Tiled == false) {
+			if (part != CamouflagePart.Plane) {
+				part = name[1] switch {
+					'G' => CamouflagePart.Gun,
+					'S' when name.Contains("_Bulge", StringComparison.Ordinal) => CamouflagePart.Bulge,
+					'S' when name.Contains("_DeckHouse", StringComparison.Ordinal) => CamouflagePart.DeckHouse,
+					'S' => CamouflagePart.Hull,
+					'A' => CamouflagePart.Float,
+					'D' => CamouflagePart.Director,
+					'M' => CamouflagePart.Misc,
+					_ when name.Contains("_wire", StringComparison.Ordinal) => CamouflagePart.Wire,
+					_ => part,
+				};
+			} else {
+				if (name[1] != 'A') {
+					return;
+				}
+			}
+		} else {
+			return;
+		}
+
+		if (!camouflage.Camouflage.Textures.TryGetValue(part, out var texture)) {
+			return;
+		}
+
+		materialAttributes.Workflow += "_camo";
+
+		if (!camouflage.Camouflage.UV.TryGetValue(part, out var uv)) {
+			uv = new Vector2D<float>(1, 1);
+		}
+
+		var textureId = TextureConverter.CreateTexture(context, gltf, context.Manager.FindFile(texture.Path), new StringId(0), uv);
+		if (textureId == -1) {
+			return;
+		}
+
+		materialAttributes.Textures ??= [];
+		materialAttributes.Textures["camouflageMap"] = new GL.TextureInfo {
+			Index = textureId,
+		};
+
+		materialAttributes.Colors ??= [];
+		materialAttributes.Colors["camouflageColor0"] = [camouflage.ColorScheme.Color0.X, camouflage.ColorScheme.Color0.Y, camouflage.ColorScheme.Color0.Z, camouflage.ColorScheme.Color0.W];
+		materialAttributes.Colors["camouflageColor1"] = [camouflage.ColorScheme.Color1.X, camouflage.ColorScheme.Color1.Y, camouflage.ColorScheme.Color1.Z, camouflage.ColorScheme.Color1.W];
+		materialAttributes.Colors["camouflageColor2"] = [camouflage.ColorScheme.Color2.X, camouflage.ColorScheme.Color2.Y, camouflage.ColorScheme.Color2.Z, camouflage.ColorScheme.Color2.W];
+		materialAttributes.Colors["camouflageColor3"] = [camouflage.ColorScheme.Color3.X, camouflage.ColorScheme.Color3.Y, camouflage.ColorScheme.Color3.Z, camouflage.ColorScheme.Color3.W];
+
+		if (!camouflage.Camouflage.MGNTextures.TryGetValue(part, out texture)) {
+			return;
+		}
+
+		textureId = TextureConverter.CreateTexture(context, gltf, context.Manager.FindFile(texture.Path), new StringId(0), uv);
+		if (textureId == -1) {
+			return;
+		}
+
+		materialAttributes.Textures["camouflageMgnMap"] = new GL.TextureInfo {
+			Index = textureId,
+		};
+
+		if (texture.Influence is { } influence) {
+			materialAttributes.Colors["camouflageMgnInfluence"] = [influence.X, influence.Y, influence.Z, influence.W];
+		}
 	}
 }

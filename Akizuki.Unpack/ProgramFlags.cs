@@ -65,6 +65,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("convert-cubemaps", Help = "Convert cubemap textures to regular images", Category = "Akizuki")]
 	public bool ConvertCubeMaps { get; set; }
 
+	[Flag("convert-armor", Help = "Convert armor models with geometry to glTF", Category = "Akizuki")]
+	public bool ConvertArmor { get; set; }
+
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
 	public TextureFormat ImageFormat { get; set; } = TextureFormat.Auto;
 

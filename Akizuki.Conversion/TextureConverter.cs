@@ -4,6 +4,7 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Akizuki.Conversion.Utility;
 using Akizuki.Graphics;
 using Akizuki.Structs.Data;
@@ -11,6 +12,8 @@ using Akizuki.Structs.Graphics;
 using BCDecNet;
 using DragonLib.IO;
 using GLTF.Scaffold;
+using GLTF.Scaffold.Extensions;
+using Silk.NET.Maths;
 using Triton;
 using Triton.Encoder;
 using Triton.Pixel;
@@ -268,7 +271,11 @@ public static class TextureConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static int CreateTexture(ModelBuilderContext context, Root gltf, ResourceId id, StringId slotName) {
+	public static int CreateTexture(ModelBuilderContext context, Root gltf, ResourceId id, StringId slotName, Vector2D<float>? uv = null) {
+		if (id.Hash is 0 or 0xFFFFFFFFFFFFFFFF) {
+			return -1;
+		}
+
 		AkizukiLog.Information("Converting texture {Path}", id);
 		if (context.TextureCache.TryGetValue(id, out var texId)) {
 			return texId;
@@ -305,6 +312,24 @@ public static class TextureConverter {
 			stream.Write(buffer.Span);
 		}
 
-		return context.TextureCache[id] = gltf.CreateTexture(slotName.Text, texturePath, WrapMode.Repeat, WrapMode.Repeat, null, null).Id;
+		var (texture, textureId) = gltf.CreateTexture(slotName.Text, texturePath, WrapMode.Repeat, WrapMode.Repeat, null, null);
+		context.TextureCache[id] = textureId;
+
+		if (uv is not { } uvCoords || (!(Math.Abs(uvCoords.X - 1.0f) > float.Epsilon) && !(Math.Abs(uvCoords.Y - 1.0f) > float.Epsilon))) {
+			return textureId;
+		}
+
+		gltf.ExtensionsUsed ??= [];
+		gltf.ExtensionsUsed.Add(KHRTextureTransform.EXT_NAME);
+
+		var transform = new KHRTextureTransform {
+			Scale = [uvCoords.X, uvCoords.Y],
+			Offset = [0, 0],
+			TexCoord = 0,
+		};
+		texture.Extensions ??= [];
+		texture.Extensions[KHRTextureTransform.EXT_NAME] = JsonValue.Create(transform, JsonOptions.GltfNodeOptions)!;
+
+		return textureId;
 	}
 }
