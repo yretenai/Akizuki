@@ -94,7 +94,7 @@ public static class GeometryConverter {
 			return null;
 		}
 
-		if (id[3] - '0' >= 5) {
+		if (id[2] - '0' >= 5) {
 			return null;
 		}
 
@@ -205,14 +205,13 @@ public static class GeometryConverter {
 		var tangentsSpan = tangents.Span;
 		var colorsSpan = colors.Span;
 
-		var shouldFlip = vertexBuffer.Header.IsSkinned && FlipAllowList.Contains(name);
+		var shouldFlip = vertexBuffer.Header.IsSkinned && (FlipAllowList.Contains(name) || (name.Length > 2 && name[1] is 'D' or 'R' or 'F'));
 		for (var index = 0; index < vertexBuffer.VertexCount; index += 1) {
 			var vertex = buffer.Slice(index * vertexBuffer.Stride, vertexBuffer.Stride);
 
 			var pos = MemoryMarshal.Read<Vector3D<float>>(vertex[info.Position..]);
 			var nor = VertexHelper.UnpackNormal(MemoryMarshal.Read<Vector4D<sbyte>>(vertex[info.Normal..]));
 			if (shouldFlip) {
-				pos *= new Vector3D<float>(1, 1, -1);
 				nor *= -1;
 			}
 
@@ -228,7 +227,6 @@ public static class GeometryConverter {
 			if (info.Tangent > -1) {
 				var tan = VertexHelper.UnpackNormal(MemoryMarshal.Read<Vector4D<sbyte>>(vertex[info.Tangent..]));
 				var bin = VertexHelper.UnpackNormal(MemoryMarshal.Read<Vector4D<sbyte>>(vertex[info.Binormal..]));
-				// todo: should we flip here too?
 				var w = Math.Sign(Vector3D.Dot(Vector3D.Cross(nor, tan), bin));
 				tangentsSpan[index] = new Vector4D<float>(tan, w);
 			}
@@ -623,6 +621,19 @@ public static class GeometryConverter {
 			Workflow = Path.GetFileNameWithoutExtension(mfm.FxPath.Path),
 		};
 
+		if (materialAttributes.Workflow.EndsWith("_skinned", StringComparison.Ordinal)) {
+			materialAttributes.Workflow = materialAttributes.Workflow[..^8];
+		}
+
+		materialAttributes.Workflow = materialAttributes.Workflow switch {
+			"ship_material" => "PBS_ship",
+			"wire_material" => "PBS_ship",
+			"PBS_wire" => "PBS_ship",
+			"grid_alpha" => "PBS_grid",
+			"glass_material" => "PBS_glass",
+			_ => materialAttributes.Workflow,
+		};
+
 		gltf.ExtensionsUsed ??= [];
 		gltf.ExtensionsUsed.Add(CHRONOVOREMaterialAttributes.EXT_NAME);
 
@@ -662,11 +673,6 @@ public static class GeometryConverter {
 				case "metallicGlossMap":
 					mat.PBR ??= new GL.PBRMaterial();
 					mat.PBR.MetallicRoughnessTexture = texInfo;
-					break;
-				case "ambientOcclusionMap" when !context.Flags.BlenderSafe:
-					mat.OcclusionTexture = new GL.OcclusionTextureInfo {
-						Index = texInfo.Index,
-					};
 					break;
 				case "normalMap":
 					mat.NormalTexture = new GL.NormalTextureInfo {
