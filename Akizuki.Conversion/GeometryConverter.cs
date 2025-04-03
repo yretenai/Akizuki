@@ -232,6 +232,7 @@ public static class GeometryConverter {
 		var gltfPath = Path.ChangeExtension(path, ".gltf");
 		var bufferPath = Path.ChangeExtension(path, ".glbin");
 		using Stream bufferStream = flags.Dry ? new MemoryStream() : new FileStream(bufferPath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
+		bufferStream.SetLength(0);
 
 		var gltf = new GL.Root();
 
@@ -277,6 +278,7 @@ public static class GeometryConverter {
 		}
 
 		using var file = new FileStream(gltfPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+		file.SetLength(0);
 		JsonSerializer.Serialize(file, gltf, JsonOptions.GltfOptions);
 		file.Write(Encoding.UTF8.GetBytes(Environment.NewLine));
 		return true;
@@ -395,6 +397,7 @@ public static class GeometryConverter {
 		var gltfPath = Path.Combine(modelPath, fileName + ".gltf");
 		var bufferPath = Path.ChangeExtension(gltfPath, ".glbin");
 		using Stream bufferStream = flags.Dry ? new MemoryStream() : new FileStream(bufferPath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
+		bufferStream.SetLength(0);
 
 		var gltf = new GL.Root();
 
@@ -416,6 +419,7 @@ public static class GeometryConverter {
 		}
 
 		using var file = new FileStream(gltfPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+		file.SetLength(0);
 		JsonSerializer.Serialize(file, gltf, JsonOptions.GltfOptions);
 		file.Write(Encoding.UTF8.GetBytes(Environment.NewLine));
 	}
