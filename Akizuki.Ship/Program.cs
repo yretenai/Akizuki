@@ -24,9 +24,12 @@ internal static class Program {
 				CommandLineOptions.Default.HelpDelegate(flags, instance, options, invoked);
 				Console.WriteLine("Ships follow the param identifier format (PXXX####).");
 				Console.WriteLine("Can specify modules by adding + followed by the module name.");
-				Console.WriteLine("For example: PJSD108_Akizuki+PJUH705_D8_HULL_TOP_2+PJUS804_D8_SUO_TOP_2");
+				Console.WriteLine("\tPJSD108_Akizuki+PJUH705_D8_HULL_TOP_2+PJUS804_D8_SUO_TOP_2");
+				Console.WriteLine("Can specify a specific permoflage by adding @ followed by the skin identifier after the ship name.");
+				Console.WriteLine("\tPJSD108_Akizuki@PCEM002_Halloween19_8lvl+PJUH705_D8_HULL_TOP_2+PJUS804_D8_SUO_TOP_2");
+				Console.WriteLine("Providing \"list\" as a module will list all modules and permoflages present.");
+				Console.WriteLine("\tPJSD108_Akizuki+list");
 				Console.WriteLine("Not providing any ship will list all ships present.");
-				Console.WriteLine("Providing \"list\" as a module will list all modules present.");
 			},
 		};
 		var flags = Flags = CommandLineFlagsParser.ParseFlags<ProgramFlags>(options);
@@ -84,6 +87,13 @@ internal static class Program {
 
 			var splitParts = shipSetup.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 			var shipName = splitParts[0];
+			var atIndex = shipName.IndexOf('@', StringComparison.Ordinal);
+			string? permoflage = null;
+			if (atIndex > -1) {
+				permoflage = shipName[(atIndex + 1)..];
+				shipName = shipName[..atIndex];
+			}
+
 			var shipParts = splitParts.Length > 1 ? splitParts[1..].ToHashSet() : [];
 			if (!manager.GameParams.TryGetValue(shipName, out var shipData)) {
 				AkizukiLog.Error("Could not find ship {Name}", shipName);
@@ -101,6 +111,10 @@ internal static class Program {
 				AkizukiLog.Information("Available parts for ship {Name}:", shipName);
 				foreach (var (upgradeName, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
 					AkizukiLog.Information("\t{Name} ({Type}, {TranslatedName})", upgradeName, upgrade.UpgradeType, text.GetTranslation(upgradeName));
+				}
+				AkizukiLog.Information("Available permoflages for ship {Name}:", shipName);
+				foreach (var permoflageName in ship.Permoflages) {
+					AkizukiLog.Information("\t{Name} ({TranslatedName})", permoflageName, text.GetTranslation(permoflageName));
 				}
 
 				continue;
@@ -166,7 +180,7 @@ internal static class Program {
 			}
 
 			CamouflageContext? camouflageContext = default;
-			var permoflage = ship.NativePermoflage;
+			permoflage ??= ship.NativePermoflage;
 			if (string.IsNullOrEmpty(permoflage) && flags.UsePermoflageRegardless) {
 				permoflage = ship.Permoflages.FirstOrDefault();
 			}

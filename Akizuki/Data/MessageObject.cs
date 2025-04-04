@@ -65,7 +65,7 @@ public class MessageObject : Dictionary<string, string> {
 		}
 
 		foreach (var key in keys) {
-			if (TryGetValue("IDS_" + key, out var value)) {
+			if (TryGetValue("IDS_" + key.ToUpperInvariant(), out var value)) {
 				return value;
 			}
 		}
