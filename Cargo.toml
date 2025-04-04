@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2025 Legiayayana
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+[workspace]
+resolver = "2"
+members = ["akizuki", "cli/unpack", "cli/ship"]
+
+[workspace.package]
+authors = ["Legiayayana"]
+edition = "2024"
+license = "EUPL-1.2"
+repository = "https://github.com/yretenai/Akizuki#rust"
+
+[profile.dev]
+split-debuginfo = "packed"
+
+[profile.release]
+codegen-units = 1
+incremental = true
+lto = true
+split-debuginfo = "packed"
+debug = 1
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
