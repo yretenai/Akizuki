@@ -11,15 +11,13 @@ use std::sync::RwLock;
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct StringId(pub u32);
 
-static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> =
-	Lazy::new(|| RwLock::new(HashMap::new()));
+static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> = Lazy::new(|| RwLock::new(HashMap::new()));
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ResourceId(pub u64);
 
-static RESOURCE_LOOKUP: Lazy<RwLock<HashMap<u64, String>>> =
-	Lazy::new(|| RwLock::new(HashMap::new()));
+static RESOURCE_LOOKUP: Lazy<RwLock<HashMap<u64, String>>> = Lazy::new(|| RwLock::new(HashMap::new()));
 
 #[inline]
 fn mmh3_fmix(hash: u32) -> u32 {
@@ -177,30 +175,24 @@ mod tests {
 		const TEST_STR: &str = "Akizuki";
 		StringId::insert(TEST_STR, 0x8d949450);
 
-		assert_eq!(
-			format!("{:?}", StringId(0x8d949450)),
-			"\"Akizuki\" (0x8d949450)"
-		);
+		assert_eq!(format!("{:?}", StringId(0x8d949450)), "\"Akizuki\" (0x8d949450)");
 	}
 
 	#[test]
 	fn test_resource_id() {
-		const TEST_STR: &str =
-			"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
+		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
 		assert_eq!(ResourceId::new(TEST_STR).value(), 0x0df5a921212a899e);
 	}
 
 	#[test]
 	fn test_resource_id8() {
-		const TEST_STR: &str =
-			"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.mo";
+		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.mo";
 		assert_eq!(ResourceId::new(TEST_STR).value(), 0xa8fa81214165ecb);
 	}
 
 	#[test]
 	fn test_resource_text() {
-		const TEST_STR: &str =
-			"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
+		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
 		ResourceId::insert(TEST_STR, 0x0df5a921212a899e);
 
 		assert_eq!(ResourceId(0x0df5a921212a899e).text().unwrap(), TEST_STR);
@@ -208,13 +200,9 @@ mod tests {
 
 	#[test]
 	fn test_resource_debug() {
-		const TEST_STR: &str =
-			"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
+		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
 		ResourceId::insert(TEST_STR, 0x0df5a921212a899e);
 
-		assert_eq!(
-			format!("{:?}", ResourceId(0x0df5a921212a899e)),
-			"\"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\" (0x0df5a921212a899e)"
-		);
+		assert_eq!(format!("{:?}", ResourceId(0x0df5a921212a899e)), "\"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\" (0x0df5a921212a899e)");
 	}
 }
