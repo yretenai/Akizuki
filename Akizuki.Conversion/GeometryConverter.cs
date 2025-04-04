@@ -102,18 +102,20 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static string? LocateMiscObject(string id) {
-		if (!id.StartsWith("MP_") || MiscBlockList.Contains(id)) {
+	public static string? LocateMiscObject(string id, CamouflageContext? camouflage) {
+		var shouldSkipChecks = camouflage?.MiscFilter.Contains(id) ?? false;
+
+		if (!shouldSkipChecks && (!id.StartsWith("MP_") || MiscBlockList.Contains(id))) {
 			return null;
 		}
 
 		id = id[3..];
 
-		if (id.Length < 5 || id[1] != 'M' || MiscBlockList.Contains(id)) {
+		if (id.Length < 5 || id[1] != 'M' || (!shouldSkipChecks && MiscBlockList.Contains(id))) {
 			return null;
 		}
 
-		if (id[2] - '0' >= 5) {
+		if (!shouldSkipChecks && id[2] - '0' >= 5) {
 			return null;
 		}
 
@@ -132,7 +134,7 @@ public static class GeometryConverter {
 			case 'U': path += "commonwealth/"; break;
 			case 'V': path += "panamerica/"; break;
 			case 'W': path += "europe/"; break;
-			// case 'X': path += "events/"; break;
+			case 'X' when shouldSkipChecks: path += "events/"; break;
 			case 'Z': path += "panasia/"; break;
 			default: return null;
 		}
@@ -234,6 +236,7 @@ public static class GeometryConverter {
 			if (flipNormals) {
 				nor *= -1;
 			}
+
 			normals[index] = nor;
 			uv1Span[index] = VertexHelper.UnpackUV(MemoryMarshal.Read<Vector2D<Half>>(vertex[info.UV1..]));
 
@@ -388,7 +391,15 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static VisualPrototype? FindVisualPrototype(ResourceManager manager, string path) {
+	public static VisualPrototype? FindVisualPrototype(ResourceManager manager, string path, CamouflageContext? camouflage) {
+		if (camouflage is { Redirect.Count: > 0 }) {
+			if (camouflage.Redirect.TryGetValue(path, out var redirected)) {
+				path = redirected;
+			} else if (path.StartsWith("res/") && camouflage.Redirect.TryGetValue(path[4..], out redirected)) {
+				path = redirected;
+			}
+		}
+
 		var prototype = manager.OpenPrototype(path);
 		while (prototype is not null) {
 			switch (prototype) {
@@ -410,7 +421,7 @@ public static class GeometryConverter {
 		string rootModelPath, Dictionary<string, HashSet<string>> hardPoints,
 		IConversionOptions flags, ParamTypeInfo? info,
 		CamouflageContext? camouflage, string? subdir = null, string? parentName = null) {
-		var builtVisual = FindVisualPrototype(manager, rootModelPath);
+		var builtVisual = FindVisualPrototype(manager, rootModelPath, camouflage);
 		if (builtVisual == null) {
 			return;
 		}
@@ -478,7 +489,7 @@ public static class GeometryConverter {
 	[MethodImpl(MethodConstants.Optimize)]
 	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath, CamouflageContext? camouflage) {
 		AkizukiLog.Information("Building part {Path}", modelPath);
-		var builtVisual = FindVisualPrototype(context.Manager, modelPath);
+		var builtVisual = FindVisualPrototype(context.Manager, modelPath, camouflage);
 		if (builtVisual == null) {
 			return;
 		}
@@ -530,7 +541,7 @@ public static class GeometryConverter {
 					BuildModelPart(context, gltf, skeletonNode, portPart, camouflage);
 				}
 
-				if (LocateMiscObject(realName) is { } miscObject) {
+				if (LocateMiscObject(realName, camouflage) is { } miscObject) {
 					BuildModelPart(context, gltf, skeletonNode, miscObject, camouflage);
 				}
 
@@ -774,15 +785,19 @@ public static class GeometryConverter {
 			Index = textureId,
 		};
 
-		materialAttributes.Colors ??= [];
-		materialAttributes.Colors["camouflageColor0"] = [camouflage.ColorScheme.Color0.X, camouflage.ColorScheme.Color0.Y, camouflage.ColorScheme.Color0.Z, camouflage.ColorScheme.Color0.W];
-		materialAttributes.Colors["camouflageColor1"] = [camouflage.ColorScheme.Color1.X, camouflage.ColorScheme.Color1.Y, camouflage.ColorScheme.Color1.Z, camouflage.ColorScheme.Color1.W];
-		materialAttributes.Colors["camouflageColor2"] = [camouflage.ColorScheme.Color2.X, camouflage.ColorScheme.Color2.Y, camouflage.ColorScheme.Color2.Z, camouflage.ColorScheme.Color2.W];
-		materialAttributes.Colors["camouflageColor3"] = [camouflage.ColorScheme.Color3.X, camouflage.ColorScheme.Color3.Y, camouflage.ColorScheme.Color3.Z, camouflage.ColorScheme.Color3.W];
+		if (camouflage.ColorScheme != null) {
+			materialAttributes.Colors ??= [];
+			materialAttributes.Colors["camouflageColor0"] = [camouflage.ColorScheme.Color0.X, camouflage.ColorScheme.Color0.Y, camouflage.ColorScheme.Color0.Z, camouflage.ColorScheme.Color0.W];
+			materialAttributes.Colors["camouflageColor1"] = [camouflage.ColorScheme.Color1.X, camouflage.ColorScheme.Color1.Y, camouflage.ColorScheme.Color1.Z, camouflage.ColorScheme.Color1.W];
+			materialAttributes.Colors["camouflageColor2"] = [camouflage.ColorScheme.Color2.X, camouflage.ColorScheme.Color2.Y, camouflage.ColorScheme.Color2.Z, camouflage.ColorScheme.Color2.W];
+			materialAttributes.Colors["camouflageColor3"] = [camouflage.ColorScheme.Color3.X, camouflage.ColorScheme.Color3.Y, camouflage.ColorScheme.Color3.Z, camouflage.ColorScheme.Color3.W];
+		}
 
 		if (!camouflage.Camouflage.MGNTextures.TryGetValue(part, out texture)) {
 			return;
 		}
+
+		materialAttributes.Workflow += "_mgn";
 
 		textureId = TextureConverter.CreateTexture(context, gltf, context.Manager.FindFile(texture.Path), new StringId(0), uv);
 		if (textureId == -1) {
@@ -794,6 +809,7 @@ public static class GeometryConverter {
 		};
 
 		if (texture.Influence is { } influence) {
+			materialAttributes.Colors ??= [];
 			materialAttributes.Colors["camouflageMgnInfluence"] = [influence.X, influence.Y, influence.Z, influence.W];
 		}
 	}

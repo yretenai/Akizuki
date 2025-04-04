@@ -124,11 +124,12 @@ internal static class Program {
 			}
 
 			AkizukiLog.Information("Selected parts for {Name}: {Parts}", shipName, string.Join(", ", selectedParts.Select(x => x.Name)));
+			var selectedPartNames = selectedParts.SelectMany(x => x.Components.Values).SelectMany(x => x).ToList();
 
 			var hullModel = string.Empty;
 			var hardPoints = new Dictionary<string, HashSet<string>>();
 			var planes = new Dictionary<string, string>();
-			foreach (var selectedComponent in selectedParts.SelectMany(x => x.Components.Values).SelectMany(x => x)) {
+			foreach (var selectedComponent in selectedPartNames) {
 				if (ship.ModelPaths.TryGetValue(selectedComponent, out var componentModel)) {
 					hullModel = componentModel;
 				}
@@ -171,13 +172,14 @@ internal static class Program {
 			}
 
 			if (TryFindPermoflageTag(manager.GameParams, permoflage, out var permoflageTag)) {
-				var camouflage = manager.Camouflages?.Camouflages.FirstOrDefault(x => x.Name == permoflageTag && x is { UseColorScheme: true, Tiled: false } && x.TargetShips?.Contains(shipName) == true);
-				if (camouflage is { ColorSchemes.Count: > 0 }) {
-					var colorSchemeId = camouflage.ColorSchemes.ElementAtOrDefault(ship.CamouflageColorSchemeId) ?? camouflage.ColorSchemes[0];
-					var colorScheme = manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
-					if (colorScheme != null) {
-						camouflageContext = new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown);
-					}
+				var camouflage = manager.Camouflages?.Camouflages.FirstOrDefault(x => x.IsValidFor(permoflageTag, shipName));
+				if (camouflage is not null) {
+					var colorSchemeId = camouflage.ColorSchemes?.ElementAtOrDefault(ship.CamouflageColorSchemeId) ?? camouflage.ColorSchemes?.FirstOrDefault();
+					var colorScheme = colorSchemeId is null ? default : manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
+					var redirect = new Dictionary<string, string>();
+					var filter = new HashSet<string>();
+					ProcessPermoflagePeculiarities(manager.GameParams, permoflage, selectedPartNames, redirect, hardPoints, filter, ref hullModel);
+					camouflageContext = new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown, redirect, filter);
 				}
 			}
 
@@ -191,19 +193,14 @@ internal static class Program {
 		}
 	}
 
-	public static bool TryFindPermoflageTag(Dictionary<string, Dictionary<object, object>> pickle, string? permoflage, [MaybeNullWhen(false)] out string tag) {
+	private static bool TryFindPermoflageTag(Dictionary<string, Dictionary<object, object>> pickle, [NotNullWhen(true)] string? permoflage, [MaybeNullWhen(false)] out string tag) {
 		if (string.IsNullOrEmpty(permoflage)) {
 			tag = null;
 			return false;
 		}
 
-		if (pickle.TryGetValue(permoflage, out var nativePermoflageParams)) {
-			if (nativePermoflageParams.GetValueOrDefault<string>("unpeculiarCamouflage") is { Length: > 0 } unpeculiarCamouflage) {
-				tag = unpeculiarCamouflage;
-				return true;
-			}
-
-			if (nativePermoflageParams.GetValueOrDefault<string>("camouflage") is { Length: > 0 } camouflage) {
+		if (pickle.TryGetValue(permoflage, out var permoflageParams)) {
+			if (permoflageParams.GetValueOrDefault<string>("camouflage") is { Length: > 0 } camouflage) {
 				tag = camouflage;
 				return true;
 			}
@@ -211,5 +208,59 @@ internal static class Program {
 
 		tag = null;
 		return false;
+	}
+
+	private static void ProcessPermoflagePeculiarities(Dictionary<string, Dictionary<object, object>> pickle, string permoflage, List<string> parts, Dictionary<string, string> redirect, Dictionary<string, HashSet<string>> hardpoints, HashSet<string> filter, ref string hullModel) {
+		if (!pickle.TryGetValue(permoflage, out var permoflageParams)) {
+			return;
+		}
+
+		var values = permoflageParams.GetValueOrDefault<Dictionary<object, object>>("peculiarityModels", []);
+		foreach (var (key, value) in values) {
+			redirect[(string) key] = (string) value;
+		}
+
+		values = permoflageParams.GetValueOrDefault<Dictionary<object, object>>("hullConfig", []);
+		foreach (var part in parts) {
+			if (values.GetValueOrDefault<Dictionary<object, object>>(part) is { } hullConfig) {
+				hullModel = hullConfig.GetValueOrDefault("model", hullModel);
+			}
+		}
+
+		values = permoflageParams.GetValueOrDefault<Dictionary<object, object>>("nodesConfig", []);
+		foreach (var part in parts) {
+			if (values.GetValueOrDefault<Dictionary<object, object>>(part) is not { } nodeConfig) {
+				continue;
+			}
+
+			foreach (var (key, value) in nodeConfig) {
+				if (value is not Dictionary<object, object> nodeData) {
+					continue;
+				}
+
+				if (key is not string hardpoint) {
+					continue;
+				}
+
+				if (nodeData.GetValueOrDefault<string>("model") is not { } model) {
+					continue;
+				}
+
+				if (!hardpoints.TryGetValue(hardpoint, out var hardpointSet)) {
+					hardpointSet = hardpoints[hardpoint] = [];
+				}
+
+				hardpointSet.Clear();
+				hardpointSet.Add(model);
+
+				if (nodeData.GetValueOrDefault<object[]>("miscFilter") is not { } miscFilter) {
+					continue;
+				}
+
+				foreach (var misc in miscFilter.OfType<string>()) {
+					filter.Add(misc);
+				}
+			}
+		}
 	}
 }

@@ -76,4 +76,16 @@ public record Camouflage {
 	public Dictionary<CamouflagePart, CamouflageTexture> Textures { get; set; } = [];
 	public Dictionary<CamouflagePart, CamouflageTexture> MGNTextures { get; set; } = [];
 	public Dictionary<CamouflagePart, CamouflageTexture> AnimMapTextures { get; set; } = [];
+
+	public bool IsValidFor(string name, string ship) {
+		if (ShipGroups != null) {
+			return false;
+		}
+
+		if (name != Name) {
+			return false;
+		}
+
+		return TargetShips == null || TargetShips.Count == 0 || TargetShips.Contains(ship);
+	}
 }
