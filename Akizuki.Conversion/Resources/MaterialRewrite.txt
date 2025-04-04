@@ -1,6 +1,9 @@
 ship_material,PBS_ship
 wire_material,PBS_ship
-PBS_wire,PBS_ship
+base_material,PBS_ship
+ship_emissive_material,PBS_emissive
 grid_alpha,PBS_grid
 glass_material,PBS_glass
 propeller_material,PBS_transparent
+PBS_ship_metallic,PBS_ship
+PBS_wire,PBS_ship
