@@ -115,6 +115,7 @@ public sealed class PackageFileSystem : IDisposable {
 	public BWFileHeader BigWorldHeader { get; }
 	public PFSIndexHeader Header { get; }
 
+	// CityHash64
 	public Dictionary<ulong, string> Paths { get; } = new() {
 		[0xDBB1A1D1B108B927ul] = "res",
 	};

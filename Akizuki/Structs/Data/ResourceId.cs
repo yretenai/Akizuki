@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Akizuki.Structs.Data;
 
+// CityHash64
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
 public readonly record struct ResourceId(ulong Hash) {
 	public string Path => ResourceManager.Instance?.ReversePathLookup.GetValueOrDefault(Hash) ?? ResourceManager.Instance?.Database?.GetPath(Hash) ?? Hash.ToString("x16");

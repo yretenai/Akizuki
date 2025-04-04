@@ -10,7 +10,7 @@ namespace Akizuki.Structs.Data;
 public record struct PFSNamedId {
 	public long NameLength { get; set; }
 	public long NamePtr { get; set; }
-	public ulong Id { get; set; }
+	public ulong Id { get; set; } // cityhash64 of name
 
 	public bool Equals(PFSNamedId? other) => other?.Id == Id;
 }

@@ -8,7 +8,7 @@ namespace Akizuki.Structs.Data;
 
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
 public record struct PFSFile : IComparable<PFSFile>, IComparable<ulong> {
-	public ulong Id { get; set; }
+	public ulong Id { get; set; } // cityhash64 of filename
 	public ulong PackageId { get; set; }
 	public long Offset { get; set; }
 	public PFSCompressionType CompressionType { get; set; }

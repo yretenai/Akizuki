@@ -167,6 +167,7 @@ public class BigWorldDatabase {
 	public Dictionary<ulong, BWPrototypeInfo> ResourceToPrototype { get; } = [];
 	public List<BigWorldTable> Tables { get; } = [];
 
+	// CityHash64
 	public Dictionary<ulong, string> Paths { get; } = new() {
 		[0] = "res",
 	};
