@@ -6,6 +6,8 @@
 name = "akizuki-unpack"
 version = "0.1.0"
 edition = "2024"
+authors = ["Legiayayana"]
+license = "EUPL-1.2"
 
 [dependencies]
-akizuki = { path = "../../akizuki" }
+akizuki = { path = "../../akizuki", features = ["art"] }
