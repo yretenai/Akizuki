@@ -808,9 +808,7 @@ public static class GeometryConverter {
 			Index = textureId,
 		};
 
-		if (texture.Influence is { } influence) {
-			materialAttributes.Colors ??= [];
-			materialAttributes.Colors["camouflageMgnInfluence"] = [influence.X, influence.Y, influence.Z, influence.W];
-		}
+		materialAttributes.Colors ??= [];
+		materialAttributes.Colors["camouflageMgnInfluence"] = [texture.Influence.X, texture.Influence.Y, texture.Influence.Z, texture.Influence.W];
 	}
 }

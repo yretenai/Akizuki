@@ -16,27 +16,25 @@ public record CamouflageTexture {
 
 		if (texture.Element("Influence_m") is not { } xInfluenceM ||
 			!float.TryParse(xInfluenceM.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var influenceM)) {
-			influenceM = 0f;
+			influenceM = 1f;
 		}
 
 		if (texture.Element("Influence_g") is not { } xInfluenceG ||
 			!float.TryParse(xInfluenceG.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var influenceG)) {
-			influenceG = 0f;
+			influenceG = 1f;
 		}
 
 		if (texture.Element("Influence_n") is not { } xInfluenceN ||
 			!float.TryParse(xInfluenceN.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var influenceN)) {
-			influenceN = 0f;
+			influenceN = 1f;
 		}
 
 		if (texture.Element("Influence_ao") is not { } xInfluenceAO ||
 			!float.TryParse(xInfluenceAO.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var influenceAO)) {
-			influenceAO = 0f;
+			influenceAO = 1f;
 		}
 
-		if (influenceM > 0 || influenceG > 0 || influenceN > 0 || influenceAO > 0) {
-			Influence = new Vector4D<float>(influenceM, influenceG, influenceN, influenceAO);
-		}
+		Influence = new Vector4D<float>(influenceM, influenceG, influenceN, influenceAO);
 
 		if (texture.Element("useCamoMaskGlobal") is { } xUseCamoMaskGlobal &&
 			bool.TryParse(xUseCamoMaskGlobal.Value, out var useCamoMaskGlobal)) {
@@ -83,18 +81,18 @@ public record CamouflageTexture {
 
 		if (texture.Element("camoMaskColor2Alpha") is not { } xCamoMaskColor2Alpha ||
 			!float.TryParse(xCamoMaskColor2Alpha.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var camoMaskColor2Alpha)) {
-			camoMaskColor2Alpha = 0f;
+			camoMaskColor2Alpha = 1f;
 		}
 
 		if (texture.Element("camoMaskColor2")?.Value is { } camoMaskColor2) {
-			CamoMaskColor2 = CamouflageHelpers.ConvertVec4(camoMaskColor2, camoMaskColor2Alpha > 0 ? camoMaskColor2Alpha : 1.0f);
-		} else if (camoMaskColor2Alpha > 0) {
-			CamoMaskColor2 = new Vector4D<float>(0, 0, 0, camoMaskColor2Alpha);
+			CamoMaskColor2 = CamouflageHelpers.ConvertVec4(camoMaskColor2, camoMaskColor2Alpha);
+		} else {
+			CamoMaskColor2 = new Vector4D<float>(1, 1, 1, camoMaskColor2Alpha);
 		}
 	}
 
 	public string Path { get; set; }
-	public Vector4D<float>? Influence { get; set; }
+	public Vector4D<float> Influence { get; set; }
 	public bool UseCamoMaskGlobal { get; set; }
 	public int CamoMode { get; set; }
 	public int CamoEmissionAnimationMode { get; set; }
