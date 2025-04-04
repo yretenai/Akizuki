@@ -11,3 +11,4 @@ license = "EUPL-1.2"
 
 [dependencies]
 akizuki = { path = "../../akizuki", features = ["art"] }
+clap = "4.5.35"

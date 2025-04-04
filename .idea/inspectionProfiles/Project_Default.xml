@@ -1,0 +1,12 @@
+<!--
+SPDX-FileCopyrightText: 2025 Legiayayana
+
+SPDX-License-Identifier: EUPL-1.2
+-->
+
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="RsUnnecessaryReturn" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+  </profile>
+</component>

@@ -8,13 +8,20 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+binrw = "0.14.1"
+bytemuck = "1.22.0"
 cantrip = "0.4.0"
-cityhash-rs = "1.0.1"
+cityhasher = "0.1.0"
 crc = "3.2.1"
 flate2 = "1.0"
+gettext = "0.4.0"
 glam = "0.30.1"
 log = "0.4.27"
-murmur3 = "0.5.2"
+memmap2 = "0.9.5"
+meshopt = "0.4.1"
+once_cell = "1.21.3"
+serde = "1.0.219"
+serde-pickle = "1.2.0"
 xml = "0.8.20"
 
 # geometry

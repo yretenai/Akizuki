@@ -3,5 +3,5 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 fn main() {
-    println!("Hello, world!");
+	println!("Hello, world!");
 }
