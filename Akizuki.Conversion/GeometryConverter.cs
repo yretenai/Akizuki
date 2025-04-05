@@ -102,9 +102,7 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static string? LocateMiscObject(string id, CamouflageContext? camouflage) {
-		var shouldSkipChecks = camouflage?.MiscFilter.Contains(id) ?? false;
-
+	public static string? LocateMiscObject(string id, bool shouldSkipChecks) {
 		if (!shouldSkipChecks && (!id.StartsWith("MP_") || MiscBlockList.Contains(id))) {
 			return null;
 		}
@@ -465,7 +463,7 @@ public static class GeometryConverter {
 
 		var root = gltf.CreateNode(fileName).Node;
 
-		var context = new ModelBuilderContext(flags, manager, bufferStream, modelPath, texturesPath, hardPoints, portPoints);
+		var context = new ModelBuilderContext(flags, manager, bufferStream, info?.Nation == "Events", modelPath, texturesPath, hardPoints, portPoints);
 		BuildModelPart(context, gltf, root, builtVisual, camouflage);
 
 		gltf.Buffers = [
@@ -541,7 +539,7 @@ public static class GeometryConverter {
 					BuildModelPart(context, gltf, skeletonNode, portPart, camouflage);
 				}
 
-				if (LocateMiscObject(realName, camouflage) is { } miscObject) {
+				if (LocateMiscObject(realName, context.IsEvent || (camouflage?.MiscFilter.Contains(realName) ?? false)) is { } miscObject) {
 					BuildModelPart(context, gltf, skeletonNode, miscObject, camouflage);
 				}
 

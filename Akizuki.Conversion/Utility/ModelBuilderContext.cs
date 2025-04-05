@@ -13,6 +13,7 @@ public record ModelBuilderContext(
 	IConversionOptions Flags,
 	ResourceManager Manager,
 	Stream BufferStream,
+	bool IsEvent,
 	string ModelPath,
 	string TexturesPath,
 	Dictionary<string, HashSet<string>> HardPoints,
