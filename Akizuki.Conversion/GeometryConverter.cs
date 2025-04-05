@@ -110,7 +110,7 @@ public static class GeometryConverter {
 		id = id[3..];
 
 		foreach (var subType in subTypes) {
-			yield return $"res/content/styles/${subType}/{id}/{id}.model";
+			yield return $"res/content/styles/{subType}/{id}/{id}.model";
 		}
 	}
 
