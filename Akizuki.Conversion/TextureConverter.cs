@@ -42,8 +42,12 @@ public static class TextureConverter {
 		path = Path.ChangeExtension(path,
 			ext != ".dds" ? $".{ext[^1]}.{imageFormat.ToString().ToLowerInvariant()}" : $".{imageFormat.ToString().ToLowerInvariant()}");
 
-		if (skipExisting && File.Exists(path)) {
-			return path;
+		if (skipExisting) {
+			if (File.Exists(path)) {
+				return path;
+			}
+
+			AkizukiLog.Information("Converting texture {Path}", path);
 		}
 
 		using var texture = new DDSTexture(data);
@@ -276,7 +280,6 @@ public static class TextureConverter {
 			return -1;
 		}
 
-		AkizukiLog.Information("Converting texture {Path}", id);
 		if (context.TextureCache.TryGetValue(id, out var texId)) {
 			return texId;
 		}

@@ -486,7 +486,7 @@ public static class GeometryConverter {
 			return;
 		}
 
-		AkizukiLog.Information("Building part {Path}", modelPath);
+		AkizukiLog.Information("Building part {Node} ({Path})", currentNode, modelPath);
 		BuildModelPart(context, gltf, parent, builtVisual, camouflage, currentNode);
 	}
 
