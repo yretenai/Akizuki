@@ -24,9 +24,9 @@ internal static class Program {
 				CommandLineOptions.Default.HelpDelegate(flags, instance, options, invoked);
 				Console.WriteLine("Ships follow the param identifier format (PXXX####).");
 				Console.WriteLine("Can specify modules by adding + followed by the module name.");
-				Console.WriteLine("\tPJSD108_Akizuki+PJUH705_D8_HULL_TOP_2+PJUS804_D8_SUO_TOP_2");
+				Console.WriteLine("\tPJSD108_Akizuki+AB1_Artillery+AB1_Torpedoes");
 				Console.WriteLine("Can specify a specific permoflage by adding @ followed by the skin identifier after the ship name.");
-				Console.WriteLine("\tPJSD108_Akizuki@PCEM002_Halloween19_8lvl+PJUH705_D8_HULL_TOP_2+PJUS804_D8_SUO_TOP_2");
+				Console.WriteLine("\tPJSD108_Akizuki@PCEM002_Halloween19_8lvl+AB1_Artillery+AB1_Torpedoes");
 				Console.WriteLine("Providing \"list\" as a module will list all modules and permoflages present.");
 				Console.WriteLine("\tPJSD108_Akizuki+list");
 				Console.WriteLine("Not providing any ship will list all ships present.");
@@ -111,6 +111,9 @@ internal static class Program {
 				AkizukiLog.Information("Available parts for ship {Name}:", shipName);
 				foreach (var (upgradeName, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
 					AkizukiLog.Information("\t{Name} ({Type}, {TranslatedName})", upgradeName, upgrade.UpgradeType, text.GetTranslation(upgradeName));
+					foreach (var partName in upgrade.Components) {
+						AkizukiLog.Information("\t\t{PartName}", partName);
+					}
 				}
 
 				AkizukiLog.Information("Available permoflages for ship {Name}:", shipName);
@@ -121,31 +124,32 @@ internal static class Program {
 				continue;
 			}
 
-			var selectedParts = new List<ShipUpgrade>();
+			HashSet<string> selectedParts;
 			if (shipParts.Count == 0) {
 				// assuming A_Name, B_Name, this will sort it to most upgrades.
 				// this is only necessary for the hull.
 				var sorted = ship.ShipUpgradeInfo.Upgrades.OrderBy(x => x.Key);
-				if (flags.AllModules) { // todo: this breaks misc resolution
-					selectedParts.AddRange(sorted.Select(x => x.Value));
+				IEnumerable<ShipUpgrade> selectedPartSelector;
+				if (flags.AllModules) {
+					// todo: this breaks misc resolution
+					selectedPartSelector = sorted.Select(x => x.Value);
 				} else {
 					var grouped = sorted.GroupBy(x => x.Value.UpgradeType);
-					selectedParts.AddRange(grouped.Select(group => group.Last().Value));
+					selectedPartSelector = grouped.Select(group => group.Last().Value);
 				}
+
+				selectedParts = new HashSet<string>(selectedPartSelector.SelectMany(x => x.Components.Values).Where(x => x.Count > 0).Select(x => x.Last()));
 			} else {
-				selectedParts.AddRange(ship.ShipUpgradeInfo.Upgrades
-										   .Where(x => shipParts.Contains(x.Key))
-										   .Select(x => x.Value).DistinctBy(x => x));
+				selectedParts = shipParts;
 			}
 
-			AkizukiLog.Information("Selected parts for {Name}: {Parts}", shipName, string.Join(", ", selectedParts.Select(x => x.Name)));
-			var selectedPartNames = selectedParts.SelectMany(x => x.Components.Values).SelectMany(x => x).ToList();
+			AkizukiLog.Information("Selected parts for {Name}: {Parts}", shipName, string.Join(", ", selectedParts));
 
 			var hullModel = string.Empty;
 			var hardPoints = new Dictionary<string, HashSet<string>>();
 			var planes = new Dictionary<string, string>();
 			var filters = new Dictionary<string, ModelMiscContext>();
-			foreach (var selectedComponent in selectedPartNames) {
+			foreach (var selectedComponent in selectedParts) {
 				if (ship.ModelPaths.TryGetValue(selectedComponent, out var componentModel)) {
 					hullModel = componentModel;
 				}
@@ -195,10 +199,10 @@ internal static class Program {
 
 			if (string.IsNullOrEmpty(selectedPermoflage)) {
 				if (flags.AllPermoflages && ship.Permoflages.Count > 0) {
-					ProcessShip(flags, manager, shipName, null, ship, selectedPartNames, hardPoints, filters, hullModel, planes, shipName);
+					ProcessShip(flags, manager, shipName, null, ship, selectedParts, hardPoints, filters, hullModel, planes, shipName);
 
 					foreach (var permoflage in ship.Permoflages) {
-						ProcessShip(flags, manager, permoflage, permoflage, ship, selectedPartNames, hardPoints, filters, hullModel, planes, shipName, true);
+						ProcessShip(flags, manager, permoflage, permoflage, ship, selectedParts, hardPoints, filters, hullModel, planes, shipName, true);
 					}
 				} else {
 					if (string.IsNullOrEmpty(ship.NativePermoflage) && flags.UsePermoflageRegardless) {
@@ -213,23 +217,25 @@ internal static class Program {
 				selectedPermoflage = null;
 			}
 
-			ProcessShip(flags, manager, selectedPermoflage ?? shipName, selectedPermoflage, ship, selectedPartNames, hardPoints, filters, hullModel, planes, shipName);
+			ProcessShip(flags, manager, selectedPermoflage ?? shipName, selectedPermoflage, ship, selectedParts, hardPoints, filters, hullModel, planes, shipName);
 		}
 	}
 
 	private static void ProcessShip(ProgramFlags flags, ResourceManager manager, string modelName, string? permoflage, ShipParam ship,
-		List<string> selectedPartNames, Dictionary<string, HashSet<string>> hardPoints, Dictionary<string, ModelMiscContext> filters,
+		HashSet<string> selectedPartNames, Dictionary<string, HashSet<string>> hardPoints, Dictionary<string, ModelMiscContext> filters,
 		string hullModel, Dictionary<string, string> planes,
 		string shipName, bool enforcePermoflage = false) {
-		CamouflageContext? camouflageContext = default;
+		CamouflageColorScheme? colorScheme = default;
+		Camouflage? camouflage = default;
 		if (TryFindPermoflageTag(manager.GameParams, permoflage, out var permoflageTag)) {
-			var camouflage = manager.Camouflages?.Camouflages.FirstOrDefault(x => x.IsValidFor(permoflageTag, shipName));
+			camouflage = manager.Camouflages?.Camouflages.FirstOrDefault(x => x.IsValidFor(permoflageTag, shipName));
 			if (camouflage is not null) {
 				var colorSchemeId = camouflage.ColorSchemes?.ElementAtOrDefault(ship.CamouflageColorSchemeId) ?? camouflage.ColorSchemes?.FirstOrDefault();
-				var colorScheme = colorSchemeId is null ? default : manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
-				camouflageContext = ProcessPermoflagePeculiarities(manager.GameParams, permoflage, colorScheme, camouflage, selectedPartNames, hardPoints, filters, ref hullModel);
+				colorScheme = colorSchemeId is null ? default : manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
 			}
 		}
+
+		var camouflageContext = ProcessPermoflagePeculiarities(manager.GameParams, permoflage, colorScheme, camouflage, selectedPartNames, hardPoints, filters, ref hullModel);
 
 		if (enforcePermoflage && camouflageContext is null) {
 			return;
@@ -262,10 +268,14 @@ internal static class Program {
 	}
 
 	private static CamouflageContext? ProcessPermoflagePeculiarities(
-		Dictionary<string, Dictionary<object, object>> pickle, string permoflage,
-		CamouflageColorScheme? colorScheme, Camouflage camouflage,
-		List<string> parts, Dictionary<string, HashSet<string>> hardpoints, Dictionary<string, ModelMiscContext> filters,
+		Dictionary<string, Dictionary<object, object>> pickle, string? permoflage,
+		CamouflageColorScheme? colorScheme, Camouflage? camouflage,
+		HashSet<string> parts, Dictionary<string, HashSet<string>> hardpoints, Dictionary<string, ModelMiscContext> filters,
 		ref string hullModel) {
+		if (string.IsNullOrEmpty(permoflage)) {
+			return null;
+		}
+
 		if (!pickle.TryGetValue(permoflage, out var permoflageParams)) {
 			return null;
 		}

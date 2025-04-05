@@ -32,4 +32,4 @@ public record ModelBuilderContext(
 	public Dictionary<ResourceId, int> TextureCache { get; } = [];
 }
 
-public record CamouflageContext(CamouflageColorScheme? ColorScheme, Camouflage Camouflage, CamouflagePart Part, Dictionary<string, string> Redirect, List<string> Style);
+public record CamouflageContext(CamouflageColorScheme? ColorScheme, Camouflage? Camouflage, CamouflagePart Part, Dictionary<string, string> Redirect, List<string> Style);

@@ -385,8 +385,10 @@ public static class GeometryConverter {
 	public static VisualPrototype? FindVisualPrototype(ResourceManager manager, ref string path, CamouflageContext? camouflage) {
 		if (camouflage is { Redirect.Count: > 0 }) {
 			if (camouflage.Redirect.TryGetValue(path, out var redirected)) {
+				AkizukiLog.Debug("Redirecting {Path} to {Redirected}", path, redirected);
 				path = redirected;
 			} else if (path.StartsWith("res/") && camouflage.Redirect.TryGetValue(path[4..], out redirected)) {
+				AkizukiLog.Debug("Redirecting {Path} to {Redirected}", path, redirected);
 				path = redirected;
 			}
 		}
@@ -479,12 +481,12 @@ public static class GeometryConverter {
 
 	[MethodImpl(MethodConstants.Optimize)]
 	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath, CamouflageContext? camouflage, string currentNode) {
-		AkizukiLog.Information("Building part {Path}", modelPath);
 		var builtVisual = FindVisualPrototype(context.Manager, ref modelPath, camouflage);
 		if (builtVisual == null) {
 			return;
 		}
 
+		AkizukiLog.Information("Building part {Path}", modelPath);
 		BuildModelPart(context, gltf, parent, builtVisual, camouflage, currentNode);
 	}
 
@@ -737,6 +739,10 @@ public static class GeometryConverter {
 	}
 
 	private static void BuildCamouflage(ModelBuilderContext context, GL.Root gltf, string name, CHRONOVOREMaterialAttributes materialAttributes, CamouflageContext camouflage) {
+		if (camouflage.Camouflage == null) {
+			return;
+		}
+
 		var part = camouflage.Part;
 		if (name.Length > 2 && camouflage.Camouflage.Tiled == false) {
 			if (part != CamouflagePart.Plane) {
