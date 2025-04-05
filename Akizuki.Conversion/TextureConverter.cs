@@ -300,13 +300,13 @@ public static class TextureConverter {
 			return context.TextureCache[id] = -1;
 		}
 
-		var texturePath = Path.Combine(context.TexturesPath, $"{id.Hash:x16}-" + Path.GetFileName(texturePkgPath));
+		var texturePath = Path.Combine(context.Resource.TexturesPath, $"{id.Hash:x16}-" + Path.GetFileName(texturePkgPath));
 		if (context.Flags.SelectedFormat is not TextureFormat.None && isDDS) {
 			if (ConvertTexture(texturePath, context.Flags, buffer, true, slotName == NormalMapId, slotName == MetalMapId) is not { } newTexturePath) {
 				return context.TextureCache[id] = -1;
 			}
 
-			texturePath = Path.GetRelativePath(context.ModelPath, newTexturePath);
+			texturePath = Path.GetRelativePath(context.Resource.ModelPath, newTexturePath);
 		} else if (!context.Flags.Dry) {
 			using var stream = new FileStream(texturePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
 			stream.Write(buffer.Span);

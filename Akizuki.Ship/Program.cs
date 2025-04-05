@@ -126,7 +126,7 @@ internal static class Program {
 				// assuming A_Name, B_Name, this will sort it to most upgrades.
 				// this is only necessary for the hull.
 				var sorted = ship.ShipUpgradeInfo.Upgrades.OrderBy(x => x.Key);
-				if (flags.AllModules) {
+				if (flags.AllModules) { // todo: this breaks misc resolution
 					selectedParts.AddRange(sorted.Select(x => x.Value));
 				} else {
 					var grouped = sorted.GroupBy(x => x.Value.UpgradeType);
@@ -144,6 +144,7 @@ internal static class Program {
 			var hullModel = string.Empty;
 			var hardPoints = new Dictionary<string, HashSet<string>>();
 			var planes = new Dictionary<string, string>();
+			var filters = new Dictionary<string, ModelMiscContext>();
 			foreach (var selectedComponent in selectedPartNames) {
 				if (ship.ModelPaths.TryGetValue(selectedComponent, out var componentModel)) {
 					hullModel = componentModel;
@@ -164,6 +165,18 @@ internal static class Program {
 						planes[key] = value;
 					}
 				}
+
+				if (ship.Filters.TryGetValue(selectedComponent, out var componentFilters)) {
+					foreach (var (key, values) in componentFilters) {
+						if (!filters.TryGetValue(key, out var filter)) {
+							filter = filters[key] = new ModelMiscContext(values.IsBlockList, []);
+						}
+
+						foreach (var value in values.Filters) {
+							filter.Filters.Add(value);
+						}
+					}
+				}
 			}
 
 			if (string.IsNullOrEmpty(hullModel)) {
@@ -182,10 +195,10 @@ internal static class Program {
 
 			if (string.IsNullOrEmpty(selectedPermoflage)) {
 				if (flags.AllPermoflages && ship.Permoflages.Count > 0) {
-					ProcessShip(flags, manager, shipName, null, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
+					ProcessShip(flags, manager, shipName, null, ship, selectedPartNames, hardPoints, filters, hullModel, planes, shipName);
 
 					foreach (var permoflage in ship.Permoflages) {
-						ProcessShip(flags, manager, permoflage, permoflage, ship, selectedPartNames, hardPoints, hullModel, planes, shipName, true);
+						ProcessShip(flags, manager, permoflage, permoflage, ship, selectedPartNames, hardPoints, filters, hullModel, planes, shipName, true);
 					}
 				} else {
 					if (string.IsNullOrEmpty(ship.NativePermoflage) && flags.UsePermoflageRegardless) {
@@ -200,12 +213,13 @@ internal static class Program {
 				selectedPermoflage = null;
 			}
 
-			ProcessShip(flags, manager, selectedPermoflage ?? shipName, selectedPermoflage, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
+			ProcessShip(flags, manager, selectedPermoflage ?? shipName, selectedPermoflage, ship, selectedPartNames, hardPoints, filters, hullModel, planes, shipName);
 		}
 	}
 
 	private static void ProcessShip(ProgramFlags flags, ResourceManager manager, string modelName, string? permoflage, ShipParam ship,
-		List<string> selectedPartNames, Dictionary<string, HashSet<string>> hardPoints, string hullModel, Dictionary<string, string> planes,
+		List<string> selectedPartNames, Dictionary<string, HashSet<string>> hardPoints, Dictionary<string, ModelMiscContext> filters,
+		string hullModel, Dictionary<string, string> planes,
 		string shipName, bool enforcePermoflage = false) {
 		CamouflageContext? camouflageContext = default;
 		if (TryFindPermoflageTag(manager.GameParams, permoflage, out var permoflageTag)) {
@@ -213,7 +227,7 @@ internal static class Program {
 			if (camouflage is not null) {
 				var colorSchemeId = camouflage.ColorSchemes?.ElementAtOrDefault(ship.CamouflageColorSchemeId) ?? camouflage.ColorSchemes?.FirstOrDefault();
 				var colorScheme = colorSchemeId is null ? default : manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
-				camouflageContext = ProcessPermoflagePeculiarities(manager.GameParams, permoflage, colorScheme, camouflage, selectedPartNames, hardPoints, ref hullModel);
+				camouflageContext = ProcessPermoflagePeculiarities(manager.GameParams, permoflage, colorScheme, camouflage, selectedPartNames, hardPoints, filters, ref hullModel);
 			}
 		}
 
@@ -221,12 +235,12 @@ internal static class Program {
 			return;
 		}
 
-		GeometryConverter.ConvertVisual(manager, modelName, flags.OutputDirectory, hullModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext, null, shipName);
+		GeometryConverter.ConvertVisual(manager, modelName, flags.OutputDirectory, hullModel, hardPoints, filters, flags, ship.ParamTypeInfo, camouflageContext, null, shipName);
 
 		camouflageContext = camouflageContext != default ? camouflageContext with { Part = CamouflagePart.Plane } : default;
 
 		foreach (var (planeName, planeModel) in planes) {
-			GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext, $"plane/{modelName}", shipName);
+			GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardPoints, filters, flags, ship.ParamTypeInfo, camouflageContext, $"plane/{modelName}", shipName);
 		}
 	}
 
@@ -247,13 +261,16 @@ internal static class Program {
 		return false;
 	}
 
-	private static CamouflageContext? ProcessPermoflagePeculiarities(Dictionary<string, Dictionary<object, object>> pickle, string permoflage, CamouflageColorScheme? colorScheme, Camouflage camouflage, List<string> parts, Dictionary<string, HashSet<string>> hardpoints, ref string hullModel) {
+	private static CamouflageContext? ProcessPermoflagePeculiarities(
+		Dictionary<string, Dictionary<object, object>> pickle, string permoflage,
+		CamouflageColorScheme? colorScheme, Camouflage camouflage,
+		List<string> parts, Dictionary<string, HashSet<string>> hardpoints, Dictionary<string, ModelMiscContext> filters,
+		ref string hullModel) {
 		if (!pickle.TryGetValue(permoflage, out var permoflageParams)) {
 			return null;
 		}
 
 		var redirect = new Dictionary<string, string>();
-		var filter = new HashSet<string>();
 		var style = new List<string>();
 
 		var values = permoflageParams.GetValueOrDefault<Dictionary<object, object>>("peculiarityModels", []);
@@ -301,12 +318,10 @@ internal static class Program {
 					continue;
 				}
 
-				foreach (var misc in miscFilter.OfType<string>()) {
-					filter.Add(misc);
-				}
+				filters[hardpoint] = new ModelMiscContext(nodeData.GetValueOrDefault<bool>("miscFilterMode"), [..miscFilter.OfType<string>()]);
 			}
 		}
 
-		return new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown, redirect, filter, style);
+		return new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown, redirect, style);
 	}
 }

@@ -9,15 +9,22 @@ using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Gr
 
 namespace Akizuki.Conversion.Utility;
 
-public record ModelBuilderContext(
-	IConversionOptions Flags,
-	ResourceManager Manager,
-	Stream BufferStream,
+public record ModelResourceContext(
 	bool IsEvent,
 	string ModelPath,
 	string TexturesPath,
 	Dictionary<string, HashSet<string>> HardPoints,
-	Dictionary<string, string> PortPoints) {
+	Dictionary<string, string> PortPoints,
+	Dictionary<string, ModelMiscContext> Filters
+);
+
+public record ModelMiscContext(bool IsBlockList, HashSet<string> Filters);
+
+public record ModelBuilderContext(
+	IConversionOptions Flags,
+	ResourceManager Manager,
+	Stream BufferStream,
+	ModelResourceContext Resource) {
 	public Dictionary<int, int> ThicknessMaterialCache { get; } = [];
 	public Dictionary<ResourceId, PrimitiveCache> PrimCache { get; } = [];
 	public Dictionary<ResourceId, GeometryCache> GeometryCache { get; } = [];
@@ -25,6 +32,4 @@ public record ModelBuilderContext(
 	public Dictionary<ResourceId, int> TextureCache { get; } = [];
 }
 
-public record CamouflageContext(CamouflageColorScheme? ColorScheme, Camouflage Camouflage, CamouflagePart Part, Dictionary<string, string> Redirect, HashSet<string> MiscFilter, List<string> Style) {
-	public bool SkipFilters => MiscFilter.Count > 0 || Style.Count > 0;
-}
+public record CamouflageContext(CamouflageColorScheme? ColorScheme, Camouflage Camouflage, CamouflagePart Part, Dictionary<string, string> Redirect, List<string> Style);

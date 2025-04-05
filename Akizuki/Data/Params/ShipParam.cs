@@ -84,6 +84,14 @@ public class ShipParam : ParamObject {
 						throw new UnreachableException();
 					}
 				}
+
+				if (componentPointData.TryGetValue<object[]>("miscFilter", out var miscFilter)) {
+					if (!Filters.TryGetValue(component, out var componentFilters)) {
+						componentFilters = Filters[component] = [];
+					}
+
+					componentFilters[keyStr] = (componentPointData.GetValueOrDefault<bool>("miscFilterMode"), [..miscFilter.OfType<string>()]);
+				}
 			}
 		}
 	}
@@ -96,6 +104,7 @@ public class ShipParam : ParamObject {
 	public int CamouflageColorSchemeId { get; set; }
 	public ShipUpgradeInfo ShipUpgradeInfo { get; set; } = new();
 	public Dictionary<string, string> ModelPaths { get; set; } = [];
+	public Dictionary<string, Dictionary<string, (bool IsBlockList, HashSet<string> Filters)>> Filters { get; set; } = [];
 	public Dictionary<string, Dictionary<string, string>> HardpointModelPaths { get; set; } = [];
 	public Dictionary<string, Dictionary<string, string>> PlaneModelPaths { get; set; } = [];
 }

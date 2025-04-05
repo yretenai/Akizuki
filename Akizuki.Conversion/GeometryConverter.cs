@@ -26,36 +26,9 @@ using PrimitiveCache = System.Collections.Generic.Dictionary<(Akizuki.Structs.Gr
 namespace Akizuki.Conversion;
 
 public static class GeometryConverter {
-	static GeometryConverter() {
-		ReadBlockList(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MiscBlockList.txt"), MiscBlockList);
-		ReadRedirectMap(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MaterialRewrite.txt"), MaterialMapping);
-	}
+	static GeometryConverter() => ReadRedirectMap(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "MaterialRewrite.txt"), MaterialMapping);
 
-	// I have no idea how the game resolves misc objects
-	// At the moment Akizuki tries to resolve the misc object based on heuristics, but sometimes invalid misc objects are found.
-	// Reads ./Resources/MiscBlockList.txt
-	public static HashSet<string> MiscBlockList { get; } = [];
 	public static Dictionary<string, string> MaterialMapping { get; } = [];
-
-	private static void ReadBlockList(string path, HashSet<string> blockList) {
-		if (!File.Exists(path)) {
-			return;
-		}
-
-		using var reader = new StreamReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-		while (reader.ReadLine() is { } line) {
-			var semiColonIndex = line.IndexOf(';', StringComparison.Ordinal);
-			switch (semiColonIndex) {
-				case 0: continue;
-				case > -1: line = line[..semiColonIndex]; break;
-			}
-
-			line = line.Trim();
-			if (line.Length > 0) {
-				blockList.Add(line);
-			}
-		}
-	}
 
 	private static void ReadRedirectMap(string path, Dictionary<string, string> mapping) {
 		if (!File.Exists(path)) {
@@ -115,18 +88,25 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static string? LocateMiscObject(string id, bool shouldSkipChecks) {
-		if (!shouldSkipChecks && (!id.StartsWith("MP_") || MiscBlockList.Contains(id))) {
+	public static string? LocateMiscObject(string id, bool isEvent, ModelMiscContext? filter) {
+		if (!id.StartsWith("MP_")) {
 			return null;
+		}
+
+		if (filter != null) {
+			var check = filter.Filters.Contains(id);
+			if (!filter.IsBlockList) {
+				check = !check;
+			}
+
+			if (check) {
+				return null;
+			}
 		}
 
 		id = id[3..];
 
-		if (id.Length < 5 || id[1] != 'M' || (!shouldSkipChecks && MiscBlockList.Contains(id))) {
-			return null;
-		}
-
-		if (!shouldSkipChecks && id[2] - '0' >= 5) {
+		if (id.Length < 5 || id[1] != 'M') {
 			return null;
 		}
 
@@ -145,7 +125,7 @@ public static class GeometryConverter {
 			case 'U': path += "commonwealth/"; break;
 			case 'V': path += "panamerica/"; break;
 			case 'W': path += "europe/"; break;
-			case 'X' when shouldSkipChecks: path += "events/"; break;
+			case 'X' when isEvent: path += "events/"; break;
 			case 'Z': path += "panasia/"; break;
 			default: return null;
 		}
@@ -429,7 +409,7 @@ public static class GeometryConverter {
 
 	[MethodImpl(MethodConstants.Optimize)]
 	public static void ConvertVisual(ResourceManager manager, string fileName, string path,
-		string rootModelPath, Dictionary<string, HashSet<string>> hardPoints,
+		string rootModelPath, Dictionary<string, HashSet<string>> hardPoints, Dictionary<string, ModelMiscContext> filters,
 		IConversionOptions flags, ParamTypeInfo? info,
 		CamouflageContext? camouflage, string? subdir = null, string? parentName = null) {
 		var builtVisual = FindVisualPrototype(manager, ref rootModelPath, camouflage);
@@ -476,8 +456,8 @@ public static class GeometryConverter {
 
 		var root = gltf.CreateNode(fileName).Node;
 
-		var context = new ModelBuilderContext(flags, manager, bufferStream, info?.Nation == "Events", modelPath, texturesPath, hardPoints, portPoints);
-		BuildModelPart(context, gltf, root, builtVisual, camouflage);
+		var context = new ModelBuilderContext(flags, manager, bufferStream, new ModelResourceContext(info?.Nation == "Events", modelPath, texturesPath, hardPoints, portPoints, filters));
+		BuildModelPart(context, gltf, root, builtVisual, camouflage, "HP_Scene");
 
 		gltf.Buffers = [
 			new GL.Buffer {
@@ -498,18 +478,18 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath, CamouflageContext? camouflage) {
+	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath, CamouflageContext? camouflage, string currentNode) {
 		AkizukiLog.Information("Building part {Path}", modelPath);
 		var builtVisual = FindVisualPrototype(context.Manager, ref modelPath, camouflage);
 		if (builtVisual == null) {
 			return;
 		}
 
-		BuildModelPart(context, gltf, parent, builtVisual, camouflage);
+		BuildModelPart(context, gltf, parent, builtVisual, camouflage, currentNode);
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual, CamouflageContext? camouflage) {
+	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, VisualPrototype visual, CamouflageContext? camouflage, string currentNode) {
 		var name = Path.GetFileNameWithoutExtension(visual.MergedGeometryPath.Path);
 		var (node, rootId) = parent.CreateNode(gltf, name);
 
@@ -542,22 +522,22 @@ public static class GeometryConverter {
 
 				nodeMap[nodeName] = skeletonNode;
 
-				if (context.HardPoints.TryGetValue(realName, out var hardPart)) {
+				if (context.Resource.HardPoints.TryGetValue(realName, out var hardPart)) {
 					foreach (var part in hardPart) {
-						BuildModelPart(context, gltf, skeletonNode, part, camouflage);
+						BuildModelPart(context, gltf, skeletonNode, part, camouflage, realName);
 					}
 				}
 
-				if (context.PortPoints.TryGetValue(realName, out var portPart)) {
-					BuildModelPart(context, gltf, skeletonNode, portPart, camouflage);
+				if (context.Resource.PortPoints.TryGetValue(realName, out var portPart)) {
+					BuildModelPart(context, gltf, skeletonNode, portPart, camouflage, realName);
 				}
 
-				if (LocateMiscObject(realName, context.IsEvent || (camouflage?.SkipFilters ?? false)) is { } miscObject) {
-					BuildModelPart(context, gltf, skeletonNode, miscObject, camouflage);
+				if (LocateMiscObject(realName, context.Resource.IsEvent, context.Resource.Filters.GetValueOrDefault(currentNode)) is { } miscObject) {
+					BuildModelPart(context, gltf, skeletonNode, miscObject, camouflage, realName);
 				}
 
 				foreach (var styleObject in LocateStyleObject(realName, camouflage?.Style)) {
-					BuildModelPart(context, gltf, skeletonNode, styleObject, camouflage);
+					BuildModelPart(context, gltf, skeletonNode, styleObject, camouflage, realName);
 				}
 
 				if (isSkinned) {
