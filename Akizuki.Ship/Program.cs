@@ -209,10 +209,7 @@ internal static class Program {
 			if (camouflage is not null) {
 				var colorSchemeId = camouflage.ColorSchemes?.ElementAtOrDefault(ship.CamouflageColorSchemeId) ?? camouflage.ColorSchemes?.FirstOrDefault();
 				var colorScheme = colorSchemeId is null ? default : manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
-				var redirect = new Dictionary<string, string>();
-				var filter = new HashSet<string>();
-				ProcessPermoflagePeculiarities(manager.GameParams, permoflage, selectedPartNames, redirect, hardPoints, filter, ref hullModel);
-				camouflageContext = new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown, redirect, filter);
+				camouflageContext = ProcessPermoflagePeculiarities(manager.GameParams, permoflage, colorScheme, camouflage, selectedPartNames, hardPoints, ref hullModel);
 			}
 		}
 
@@ -246,15 +243,22 @@ internal static class Program {
 		return false;
 	}
 
-	private static void ProcessPermoflagePeculiarities(Dictionary<string, Dictionary<object, object>> pickle, string permoflage, List<string> parts, Dictionary<string, string> redirect, Dictionary<string, HashSet<string>> hardpoints, HashSet<string> filter, ref string hullModel) {
+	private static CamouflageContext? ProcessPermoflagePeculiarities(Dictionary<string, Dictionary<object, object>> pickle, string permoflage, CamouflageColorScheme? colorScheme, Camouflage camouflage, List<string> parts, Dictionary<string, HashSet<string>> hardpoints, ref string hullModel) {
 		if (!pickle.TryGetValue(permoflage, out var permoflageParams)) {
-			return;
+			return null;
 		}
+
+		var redirect = new Dictionary<string, string>();
+		var filter = new HashSet<string>();
+		var style = new List<string>();
 
 		var values = permoflageParams.GetValueOrDefault<Dictionary<object, object>>("peculiarityModels", []);
 		foreach (var (key, value) in values) {
 			redirect[(string) key] = (string) value;
 		}
+
+		var subTypes = permoflageParams.GetValueOrDefault<object[]>("subTypes", []);
+		style.AddRange(subTypes.OfType<string>());
 
 		values = permoflageParams.GetValueOrDefault<Dictionary<object, object>>("hullConfig", []);
 		foreach (var part in parts) {
@@ -298,5 +302,7 @@ internal static class Program {
 				}
 			}
 		}
+
+		return new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown, redirect, filter, style);
 	}
 }

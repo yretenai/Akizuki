@@ -102,6 +102,19 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
+	public static IEnumerable<string> LocateStyleObject(string id, List<string>? subTypes) {
+		if (subTypes is not { Count: > 0 } || id.Length < 3 || !id.StartsWith("SP_")) {
+			yield break;
+		}
+
+		id = id[3..];
+
+		foreach (var subType in subTypes) {
+			yield return $"res/content/styles/${subType}/{id}/{id}.model";
+		}
+	}
+
+	[MethodImpl(MethodConstants.Optimize)]
 	public static string? LocateMiscObject(string id, bool shouldSkipChecks) {
 		if (!shouldSkipChecks && (!id.StartsWith("MP_") || MiscBlockList.Contains(id))) {
 			return null;
@@ -389,7 +402,7 @@ public static class GeometryConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static VisualPrototype? FindVisualPrototype(ResourceManager manager, string path, CamouflageContext? camouflage) {
+	public static VisualPrototype? FindVisualPrototype(ResourceManager manager, ref string path, CamouflageContext? camouflage) {
 		if (camouflage is { Redirect.Count: > 0 }) {
 			if (camouflage.Redirect.TryGetValue(path, out var redirected)) {
 				path = redirected;
@@ -419,7 +432,7 @@ public static class GeometryConverter {
 		string rootModelPath, Dictionary<string, HashSet<string>> hardPoints,
 		IConversionOptions flags, ParamTypeInfo? info,
 		CamouflageContext? camouflage, string? subdir = null, string? parentName = null) {
-		var builtVisual = FindVisualPrototype(manager, rootModelPath, camouflage);
+		var builtVisual = FindVisualPrototype(manager, ref rootModelPath, camouflage);
 		if (builtVisual == null) {
 			return;
 		}
@@ -487,7 +500,7 @@ public static class GeometryConverter {
 	[MethodImpl(MethodConstants.Optimize)]
 	public static void BuildModelPart(ModelBuilderContext context, GL.Root gltf, GL.Node parent, string modelPath, CamouflageContext? camouflage) {
 		AkizukiLog.Information("Building part {Path}", modelPath);
-		var builtVisual = FindVisualPrototype(context.Manager, modelPath, camouflage);
+		var builtVisual = FindVisualPrototype(context.Manager, ref modelPath, camouflage);
 		if (builtVisual == null) {
 			return;
 		}
@@ -539,8 +552,12 @@ public static class GeometryConverter {
 					BuildModelPart(context, gltf, skeletonNode, portPart, camouflage);
 				}
 
-				if (LocateMiscObject(realName, context.IsEvent || (camouflage?.MiscFilter.Contains(realName) ?? false)) is { } miscObject) {
+				if (LocateMiscObject(realName, context.IsEvent || (camouflage?.SkipFilters ?? false)) is { } miscObject) {
 					BuildModelPart(context, gltf, skeletonNode, miscObject, camouflage);
+				}
+
+				foreach (var styleObject in LocateStyleObject(realName, camouflage?.Style)) {
+					BuildModelPart(context, gltf, skeletonNode, styleObject, camouflage);
 				}
 
 				if (isSkinned) {

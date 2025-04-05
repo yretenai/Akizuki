@@ -25,4 +25,6 @@ public record ModelBuilderContext(
 	public Dictionary<ResourceId, int> TextureCache { get; } = [];
 }
 
-public record CamouflageContext(CamouflageColorScheme? ColorScheme, Camouflage Camouflage, CamouflagePart Part, Dictionary<string, string> Redirect, HashSet<string> MiscFilter);
+public record CamouflageContext(CamouflageColorScheme? ColorScheme, Camouflage Camouflage, CamouflagePart Part, Dictionary<string, string> Redirect, HashSet<string> MiscFilter, List<string> Style) {
+	public bool SkipFilters => MiscFilter.Count > 0 || Style.Count > 0;
+}
