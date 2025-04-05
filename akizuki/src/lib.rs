@@ -3,3 +3,5 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 mod identifiers;
+mod manager;
+mod pfs;
