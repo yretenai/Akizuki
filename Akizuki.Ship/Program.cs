@@ -196,7 +196,11 @@ internal static class Program {
 				}
 			}
 
-			ProcessShip(flags, manager, shipName, selectedPermoflage, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
+			if (string.IsNullOrEmpty(selectedPermoflage)) {
+				selectedPermoflage = null;
+			}
+
+			ProcessShip(flags, manager, selectedPermoflage ?? shipName, selectedPermoflage, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
 		}
 	}
 
