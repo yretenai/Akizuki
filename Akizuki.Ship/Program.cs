@@ -185,7 +185,7 @@ internal static class Program {
 					ProcessShip(flags, manager, shipName, null, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
 
 					foreach (var permoflage in ship.Permoflages) {
-						ProcessShip(flags, manager, permoflage, permoflage, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
+						ProcessShip(flags, manager, permoflage, permoflage, ship, selectedPartNames, hardPoints, hullModel, planes, shipName, true);
 					}
 				} else {
 					if (string.IsNullOrEmpty(ship.NativePermoflage) && flags.UsePermoflageRegardless) {
@@ -202,7 +202,7 @@ internal static class Program {
 
 	private static void ProcessShip(ProgramFlags flags, ResourceManager manager, string modelName, string? permoflage, ShipParam ship,
 		List<string> selectedPartNames, Dictionary<string, HashSet<string>> hardPoints, string hullModel, Dictionary<string, string> planes,
-		string shipName) {
+		string shipName, bool enforcePermoflage = false) {
 		CamouflageContext? camouflageContext = default;
 		if (TryFindPermoflageTag(manager.GameParams, permoflage, out var permoflageTag)) {
 			var camouflage = manager.Camouflages?.Camouflages.FirstOrDefault(x => x.IsValidFor(permoflageTag, shipName));
@@ -214,6 +214,10 @@ internal static class Program {
 				ProcessPermoflagePeculiarities(manager.GameParams, permoflage, selectedPartNames, redirect, hardPoints, filter, ref hullModel);
 				camouflageContext = new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown, redirect, filter);
 			}
+		}
+
+		if (enforcePermoflage && camouflageContext is null) {
+			return;
 		}
 
 		GeometryConverter.ConvertVisual(manager, modelName, flags.OutputDirectory, hullModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext, null, shipName);
