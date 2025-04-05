@@ -46,6 +46,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("permoflage", Help = "Use Permoflages on ships that do not have a native permoflage", Category = "Akizuki")]
 	public bool UsePermoflageRegardless { get; set; }
 
+	[Flag("secondary-permoflage", Help = "Convert the default permoflage in addition to base skin (does nothing if a native permoflage is present)", Category = "Akizuki")]
+	public bool SecondaryPermoflage { get; set; }
+
 	[Flag("all-permoflages", Help = "Convert all permoflages a ship has", Category = "Akizuki")]
 	public bool AllPermoflages { get; set; }
 

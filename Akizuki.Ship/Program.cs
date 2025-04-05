@@ -197,19 +197,28 @@ internal static class Program {
 				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
 			}
 
-			if (string.IsNullOrEmpty(selectedPermoflage)) {
-				if (flags.AllPermoflages && ship.Permoflages.Count > 0) {
+			if (string.IsNullOrEmpty(selectedPermoflage) && ship.Permoflages.Count > 0) {
+				if (flags.AllPermoflages) {
 					ProcessShip(flags, manager, shipName, null, ship, selectedParts, hardPoints, filters, hullModel, planes, shipName);
 
 					foreach (var permoflage in ship.Permoflages) {
 						ProcessShip(flags, manager, permoflage, permoflage, ship, selectedParts, hardPoints, filters, hullModel, planes, shipName, true);
 					}
-				} else {
-					if (string.IsNullOrEmpty(ship.NativePermoflage) && flags.UsePermoflageRegardless) {
-						selectedPermoflage = ship.Permoflages.FirstOrDefault();
-					} else {
-						selectedPermoflage = ship.NativePermoflage;
+
+					continue;
+				}
+
+				if (string.IsNullOrEmpty(ship.NativePermoflage) && (flags.SecondaryPermoflage || flags.UsePermoflageRegardless)) {
+					if (flags.SecondaryPermoflage) {
+						ProcessShip(flags, manager, shipName, null, ship, selectedParts, hardPoints, filters, hullModel, planes, shipName);
 					}
+
+					selectedPermoflage = ship.Permoflages
+											 .Select(x => (Key: x, Value: manager.GameParams.GetValueOrDefault(x)))
+											 .Where(x => x.Value != null)
+											 .OrderByDescending(x => x.Value!.GetValueOrDefault<int>("sortOrder")).First().Key;
+				} else {
+					selectedPermoflage = ship.NativePermoflage;
 				}
 			}
 
