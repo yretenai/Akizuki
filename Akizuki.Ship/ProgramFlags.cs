@@ -46,6 +46,9 @@ internal record ProgramFlags : CommandLineFlags, IConversionOptions {
 	[Flag("permoflage", Help = "Use Permoflages on ships that do not have a native permoflage", Category = "Akizuki")]
 	public bool UsePermoflageRegardless { get; set; }
 
+	[Flag("all-permoflages", Help = "Convert all permoflages a ship has", Category = "Akizuki")]
+	public bool AllPermoflages { get; set; }
+
 	[Flag("texture-format", Help = "Format to save textures as", Category = "Akizuki")]
 	public TextureFormat ImageFormat { get; set; } = TextureFormat.Auto;
 

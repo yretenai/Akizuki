@@ -88,9 +88,9 @@ internal static class Program {
 			var splitParts = shipSetup.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 			var shipName = splitParts[0];
 			var atIndex = shipName.IndexOf('@', StringComparison.Ordinal);
-			string? permoflage = null;
+			string? selectedPermoflage = null;
 			if (atIndex > -1) {
-				permoflage = shipName[(atIndex + 1)..];
+				selectedPermoflage = shipName[(atIndex + 1)..];
 				shipName = shipName[..atIndex];
 			}
 
@@ -112,6 +112,7 @@ internal static class Program {
 				foreach (var (upgradeName, upgrade) in ship.ShipUpgradeInfo.Upgrades) {
 					AkizukiLog.Information("\t{Name} ({Type}, {TranslatedName})", upgradeName, upgrade.UpgradeType, text.GetTranslation(upgradeName));
 				}
+
 				AkizukiLog.Information("Available permoflages for ship {Name}:", shipName);
 				foreach (var permoflageName in ship.Permoflages) {
 					AkizukiLog.Information("\t{Name} ({TranslatedName})", permoflageName, text.GetTranslation(permoflageName));
@@ -179,31 +180,48 @@ internal static class Program {
 				AkizukiLog.Debug("{Hardpoint}: {ModelPath}", key, value);
 			}
 
-			CamouflageContext? camouflageContext = default;
-			permoflage ??= ship.NativePermoflage;
-			if (string.IsNullOrEmpty(permoflage) && flags.UsePermoflageRegardless) {
-				permoflage = ship.Permoflages.FirstOrDefault();
-			}
+			if (string.IsNullOrEmpty(selectedPermoflage)) {
+				if (flags.AllPermoflages && ship.Permoflages.Count > 0) {
+					ProcessShip(flags, manager, shipName, null, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
 
-			if (TryFindPermoflageTag(manager.GameParams, permoflage, out var permoflageTag)) {
-				var camouflage = manager.Camouflages?.Camouflages.FirstOrDefault(x => x.IsValidFor(permoflageTag, shipName));
-				if (camouflage is not null) {
-					var colorSchemeId = camouflage.ColorSchemes?.ElementAtOrDefault(ship.CamouflageColorSchemeId) ?? camouflage.ColorSchemes?.FirstOrDefault();
-					var colorScheme = colorSchemeId is null ? default : manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
-					var redirect = new Dictionary<string, string>();
-					var filter = new HashSet<string>();
-					ProcessPermoflagePeculiarities(manager.GameParams, permoflage, selectedPartNames, redirect, hardPoints, filter, ref hullModel);
-					camouflageContext = new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown, redirect, filter);
+					foreach (var permoflage in ship.Permoflages) {
+						ProcessShip(flags, manager, permoflage, permoflage, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
+					}
+				} else {
+					if (string.IsNullOrEmpty(ship.NativePermoflage) && flags.UsePermoflageRegardless) {
+						selectedPermoflage = ship.Permoflages.FirstOrDefault();
+					} else {
+						selectedPermoflage = ship.NativePermoflage;
+					}
 				}
 			}
 
-			GeometryConverter.ConvertVisual(manager, shipName, flags.OutputDirectory, hullModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext);
+			ProcessShip(flags, manager, shipName, selectedPermoflage, ship, selectedPartNames, hardPoints, hullModel, planes, shipName);
+		}
+	}
 
-			camouflageContext = camouflageContext != default ? camouflageContext with { Part = CamouflagePart.Plane } : default;
-
-			foreach (var (planeName, planeModel) in planes) {
-				GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext, "plane", shipName);
+	private static void ProcessShip(ProgramFlags flags, ResourceManager manager, string modelName, string? permoflage, ShipParam ship,
+		List<string> selectedPartNames, Dictionary<string, HashSet<string>> hardPoints, string hullModel, Dictionary<string, string> planes,
+		string shipName) {
+		CamouflageContext? camouflageContext = default;
+		if (TryFindPermoflageTag(manager.GameParams, permoflage, out var permoflageTag)) {
+			var camouflage = manager.Camouflages?.Camouflages.FirstOrDefault(x => x.IsValidFor(permoflageTag, shipName));
+			if (camouflage is not null) {
+				var colorSchemeId = camouflage.ColorSchemes?.ElementAtOrDefault(ship.CamouflageColorSchemeId) ?? camouflage.ColorSchemes?.FirstOrDefault();
+				var colorScheme = colorSchemeId is null ? default : manager.Camouflages!.ColorSchemes.FirstOrDefault(x => x.Name == colorSchemeId);
+				var redirect = new Dictionary<string, string>();
+				var filter = new HashSet<string>();
+				ProcessPermoflagePeculiarities(manager.GameParams, permoflage, selectedPartNames, redirect, hardPoints, filter, ref hullModel);
+				camouflageContext = new CamouflageContext(colorScheme, camouflage, CamouflagePart.Unknown, redirect, filter);
 			}
+		}
+
+		GeometryConverter.ConvertVisual(manager, modelName, flags.OutputDirectory, hullModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext, null, shipName);
+
+		camouflageContext = camouflageContext != default ? camouflageContext with { Part = CamouflagePart.Plane } : default;
+
+		foreach (var (planeName, planeModel) in planes) {
+			GeometryConverter.ConvertVisual(manager, planeName, flags.OutputDirectory, planeModel, hardPoints, flags, ship.ParamTypeInfo, camouflageContext, $"plane/{modelName}", shipName);
 		}
 	}
 
