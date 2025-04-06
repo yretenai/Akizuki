@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use binrw::BinRead;
+use colored::Colorize;
 use once_cell::sync::Lazy;
+
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::RwLock;
@@ -28,7 +30,7 @@ fn mmh3_fmix(hash: u32) -> u32 {
 	h ^= h >> 13;
 	h = h.wrapping_mul(0xc2b2ae35);
 	h ^= h >> 16;
-	return h;
+	h
 }
 
 #[inline]
@@ -75,7 +77,7 @@ pub(crate) fn mmh3_32(data: impl AsRef<[u8]>) -> u32 {
 		h1 ^= k1;
 	}
 
-	return mmh3_fmix(h1 ^ (bytes.len() as u32));
+	mmh3_fmix(h1 ^ (bytes.len() as u32))
 }
 
 impl StringId {
@@ -98,8 +100,12 @@ impl StringId {
 	}
 
 	#[inline]
-	pub fn insert(s: &str, hash: u32) {
-		STRING_LOOKUP.write().unwrap().insert(hash, s.to_owned());
+	pub fn insert(id: StringId, s: &str) {
+		STRING_LOOKUP.write().unwrap().insert(id.0, s.to_owned());
+	}
+
+	pub fn is_valid(&self) -> bool {
+		self.0 > 0 && self.0 < 0xFFFFFFFF
 	}
 }
 
@@ -122,16 +128,20 @@ impl ResourceId {
 	}
 
 	#[inline]
-	pub fn insert(s: &str, hash: u64) {
-		RESOURCE_LOOKUP.write().unwrap().insert(hash, s.to_owned());
+	pub fn insert(id: ResourceId, s: &str) {
+		RESOURCE_LOOKUP.write().unwrap().insert(id.0, s.to_owned());
+	}
+
+	pub fn is_valid(&self) -> bool {
+		self.0 > 0 && self.0 < 0xFFFFFFFFFFFFFFFF
 	}
 }
 
 impl fmt::Debug for StringId {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self.text() {
-			Some(s) => write!(f, "\"{}\" (0x{:08x})", s, self.0),
-			None => write!(f, "<unknown> (0x{:08x})", self.0),
+			Some(s) => write!(f, "\"{}\" ({})", s.blue(), format!("0x{:08x}", self.0).yellow()),
+			None => write!(f, "{} ({})", "<unknown>".red(), format!("0x{:08x}", self.0).yellow()),
 		}
 	}
 }
@@ -139,8 +149,8 @@ impl fmt::Debug for StringId {
 impl fmt::Debug for ResourceId {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self.text() {
-			Some(s) => write!(f, "\"{}\" (0x{:016x})", s, self.0),
-			None => write!(f, "<unknown> (0x{:016x})", self.0),
+			Some(s) => write!(f, "\"{}\" ({})", s.blue(), format!("0x{:016x}", self.0).yellow()),
+			None => write!(f, "{} ({})", "<unknown>".red(), format!("0x{:016x}", self.0).yellow()),
 		}
 	}
 }
@@ -178,7 +188,7 @@ mod tests {
 	#[test]
 	fn test_string_text() {
 		const TEST_STR: &str = "Akizuki";
-		StringId::insert(TEST_STR, 0x8d949450);
+		StringId::insert(StringId(0x8d949450), TEST_STR);
 
 		assert_eq!(StringId::new(TEST_STR).text().unwrap(), TEST_STR);
 	}
@@ -186,7 +196,7 @@ mod tests {
 	#[test]
 	fn test_string_debug() {
 		const TEST_STR: &str = "Akizuki";
-		StringId::insert(TEST_STR, 0x8d949450);
+		StringId::insert(StringId(0x8d949450), TEST_STR);
 
 		assert_eq!(format!("{:?}", StringId(0x8d949450)), "\"Akizuki\" (0x8d949450)");
 	}
@@ -206,7 +216,7 @@ mod tests {
 	#[test]
 	fn test_resource_text() {
 		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
-		ResourceId::insert(TEST_STR, 0x0df5a921212a899e);
+		ResourceId::insert(ResourceId(0x0df5a921212a899e), TEST_STR);
 
 		assert_eq!(ResourceId(0x0df5a921212a899e).text().unwrap(), TEST_STR);
 	}
@@ -214,7 +224,7 @@ mod tests {
 	#[test]
 	fn test_resource_debug() {
 		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
-		ResourceId::insert(TEST_STR, 0x0df5a921212a899e);
+		ResourceId::insert(ResourceId(0x0df5a921212a899e), TEST_STR);
 
 		assert_eq!(format!("{:?}", ResourceId(0x0df5a921212a899e)), "\"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\" (0x0df5a921212a899e)");
 	}

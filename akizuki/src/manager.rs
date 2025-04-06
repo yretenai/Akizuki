@@ -2,20 +2,24 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use crate::identifiers::ResourceId;
 use crate::pfs::PackageFileSystem;
+
 use colored::Colorize;
 use log::error;
+
+use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::{fs, io};
 
-#[derive(Debug)]
 pub struct ResourceManager {
-	pub packages: Vec<PackageFileSystem>,
+	pub packages: HashMap<ResourceId, PackageFileSystem>,
+	pub lookup: HashMap<ResourceId, ResourceId>,
 }
 
 impl ResourceManager {
-	pub fn new(install_path: &String, install_version: Option<i64>, should_validate: bool) -> Self {
+	pub fn new(install_path: &String, install_version: Option<i64>, should_validate: bool) -> Option<Self> {
 		let install = PathBuf::from(install_path);
 		let mut pkg_path = install.clone();
 		pkg_path.push("res_packages");
@@ -32,14 +36,27 @@ impl ResourceManager {
 
 		idx_path.push("idx");
 
-		let packages = load_idx(&pkg_path, &idx_path, should_validate).unwrap_or_default();
+		let packages = match load_idx(&pkg_path, &idx_path, should_validate) {
+			Ok(packages) => packages,
+			Err(err) => {
+				error!("could not load packages: {:?}", err);
+				return None;
+			}
+		};
 
-		return ResourceManager { packages };
+		let mut lookup = HashMap::<ResourceId, ResourceId>::new();
+		for (package_id, package) in &packages {
+			for file_id in package.files.keys() {
+				lookup.insert(*file_id, *package_id);
+			}
+		}
+
+		Some(ResourceManager { packages, lookup })
 	}
 }
 
-fn load_idx(packages_path: &PathBuf, idx_path: &PathBuf, should_validate: bool) -> io::Result<Vec<PackageFileSystem>> {
-	let mut packages = Vec::<PackageFileSystem>::new();
+fn load_idx(packages_path: &PathBuf, idx_path: &PathBuf, should_validate: bool) -> io::Result<HashMap<ResourceId, PackageFileSystem>> {
+	let mut packages = HashMap::<ResourceId, PackageFileSystem>::new();
 
 	if !idx_path.is_dir() {
 		return Ok(packages);
@@ -53,7 +70,9 @@ fn load_idx(packages_path: &PathBuf, idx_path: &PathBuf, should_validate: bool) 
 		}
 
 		match PackageFileSystem::new(packages_path, &path, should_validate) {
-			Ok(pkg) => packages.push(pkg),
+			Ok(pkg) => {
+				packages.insert(ResourceId::new(&pkg.name), pkg);
+			}
 			Err(err) => {
 				error!("{}", err.to_string().red());
 			}
@@ -83,8 +102,8 @@ fn find_install_version(bin_path: &PathBuf) -> Result<String, io::Error> {
 		}
 	}
 
-	return match max_folder {
+	match max_folder {
 		Some(folder) => Ok(folder.file_stem().unwrap_or_default().to_os_string().into_string().unwrap_or_default()),
 		_ => Err(io::Error::new(ErrorKind::NotFound, "no versions present")),
-	};
+	}
 }

@@ -3,10 +3,12 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::identifiers::mmh3_32;
+
 use binrw::io::BufReader;
 use binrw::{BinRead, BinResult};
 use four_char_code::four_char_code;
 use log::debug;
+
 use std::fs::File;
 use std::io;
 use std::io::SeekFrom::Start;
@@ -29,7 +31,7 @@ pub struct BigWorldFileHeader {
 }
 
 impl BigWorldFileHeader {
-	pub(crate) fn validate(&self, magic: BigWorldMagic, version: u32, should_validate: bool, reader: &mut BufReader<File>) -> BinResult<()> {
+	pub(crate) fn validate(&self, magic: BigWorldMagic, version: u32, validate: bool, reader: &mut BufReader<File>) -> BinResult<()> {
 		let swapped_version = u32::swap_bytes(self.version_be);
 
 		if swapped_version > self.version_be {
@@ -48,8 +50,8 @@ impl BigWorldFileHeader {
 			return Err(io::Error::new(ErrorKind::InvalidData, "unsupported pointer size").into());
 		}
 
-		if should_validate {
-			let mut all_data = Vec::<u8>::new();
+		if validate {
+			let mut all_data = Vec::<u8>::with_capacity(reader.capacity() - 0x10);
 			reader.read_to_end(&mut all_data)?;
 
 			let hash = mmh3_32(all_data);
@@ -62,6 +64,6 @@ impl BigWorldFileHeader {
 
 		debug!("big world header passed validation");
 
-		return Ok(());
+		Ok(())
 	}
 }

@@ -27,7 +27,6 @@ dependencies = [
  "bcdec_rs",
  "binrw",
  "bytemuck",
- "cantrip",
  "cityhasher",
  "colored",
  "crc",
@@ -195,12 +194,6 @@ name = "byteorder-lite"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
-
-[[package]]
-name = "cantrip"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f25d67b28b4899146ba4aa91d7b82b6cac41dcd2a4f162d2b1d88dd285254a32"
 
 [[package]]
 name = "cc"

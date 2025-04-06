@@ -3,64 +3,58 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::identifiers::ResourceId;
+
 use binrw::{BinRead, PosValue};
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
 #[br(repr = u32)]
 pub enum PackageCompressionType {
-	NoCompression,
+	NoCompression = 0,
 	DeflateCompression = 5,
-}
-
-#[derive(BinRead, Debug, Clone)]
-#[br(repr = u32)]
-pub enum PackageFileFlags {
-	None,
-	Compressed = 1,
 }
 
 #[derive(BinRead, Debug, Clone)]
 #[br()]
 pub struct PackageFile {
-	id: ResourceId,
-	package_id: ResourceId,
-	offset: i64,
-	compression_type: PackageCompressionType,
-	flags: PackageFileFlags,
-	compressed_size: i32,
-	hash: u32,
-	uncompressed_size: i64,
+	pub id: ResourceId,
+	pub package_id: ResourceId,
+	pub offset: u64,
+	pub compression_type: PackageCompressionType,
+	pub flags: u32,
+	pub compressed_size: u32,
+	pub hash: u32,
+	pub uncompressed_size: u64,
 }
 
 #[derive(BinRead, Debug, Clone)]
 #[br()]
 pub struct PackageFileHeader {
-	relative_position: PosValue<()>,
+	pub relative_position: PosValue<()>,
 
-	name_count: i32,
-	file_count: i32,
+	pub name_count: u32,
+	pub file_count: u32,
 	#[br(pad_after = 4)]
-	pkgs_count: i32,
+	pub pkgs_count: u32,
 
-	name_offset: i64,
-	file_offset: i64,
-	pkgs_offset: i64,
+	pub name_offset: u64,
+	pub file_offset: u64,
+	pub pkgs_offset: u64,
 }
 
 #[derive(BinRead, Debug, Clone)]
 #[br()]
 pub struct PackageFileName {
-	name: PackageName,
-	parent_id: i64,
+	pub name: PackageName,
+	pub parent_id: ResourceId,
 }
 
 #[derive(BinRead, Debug, Clone)]
 #[br()]
 pub struct PackageName {
-	relative_position: PosValue<()>,
-	length: i64,
-	offset: i64,
-	id: ResourceId,
+	pub relative_position: PosValue<()>,
+	pub length: u64,
+	pub offset: u64,
+	pub id: ResourceId,
 }
 
 impl PartialEq<ResourceId> for PackageFile {

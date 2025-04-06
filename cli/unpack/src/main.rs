@@ -3,11 +3,13 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use akizuki::manager::ResourceManager;
+
 use clap::Parser;
 use colog::format::CologStyle;
 use colored::Colorize;
 use env_logger::fmt::Formatter;
-use log::{LevelFilter, Record};
+use log::{LevelFilter, Record, error, info};
+
 use std::io::{Error, Write};
 
 #[derive(Parser)]
@@ -48,7 +50,24 @@ fn main() {
 	log::set_max_level(log_level);
 	init_logging(log_level);
 
-	let manager = ResourceManager::new(&args.install_path, args.install_version, args.validate);
+	let manager = match ResourceManager::new(&args.install_path, args.install_version, args.validate) {
+		Some(manager) => manager,
+		None => {
+			error!("could not create manager");
+			return;
+		}
+	};
+
+	for package in manager.packages.values() {
+		for asset in package.files.values() {
+			let data = match package.open(asset.id, args.validate) {
+				Some(data) => data,
+				None => continue,
+			};
+
+			info!("Unpacking {:?}", asset.id);
+		}
+	}
 }
 
 pub struct PrefixModule;
@@ -62,7 +81,7 @@ impl CologStyle for PrefixModule {
 		write!(buf, "{}{}{}", "[".blue().bold(), record.target().bright_purple(), "] ".blue().bold())?;
 		writeln!(buf, "{}", record.args().to_string().replace('\n', &sep))?;
 
-		return Ok(());
+		Ok(())
 	}
 }
 pub fn init_logging(filter: LevelFilter) {
