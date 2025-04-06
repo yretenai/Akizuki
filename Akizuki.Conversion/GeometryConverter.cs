@@ -488,6 +488,10 @@ public static class GeometryConverter {
 			return;
 		}
 
+		if (!context.Resource.HandledParts.Add(currentNode) && currentNode == "HP_Plane_Start") {
+			return;
+		}
+
 		AkizukiLog.Information("Building part {Node} ({Path})", currentNode, modelPath);
 		BuildModelPart(context, gltf, parent, builtVisual, camouflage, currentNode);
 	}

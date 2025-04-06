@@ -16,7 +16,9 @@ public record ModelResourceContext(
 	Dictionary<string, HashSet<string>> HardPoints,
 	Dictionary<string, string> PortPoints,
 	Dictionary<string, ModelMiscContext> Filters
-);
+) {
+	public HashSet<string> HandledParts { get; } = [];
+}
 
 public record ModelMiscContext(bool IsBlockList, HashSet<string> Filters);
 
