@@ -2,19 +2,20 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use binrw::BinRead;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::RwLock;
 
-#[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(BinRead, Clone, Copy, PartialEq, Eq, Hash)]
+#[br(repr = u32)]
 pub struct StringId(pub u32);
 
 static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> = Lazy::new(|| RwLock::new(HashMap::new()));
 
-#[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(BinRead, Clone, Copy, PartialEq, Eq, Hash)]
+#[br(repr = u64)]
 pub struct ResourceId(pub u64);
 
 static RESOURCE_LOOKUP: Lazy<RwLock<HashMap<u64, String>>> = Lazy::new(|| RwLock::new(HashMap::new()));
@@ -31,7 +32,7 @@ fn mmh3_fmix(hash: u32) -> u32 {
 }
 
 #[inline]
-fn mmh3_32(data: impl AsRef<[u8]>) -> u32 {
+pub(crate) fn mmh3_32(data: impl AsRef<[u8]>) -> u32 {
 	let bytes = data.as_ref();
 
 	const C1: u32 = 0xcc9e2d51;
@@ -141,6 +142,18 @@ impl fmt::Debug for ResourceId {
 			Some(s) => write!(f, "\"{}\" (0x{:016x})", s, self.0),
 			None => write!(f, "<unknown> (0x{:016x})", self.0),
 		}
+	}
+}
+
+impl From<u32> for StringId {
+	fn from(value: u32) -> Self {
+		Self(value)
+	}
+}
+
+impl From<u64> for ResourceId {
+	fn from(value: u64) -> Self {
+		Self(value)
 	}
 }
 

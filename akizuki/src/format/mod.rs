@@ -2,7 +2,5 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-pub mod format;
-pub mod identifiers;
-pub mod manager;
+pub mod bigworld;
 pub mod pfs;
