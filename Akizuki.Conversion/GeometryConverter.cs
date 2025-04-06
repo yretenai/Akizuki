@@ -282,6 +282,7 @@ public static class GeometryConverter {
 		var gltf = new GL.Root();
 
 		var root = gltf.CreateNode(Path.GetFileNameWithoutExtension(path)).Node;
+		root.Scale = [-1, 1, 1];
 
 		var buffers = BuildGeometryBuffers(flags, gltf, bufferStream, geometry, root.Name!, []);
 		var existingPrimitives = new PrimitiveCache();
@@ -457,6 +458,7 @@ public static class GeometryConverter {
 		var gltf = new GL.Root();
 
 		var root = gltf.CreateNode(fileName).Node;
+		root.Scale = [-1, 1, 1];
 
 		var context = new ModelBuilderContext(flags, manager, bufferStream, new ModelResourceContext(info?.Nation == "Events", modelPath, texturesPath, hardPoints, portPoints, filters));
 		BuildModelPart(context, gltf, root, builtVisual, camouflage, "HP_Scene");
@@ -509,7 +511,7 @@ public static class GeometryConverter {
 			for (var nodeIndex = 0; nodeIndex < visual.Skeleton.Names.Count; nodeIndex++) {
 				var nodeName = visual.Skeleton.Names[nodeIndex];
 				var nodeParent = visual.Skeleton.ParentIds[nodeIndex];
-				var nodeMatrix = visual.Skeleton.Matrices[nodeIndex] * Matrix4X4.CreateScale<float>(-1, 1, 1);
+				var nodeMatrix = visual.Skeleton.Matrices[nodeIndex];
 				var parentNode = nodeParent == ushort.MaxValue ? node : nodeMap[visual.Skeleton.Names[nodeParent]];
 
 				GL.Node skeletonNode;
