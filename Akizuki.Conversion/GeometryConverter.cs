@@ -509,7 +509,7 @@ public static class GeometryConverter {
 			for (var nodeIndex = 0; nodeIndex < visual.Skeleton.Names.Count; nodeIndex++) {
 				var nodeName = visual.Skeleton.Names[nodeIndex];
 				var nodeParent = visual.Skeleton.ParentIds[nodeIndex];
-				var nodeMatrix = visual.Skeleton.Matrices[nodeIndex];
+				var nodeMatrix = visual.Skeleton.Matrices[nodeIndex] * Matrix4X4.CreateScale<float>(-1, 1, 1);
 				var parentNode = nodeParent == ushort.MaxValue ? node : nodeMap[visual.Skeleton.Names[nodeParent]];
 
 				GL.Node skeletonNode;
