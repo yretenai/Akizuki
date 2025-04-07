@@ -24,7 +24,7 @@ struct Cli {
 	#[arg(index = 3, help = "version number of the game, if not set will try to find the latest version")]
 	install_version: Option<i64>,
 
-	#[arg(long, help = "do not write any files")]
+	#[arg(long, help = "validate the data that's being processed")]
 	validate: bool,
 
 	#[arg(short = 'n', help = "do not write any files")]
@@ -53,19 +53,22 @@ fn main() {
 	let manager = match ResourceManager::new(&args.install_path, args.install_version, args.validate) {
 		Some(manager) => manager,
 		None => {
-			error!("could not create manager");
+			error!(target: "akizuki::unpack", "could not create manager");
 			return;
 		}
 	};
 
 	for package in manager.packages.values() {
 		for asset in package.files.values() {
-			let data = match package.open(asset.id, args.validate) {
-				Some(data) => data,
-				None => continue,
+			let Some(_data) = package.open(&asset.id, args.validate) else {
+				continue;
 			};
 
-			info!("Unpacking {:?}", asset.id);
+			info!(target: "akizuki::unpack", "Unpacking {:?}", asset.id);
+
+			if args.dry {
+				continue;
+			}
 		}
 	}
 }
@@ -77,7 +80,7 @@ impl CologStyle for PrefixModule {
 		let prefix = self.prefix_token(&record.level());
 
 		write!(buf, "{}", prefix)?;
-		write!(buf, "{}{}{}", "[".blue().bold(), format!("{}", buf.timestamp()).bright_cyan(), "]")?;
+		write!(buf, "{}{}{}", "[".blue().bold(), format!("{}", buf.timestamp()).bright_cyan(), "]".blue().bold())?;
 		write!(buf, "{}{}{}", "[".blue().bold(), record.target().bright_purple(), "] ".blue().bold())?;
 		writeln!(buf, "{}", record.args().to_string().replace('\n', &sep))?;
 

@@ -93,14 +93,11 @@ impl StringId {
 
 	#[inline]
 	pub fn text(&self) -> Option<String> {
-		match STRING_LOOKUP.read().unwrap().get(&self.0) {
-			Some(s) => Some(s.clone()),
-			None => None,
-		}
+		STRING_LOOKUP.read().unwrap().get(&self.0).cloned()
 	}
 
 	#[inline]
-	pub fn insert(id: StringId, s: &str) {
+	pub fn insert(id: &StringId, s: &str) {
 		STRING_LOOKUP.write().unwrap().insert(id.0, s.to_owned());
 	}
 
@@ -121,14 +118,11 @@ impl ResourceId {
 
 	#[inline]
 	pub fn text(&self) -> Option<String> {
-		match RESOURCE_LOOKUP.read().unwrap().get(&self.0) {
-			Some(s) => Some(s.clone()),
-			None => None,
-		}
+		RESOURCE_LOOKUP.read().unwrap().get(&self.0).cloned()
 	}
 
 	#[inline]
-	pub fn insert(id: ResourceId, s: &str) {
+	pub fn insert(id: &ResourceId, s: &str) {
 		RESOURCE_LOOKUP.write().unwrap().insert(id.0, s.to_owned());
 	}
 
@@ -188,7 +182,7 @@ mod tests {
 	#[test]
 	fn test_string_text() {
 		const TEST_STR: &str = "Akizuki";
-		StringId::insert(StringId(0x8d949450), TEST_STR);
+		StringId::insert(&StringId(0x8d949450), TEST_STR);
 
 		assert_eq!(StringId::new(TEST_STR).text().unwrap(), TEST_STR);
 	}
@@ -196,9 +190,9 @@ mod tests {
 	#[test]
 	fn test_string_debug() {
 		const TEST_STR: &str = "Akizuki";
-		StringId::insert(StringId(0x8d949450), TEST_STR);
+		StringId::insert(&StringId(0x8d949450), TEST_STR);
 
-		assert_eq!(format!("{:?}", StringId(0x8d949450)), "\"Akizuki\" (0x8d949450)");
+		assert_eq!(format!("{:?}", StringId(0x8d949450)), "\"\u{1b}[34mAkizuki\u{1b}[0m\" (\u{1b}[33m0x8d949450\u{1b}[0m)");
 	}
 
 	#[test]
@@ -216,7 +210,7 @@ mod tests {
 	#[test]
 	fn test_resource_text() {
 		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
-		ResourceId::insert(ResourceId(0x0df5a921212a899e), TEST_STR);
+		ResourceId::insert(&ResourceId(0x0df5a921212a899e), TEST_STR);
 
 		assert_eq!(ResourceId(0x0df5a921212a899e).text().unwrap(), TEST_STR);
 	}
@@ -224,8 +218,8 @@ mod tests {
 	#[test]
 	fn test_resource_debug() {
 		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
-		ResourceId::insert(ResourceId(0x0df5a921212a899e), TEST_STR);
+		ResourceId::insert(&ResourceId(0x0df5a921212a899e), TEST_STR);
 
-		assert_eq!(format!("{:?}", ResourceId(0x0df5a921212a899e)), "\"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\" (0x0df5a921212a899e)");
+		assert_eq!(format!("{:?}", ResourceId(0x0df5a921212a899e)), "\"\u{1b}[34mcontent/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\u{1b}[0m\" (\u{1b}[33m0x0df5a921212a899e\u{1b}[0m)");
 	}
 }

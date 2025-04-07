@@ -10,7 +10,7 @@ use log::error;
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 pub struct ResourceManager {
@@ -55,7 +55,7 @@ impl ResourceManager {
 	}
 }
 
-fn load_idx(packages_path: &PathBuf, idx_path: &PathBuf, should_validate: bool) -> io::Result<HashMap<ResourceId, PackageFileSystem>> {
+fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> io::Result<HashMap<ResourceId, PackageFileSystem>> {
 	let mut packages = HashMap::<ResourceId, PackageFileSystem>::new();
 
 	if !idx_path.is_dir() {

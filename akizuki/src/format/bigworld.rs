@@ -60,9 +60,9 @@ impl BigWorldFileHeader {
 			}
 
 			reader.seek(Start(0x10))?;
-		}
 
-		debug!("big world header passed validation");
+			debug!("big world header passed validation");
+		}
 
 		Ok(())
 	}
