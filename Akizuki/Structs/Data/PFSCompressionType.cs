@@ -7,4 +7,5 @@ namespace Akizuki.Structs.Data;
 public enum PFSCompressionType : uint {
 	None = 0,
 	Deflate = 5,
+	DataStream = 6,
 }

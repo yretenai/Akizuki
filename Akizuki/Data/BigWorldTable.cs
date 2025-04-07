@@ -49,11 +49,12 @@ public class BigWorldTable {
 
 		if (table.Version != T.Version) {
 			AkizukiLog.Warning("Tried loading {Name} with an unsupported version!", T.PrototypeName);
-		} else {
-			AkizukiLog.Debug("{Name} Version Matches", T.PrototypeName);
+			return;
 		}
 
+		AkizukiLog.Debug("{Name} Version Matches", T.PrototypeName);
 		AkizukiLog.Debug("Creating Records for {Name}", T.PrototypeName);
+
 		table.CreateRecords<T>(data, count, offset);
 	}
 

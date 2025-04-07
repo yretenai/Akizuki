@@ -12,7 +12,7 @@ public record struct PFSFile : IComparable<PFSFile>, IComparable<ulong> {
 	public ulong PackageId { get; set; }
 	public long Offset { get; set; }
 	public PFSCompressionType CompressionType { get; set; }
-	public PFSFileFlags Flags { get; set; }
+	public uint CompressionFlags { get; set; }
 	public int CompressedSize { get; set; }
 	public uint Hash { get; set; } // crc32 of data
 	public long UncompressedSize { get; set; }

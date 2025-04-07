@@ -4,6 +4,7 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Akizuki.Exceptions;
 using Akizuki.Structs.Data;
 using DragonLib.Hash;
@@ -192,7 +193,7 @@ public sealed class PackageFileSystem : IDisposable {
 		var dataSpan = data.Span;
 
 		try {
-			if ((file.Flags & PFSFileFlags.Compressed) != 0) {
+			if (file.CompressionType != PFSCompressionType.None && file.CompressionFlags > 0) {
 				using var compressed = new MemoryBuffer<byte>(int.CreateChecked(file.CompressedSize));
 				var compressedMemory = compressed.Memory;
 				var compressedSpan = compressed.Span;
@@ -206,9 +207,26 @@ public sealed class PackageFileSystem : IDisposable {
 					case PFSCompressionType.Deflate:
 						CompressionHelper.Decompress(CompressionType.Deflate, compressedMemory, dataMemory);
 						break;
+					case PFSCompressionType.DataStream:
+						var header = MemoryMarshal.Read<PFSDataStream>(compressedMemory.Span);
+						var remainingSize = header.UncompressedSize;
+						var offset = (int) header.HeaderSize + 8;
+						var blocks = MemoryMarshal.Cast<byte, int>(compressedMemory.Span[0x38..])[..header.BlockCount];
+						Debug.Assert(header.UncompressedSize == file.UncompressedSize);
+						foreach (var block in blocks) {
+							var start = (int) (header.UncompressedSize - remainingSize);
+							var size = Math.Min(remainingSize, header.BlockSize);
+							var end = (int) (start + Math.Min(remainingSize, header.BlockSize));
+							var n = CompressionHelper.Decompress(CompressionType.Oodle, compressedMemory[offset..(offset + block)], dataMemory[start..end]);
+							Debug.Assert(n == size);
+							offset += block;
+							remainingSize -= size;
+						}
+						break;
 					default: throw new NotSupportedException();
 				}
 			} else {
+				Debug.Assert(file.CompressedSize == file.UncompressedSize);
 				packageStream.Position = file.Offset;
 				packageStream.ReadExactly(dataSpan);
 			}
