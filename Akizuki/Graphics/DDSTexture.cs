@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using Akizuki.Structs.Graphics;
 using DragonLib;
 using DragonLib.IO;
+using Waterfall.Compression;
 
 namespace Akizuki.Graphics;
 
@@ -71,6 +72,24 @@ public sealed class DDSTexture : IDisposable {
 
 		OneSurfaceSize = (int) CalculateSurfaceSize(out var oneMipSize);
 		OneMipSize = (int) oneMipSize;
+
+		if (Mips != 1 || OneSurfaceSize <= Buffer.Memory.Length - StartOffset) {
+			return;
+		}
+
+		var compressed = Buffer.Memory[StartOffset..];
+		var decompressed = new MemoryBuffer<byte>(OneSurfaceSize);
+		Surfaces = 1;
+		if (OodleTex.Decompress(compressed, decompressed.Memory) < 0) {
+			decompressed.Dispose();
+			OneSurfaceSize = OneMipSize = 0;
+			return;
+		}
+
+		StartOffset = 0;
+		var old = Buffer;
+		Buffer = decompressed;
+		old.Dispose();
 	}
 
 	private IMemoryBuffer<byte> Buffer { get; }
