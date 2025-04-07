@@ -27,9 +27,13 @@ impl ResourceManager {
 
 		idx_path.push(match install_version {
 			Some(install_version) => install_version.to_string(),
-			_ => find_install_version(&idx_path).unwrap_or_else(|err| {
-				panic!("could not determine game version!\n{:?}", err);
-			}),
+			_ => match find_install_version(&idx_path) {
+				Ok(version) => version,
+				Err(err) => {
+					error!("could not determine game version!\n{:?}", err);
+					return None;
+				}
+			},
 		});
 
 		idx_path.push("idx");

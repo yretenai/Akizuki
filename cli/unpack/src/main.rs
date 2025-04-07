@@ -57,12 +57,9 @@ fn main() {
 
 	args.filter.dedup();
 
-	let manager = match ResourceManager::new(&args.install_path, args.install_version, args.validate) {
-		Some(manager) => manager,
-		None => {
-			error!(target: "akizuki::unpack", "could not create manager");
-			return;
-		}
+	let Some(manager) = ResourceManager::new(&args.install_path, args.install_version, args.validate) else {
+		error!(target: "akizuki::unpack", "could not create manager");
+		return;
 	};
 
 	let output_path = Path::new(&args.output_path);
@@ -92,12 +89,12 @@ fn main() {
 			let asset_dir = asset_path.parent().unwrap_or(output_path);
 
 			if let Err(err) = fs::create_dir_all(asset_dir) {
-				error!("unable to create path {:?}: {:?}", asset_dir, err);
+				error!(target: "akizuki::unpack", "unable to create path {:?}: {:?}", asset_dir, err);
 				continue;
 			}
 
 			if let Err(err) = fs::write(&asset_path, data) {
-				error!("unable to write data {:?}: {:?}", asset_dir, err);
+				error!(target: "akizuki::unpack", "unable to write data {:?}: {:?}", asset_dir, err);
 				continue;
 			}
 		}
