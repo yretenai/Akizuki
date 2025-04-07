@@ -8,4 +8,5 @@ pub mod bigworld;
 pub mod bigworld_data;
 #[cfg(feature = "data")]
 pub mod bigworld_table;
+pub(crate) mod oodle;
 pub mod pfs;

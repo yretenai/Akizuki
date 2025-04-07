@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
+use crate::format::oodle;
+use crate::format::pfs::PackageDataStreamHeader;
 use crate::format::pfs::{PackageCompressionType, PackageFile, PackageFileHeader, PackageFileName, PackageName};
 use crate::identifiers::ResourceId;
-
-#[cfg(feature = "oodle")]
-use crate::format::pfs::PackageDataStreamHeader;
 
 use binrw::io::BufReader;
 use binrw::{BinRead, BinResult, NullString, VecArgs};
@@ -17,18 +16,12 @@ use flate2::FlushDecompress;
 use log::{debug, error, info};
 use memmap2::Mmap;
 
-#[cfg(feature = "oodle")]
-use oodle_safe::DecodeThreadPhase;
-
+use std::cmp::min;
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Cursor;
 use std::io::{Error, ErrorKind, Seek, SeekFrom::Start};
 use std::path::{Path, PathBuf};
-
-#[cfg(feature = "oodle")]
-use std::cmp::min;
-#[cfg(feature = "oodle")]
-use std::io::Cursor;
 
 pub struct PackageFileSystem {
 	pub name: String,
@@ -120,18 +113,10 @@ fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, E
 			todo!();
 		}
 		PackageCompressionType::None => Ok(stream[info.offset as usize..(info.offset + info.size) as usize].to_vec()),
-		_ => {
-			// oodle
-			#[cfg(feature = "oodle")]
-			return decompress_oodle(stream, info);
-
-			#[cfg(not(feature = "oodle"))]
-			Err(Error::new(ErrorKind::InvalidData, "Oodle is not supported"))
-		}
+		_ => decompress_oodle(stream, info),
 	}
 }
 
-#[cfg(feature = "oodle")]
 fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error> {
 	let mut reader = Cursor::new(stream);
 	reader.seek(Start(info.offset))?;
@@ -149,7 +134,7 @@ fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error>
 		let start = header.size as usize - remaining_size;
 		let size = min(remaining_size, header.block_size as usize);
 		let end = start + size;
-		match oodle_safe::decompress(&stream[offset..(offset + block)], &mut data[start..end], None, None, None, Some(DecodeThreadPhase::All)) {
+		match oodle::decompress_oodle_data(&stream[offset..(offset + block)], &mut data[start..end]) {
 			Ok(size) => {
 				assert!(size > 0);
 				remaining_size -= size;
