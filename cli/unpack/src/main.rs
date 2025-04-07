@@ -31,7 +31,7 @@ struct Cli {
 	#[arg(long, help = "validate the data that's being processed")]
 	validate: bool,
 
-	#[arg(short = 'n', help = "do not write any files")]
+	#[arg(short = 'n', long, help = "do not write any files")]
 	dry: bool,
 
 	#[arg(short = 'q', long, help = "output only errors and warnings")]

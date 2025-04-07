@@ -116,14 +116,18 @@ fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, E
 			flate.decompress(compressed_data, data.as_mut_slice(), FlushDecompress::Finish)?;
 			Ok(data)
 		}
-		PackageCompressionType::Oodle => {
+		PackageCompressionType::DeflateBlocks => {
+			todo!();
+		}
+		PackageCompressionType::None => Ok(stream[info.offset as usize..(info.offset + info.size) as usize].to_vec()),
+		_ => {
+			// oodle
 			#[cfg(feature = "oodle")]
 			return decompress_oodle(stream, info);
 
 			#[cfg(not(feature = "oodle"))]
 			Err(Error::new(ErrorKind::InvalidData, "Oodle is not supported"))
 		}
-		PackageCompressionType::None => Ok(stream[info.offset as usize..(info.offset + info.size) as usize].to_vec()),
 	}
 }
 
@@ -135,6 +139,8 @@ fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error>
 		Ok(header) => header,
 		Err(err) => return Err(Error::new(ErrorKind::InvalidData, err)),
 	};
+
+	assert_eq!(header.reserved, 0);
 
 	let mut data = vec![0; header.size as usize];
 	let mut remaining_size = info.size as usize;

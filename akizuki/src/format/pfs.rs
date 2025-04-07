@@ -10,8 +10,13 @@ use binrw::{BinRead, PosValue};
 #[br(repr = u32)]
 pub enum PackageCompressionType {
 	None = 0,
-	Deflate = 5,
-	Oodle = 6,
+	Deflate = 1,
+	DeflateBlocks = 2,
+	OodleKraken = 3,
+	OodleLeviathan = 4,
+	OodleMermaid = 5,
+	OodleSelkie = 6,
+	OodleHydra = 7,
 }
 
 #[derive(BinRead, Debug, Clone)]
@@ -20,8 +25,8 @@ pub struct PackageFile {
 	pub id: ResourceId,
 	pub package_id: ResourceId,
 	pub offset: u64,
-	pub compression_type: PackageCompressionType,
 	pub compression_flags: u32,
+	pub compression_type: PackageCompressionType,
 	pub compressed_size: u32,
 	pub hash: u32,
 	pub size: u64,
