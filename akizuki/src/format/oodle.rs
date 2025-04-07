@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 #![allow(non_snake_case)]
+#![allow(clippy::too_many_arguments)]
 
 use dlopen2::wrapper::{Container, WrapperApi};
+use once_cell::sync::Lazy;
+
 use std::ffi::c_void;
 use std::ptr::{null, null_mut};
 
@@ -26,7 +29,6 @@ struct Oodle {
 struct OodleTex {
 	OodleTexRT_BC7Prep_ReadHeader: unsafe extern "C" fn(header: *const BC7PrepHeader, num_blocks: *mut i64, payload_size: *mut i64) -> i32,
 	OodleTexRT_BC7Prep_MinDecodeScratchSize: unsafe extern "C" fn(num_blocks: i64) -> i64,
-	#[allow(clippy::too_many_arguments)]
 	OodleTexRT_BC7Prep_Decode: unsafe extern "C" fn(output_buf: *const u8, output_size: i64, bc7_buf: *const u8, bc7_size: i64, header: *const BC7PrepHeader, flags: u32, scratch_buf: *const u8, scratch_size: i64) -> i64,
 }
 
@@ -40,19 +42,44 @@ const OODLE_NAME: &str = "liboo2core.dylib";
 const OODLE_NAME: &str = "liboo2core";
 
 #[cfg(target_os = "linux")]
-#[allow(dead_code)]
-const OODLETEX_NAME: &str = "liboo2texrt.so";
+const OODLE_TEX_NAME: &str = "liboo2texrt.so";
 #[cfg(target_os = "windows")]
-const OODLETEX_NAME: &str = "liboo2texrt.dll";
+const OODLE_TEX_NAME: &str = "liboo2texrt.dll";
 #[cfg(target_os = "macos")]
-const OODLETEX_NAME: &str = "liboo2texrt.dylib";
+const OODLE_TEX_NAME: &str = "liboo2texrt.dylib";
 #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
-const OODLETEX_NAME: &str = "liboo2texrt";
+const OODLE_TEX_NAME: &str = "liboo2texrt";
+
+static OODLE: Lazy<Option<Container<Oodle>>> = Lazy::new(|| unsafe {
+	match Container::<Oodle>::load(OODLE_NAME) {
+		Ok(oodle) => Some(oodle),
+		Err(_) => None,
+	}
+});
+
+static OODLE_TEX: Lazy<Option<Container<OodleTex>>> = Lazy::new(|| unsafe {
+	match Container::<OodleTex>::load(OODLE_TEX_NAME) {
+		Ok(oodle) => Some(oodle),
+		Err(_) => None,
+	}
+});
+
+fn get_oodle() -> &'static Option<Container<Oodle>> {
+	&OODLE
+}
+
+fn get_oodle_tex() -> &'static Option<Container<OodleTex>> {
+	&OODLE_TEX
+}
+
+pub fn init() {
+	_ = get_oodle_tex();
+	_ = get_oodle();
+}
 
 pub fn decompress_oodle_data(compressed: &[u8], uncompressed: &mut [u8]) -> Result<usize, i64> {
 	unsafe {
-		let Ok(oodle) = Container::<Oodle>::load(OODLE_NAME) else { return Err(-1) };
-
+		let Some(oodle) = get_oodle() else { return Err(-1) };
 		let memorySize = oodle.OodleLZDecoder_MemorySizeNeeded(-1, -1);
 		let mut scratch: Vec<u8> = vec![0; memorySize as usize];
 		let in_ref = compressed.as_ptr();
@@ -66,7 +93,7 @@ pub fn decompress_oodle_data(compressed: &[u8], uncompressed: &mut [u8]) -> Resu
 #[allow(dead_code)]
 pub fn decompress_oodle_bc7(header: &BC7PrepHeader, compressed: &[u8], uncompressed: &mut [u8]) -> Result<usize, i64> {
 	unsafe {
-		let Ok(oodle) = Container::<OodleTex>::load(OODLETEX_NAME) else { return Err(-1) };
+		let Some(oodle) = get_oodle_tex() else { return Err(-1) };
 
 		let mut blocks: i64 = 0;
 		let mut payload_size: i64 = 0;

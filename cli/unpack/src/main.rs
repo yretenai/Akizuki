@@ -45,6 +45,8 @@ struct Cli {
 }
 
 fn main() {
+	akizuki::format::oodle::init();
+
 	let mut args = Cli::parse();
 
 	let mut log_level = LevelFilter::Info;
