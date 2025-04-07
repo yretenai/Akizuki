@@ -41,6 +41,7 @@ dependencies = [
  "memmap2",
  "meshopt",
  "once_cell",
+ "oodle-safe",
  "rayon",
  "serde",
  "serde-pickle",
@@ -994,6 +995,21 @@ name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+
+[[package]]
+name = "oodle-safe"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "224dfdd5cf01542969ce6b6b532ed53207d89d322d4b6a2c2cee1740e72b68b9"
+dependencies = [
+ "oodle-sys",
+]
+
+[[package]]
+name = "oodle-sys"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7245c812e63474250d7fe84a04803004e61deb1d8644e9ca8bc3687147ab8cc"
 
 [[package]]
 name = "owo-colors"

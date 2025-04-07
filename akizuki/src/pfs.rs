@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
-use crate::format::pfs::PackageCompressionType::DeflateCompression;
-use crate::format::pfs::{PackageFile, PackageFileHeader, PackageFileName, PackageName};
+use crate::format::pfs::{PackageCompressionType, PackageDataStreamHeader, PackageFile, PackageFileHeader, PackageFileName, PackageName};
 use crate::identifiers::ResourceId;
 
 use binrw::io::BufReader;
@@ -15,9 +14,13 @@ use flate2::FlushDecompress;
 use log::{debug, error, info};
 use memmap2::Mmap;
 
+#[cfg(feature = "oodle")]
+use oodle_safe::DecodeThreadPhase;
+
+use std::cmp::min;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Error, ErrorKind, Seek, SeekFrom::Start};
+use std::io::{Cursor, Error, ErrorKind, Seek, SeekFrom::Start};
 use std::path::{Path, PathBuf};
 
 pub struct PackageFileSystem {
@@ -96,22 +99,48 @@ impl PackageFileSystem {
 }
 
 fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error> {
-	if info.flags > 1 {
-		return Err(Error::new(ErrorKind::InvalidData, "invalid file flags"));
-	}
+	let compression_type: &PackageCompressionType = if info.compression_flags == 0 { &PackageCompressionType::None } else { &info.compression_type };
 
-	if (info.flags & 1) == 1 {
-		if info.compression_type != DeflateCompression {
-			return Err(Error::new(ErrorKind::InvalidData, "invalid file compression"));
+	match compression_type {
+		PackageCompressionType::Deflate => {
+			let mut data = vec![0; info.size as usize];
+			let compressed_data = &stream[info.offset as usize..(info.offset + info.compressed_size as u64) as usize];
+			let mut flate = flate2::Decompress::new(false);
+			flate.decompress(compressed_data, data.as_mut_slice(), FlushDecompress::Finish)?;
+			Ok(data)
 		}
+		PackageCompressionType::Oodle => {
+			if cfg!(feature = "oodle") {
+				let mut reader = Cursor::new(stream);
+				reader.seek(Start(info.offset))?;
+				let header = match PackageDataStreamHeader::read_ne(&mut reader) {
+					Ok(header) => header,
+					Err(err) => return Err(Error::new(ErrorKind::InvalidData, err)),
+				};
 
-		let mut data = vec![0; info.uncompressed_size as usize];
-		let compressed_data = &stream[info.offset as usize..(info.offset + info.compressed_size as u64) as usize];
-		let mut flate = flate2::Decompress::new(false);
-		flate.decompress(compressed_data, data.as_mut_slice(), FlushDecompress::Finish)?;
-		Ok(data)
-	} else {
-		Ok(stream[info.offset as usize..(info.offset + info.uncompressed_size) as usize].to_vec())
+				let mut data = vec![0; header.size as usize];
+				let mut remaining_size = info.size as usize;
+				let mut offset = (header.data_offset + header.relative_position.pos) as usize;
+				for block in header.blocks.iter().map(|x| *x as usize) {
+					let start = header.size as usize - remaining_size;
+					let size = min(remaining_size, header.block_size as usize);
+					let end = start + size;
+					match oodle_safe::decompress(&stream[offset..(offset + block)], &mut data[start..end], None, None, None, Some(DecodeThreadPhase::All)) {
+						Ok(size) => {
+							assert!(size > 0);
+							remaining_size -= size;
+						}
+						Err(err) => return Err(Error::new(ErrorKind::InvalidData, format!("oodle failed with error: {:?}", err))),
+					}
+					offset += block;
+				}
+
+				Ok(vec![0])
+			} else {
+				Err(Error::new(ErrorKind::InvalidData, "Oodle is not supported"))
+			}
+		}
+		PackageCompressionType::None => Ok(stream[info.offset as usize..(info.offset + info.size) as usize].to_vec()),
 	}
 }
 

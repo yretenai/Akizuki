@@ -9,8 +9,9 @@ use binrw::{BinRead, PosValue};
 #[derive(BinRead, Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
 #[br(repr = u32)]
 pub enum PackageCompressionType {
-	NoCompression = 0,
-	DeflateCompression = 5,
+	None = 0,
+	Deflate = 5,
+	Oodle = 6,
 }
 
 #[derive(BinRead, Debug, Clone)]
@@ -20,10 +21,10 @@ pub struct PackageFile {
 	pub package_id: ResourceId,
 	pub offset: u64,
 	pub compression_type: PackageCompressionType,
-	pub flags: u32,
+	pub compression_flags: u32,
 	pub compressed_size: u32,
 	pub hash: u32,
-	pub uncompressed_size: u64,
+	pub size: u64,
 }
 
 #[derive(BinRead, Debug, Clone)]
@@ -55,6 +56,22 @@ pub struct PackageName {
 	pub length: u64,
 	pub offset: u64,
 	pub id: ResourceId,
+}
+
+#[derive(BinRead, Debug, Clone)]
+#[br()]
+pub struct PackageDataStreamHeader {
+	pub data_offset: u64,
+	pub relative_position: PosValue<()>,
+	pub compression_type: u32,
+	pub compression_flags: u32,
+	pub size: u64,
+	pub decompressed_size: u64,
+	pub block_count: u32,
+	pub block_size: u32,
+	pub reserved: u128,
+	#[br(count = block_count)]
+	pub blocks: Vec<u32>,
 }
 
 impl PartialEq<ResourceId> for PackageFile {
