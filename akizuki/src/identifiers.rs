@@ -165,6 +165,8 @@ impl From<u64> for ResourceId {
 mod tests {
 	use super::*;
 
+	use colored::control::SHOULD_COLORIZE;
+
 	#[test]
 	fn test_string_id() {
 		const TEST_STR: &str = "Akizuki";
@@ -192,7 +194,8 @@ mod tests {
 		const TEST_STR: &str = "Akizuki";
 		StringId::insert(&StringId(0x8d949450), TEST_STR);
 
-		assert_eq!(format!("{:?}", StringId(0x8d949450)), "\"\u{1b}[34mAkizuki\u{1b}[0m\" (\u{1b}[33m0x8d949450\u{1b}[0m)");
+		SHOULD_COLORIZE.set_override(false);
+		assert_eq!(format!("{:?}", StringId(0x8d949450)), "\"Akizuki\" (0x8d949450)");
 	}
 
 	#[test]
@@ -220,6 +223,7 @@ mod tests {
 		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
 		ResourceId::insert(&ResourceId(0x0df5a921212a899e), TEST_STR);
 
-		assert_eq!(format!("{:?}", ResourceId(0x0df5a921212a899e)), "\"\u{1b}[34mcontent/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\u{1b}[0m\" (\u{1b}[33m0x0df5a921212a899e\u{1b}[0m)");
+		SHOULD_COLORIZE.set_override(false);
+		assert_eq!(format!("{:?}", ResourceId(0x0df5a921212a899e)), "\"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\" (0x0df5a921212a899e)");
 	}
 }
