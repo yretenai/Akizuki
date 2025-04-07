@@ -138,7 +138,7 @@ fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error>
 				assert!(size > 0);
 				remaining_size -= size;
 			}
-			Err(err) => return Err(Error::new(ErrorKind::InvalidData, format!("oodle failed with error: {:?}", err.to_string()))),
+			Err(err) => return Err(Error::new(ErrorKind::InvalidData, format!("oodle failed with error: {:?}", err))),
 		}
 		offset += block;
 	}
