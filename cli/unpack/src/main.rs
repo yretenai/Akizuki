@@ -3,14 +3,15 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use akizuki::manager::ResourceManager;
-use std::fs;
 
 use clap::Parser;
 use colog::format::CologStyle;
 use colored::Colorize;
 use env_logger::fmt::Formatter;
 use log::{LevelFilter, Record, error, info};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
+use std::fs;
 use std::io::{Error, Write};
 use std::path::Path;
 
@@ -65,24 +66,24 @@ fn main() {
 	let output_path = Path::new(&args.output_path);
 
 	for package in manager.packages.values() {
-		for asset in package.files.values() {
-			let asset_name = match asset.id.text() {
+		(&package.files).into_par_iter().for_each(|(asset_id, _)| {
+			let asset_name = match asset_id.text() {
 				Some(asset_name) => asset_name,
-				None => format!("unknown/{:016x}", asset.id.value()),
+				None => format!("unknown/{:016x}", asset_id.value()),
 			};
 
 			if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
-				continue;
+				return;
 			}
 
-			let Some(data) = package.open(&asset.id, args.validate) else {
-				continue;
+			let Some(data) = package.open(asset_id, args.validate) else {
+				return;
 			};
 
-			info!(target: "akizuki::unpack", "Unpacking {:?}", asset.id);
+			info!(target: "akizuki::unpack", "Unpacking {:?}", asset_id);
 
 			if args.dry {
-				continue;
+				return;
 			}
 
 			let asset_path = output_path.join(asset_name);
@@ -90,14 +91,13 @@ fn main() {
 
 			if let Err(err) = fs::create_dir_all(asset_dir) {
 				error!(target: "akizuki::unpack", "unable to create path {:?}: {:?}", asset_dir, err);
-				continue;
+				return;
 			}
 
 			if let Err(err) = fs::write(&asset_path, data) {
 				error!(target: "akizuki::unpack", "unable to write data {:?}: {:?}", asset_dir, err);
-				continue;
 			}
-		}
+		});
 	}
 }
 

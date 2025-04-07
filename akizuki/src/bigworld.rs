@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::format::bigworld::BigWorldPrototypeRef;
+use crate::format::bigworld_data::BigWorldPrototypeRef;
 use crate::identifiers::ResourceId;
 use std::collections::HashMap;
 

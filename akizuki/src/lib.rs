@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-pub mod bigworld;
 pub mod format;
 pub mod identifiers;
+
+#[cfg(feature = "data")]
+pub mod bigworld;
 pub mod manager;
 pub mod pfs;
+#[cfg(feature = "data")]
 pub mod table;

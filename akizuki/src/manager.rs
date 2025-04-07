@@ -5,8 +5,8 @@
 use crate::identifiers::ResourceId;
 use crate::pfs::PackageFileSystem;
 
-use colored::Colorize;
 use log::error;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
@@ -58,30 +58,29 @@ impl ResourceManager {
 }
 
 fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> io::Result<HashMap<ResourceId, PackageFileSystem>> {
-	let mut packages = HashMap::<ResourceId, PackageFileSystem>::new();
-
 	if !idx_path.is_dir() {
-		return Ok(packages);
+		return Err(io::Error::new(ErrorKind::InvalidInput, "index path is not a folder"));
 	}
 
-	for entry in fs::read_dir(idx_path)? {
-		let entry = entry?;
-		let path = entry.path();
-		if path.is_dir() || path.extension().unwrap_or_default().to_str().unwrap_or_default() == ".idx" {
-			continue;
-		}
+	let entries: Vec<_> = fs::read_dir(idx_path)?
+		.filter_map(Result::ok)
+		.filter(|entry| {
+			let path = entry.path();
+			!path.is_dir() && path.extension().unwrap_or_default().to_str().unwrap_or_default() != ".idx"
+		})
+		.collect();
 
-		match PackageFileSystem::new(packages_path, &path, should_validate) {
-			Ok(pkg) => {
-				packages.insert(ResourceId::new(&pkg.name), pkg);
-			}
+	Ok(entries
+		.into_par_iter()
+		.filter_map(|entry| match PackageFileSystem::new(packages_path, &entry.path(), should_validate) {
+			Ok(pkg) => Some((ResourceId::new(&pkg.name), pkg)),
 			Err(err) => {
-				error!("{}", err.to_string().red());
+				error!("failed to load package: {:?}", err);
+				None
 			}
-		}
-	}
-
-	Ok(packages)
+		})
+		.filter_map(Some)
+		.collect())
 }
 
 fn find_install_version(bin_path: &PathBuf) -> Result<String, io::Error> {
