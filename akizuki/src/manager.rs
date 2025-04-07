@@ -6,7 +6,6 @@ use crate::identifiers::ResourceId;
 use crate::pfs::PackageFileSystem;
 
 use log::error;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use std::collections::HashMap;
 use std::io::ErrorKind;
@@ -30,7 +29,7 @@ impl ResourceManager {
 			_ => match find_install_version(&idx_path) {
 				Ok(version) => version,
 				Err(err) => {
-					error!("could not determine game version!\n{:?}", err);
+					error!("could not determine game version!\n{:?}", err.to_string());
 					return None;
 				}
 			},
@@ -41,7 +40,7 @@ impl ResourceManager {
 		let packages = match load_idx(&pkg_path, &idx_path, should_validate) {
 			Ok(packages) => packages,
 			Err(err) => {
-				error!("could not load packages: {:?}", err);
+				error!("could not load packages: {:?}", err.to_string());
 				return None;
 			}
 		};
@@ -71,11 +70,11 @@ fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> 
 		.collect();
 
 	Ok(entries
-		.into_par_iter()
+		.into_iter()
 		.filter_map(|entry| match PackageFileSystem::new(packages_path, &entry.path(), should_validate) {
 			Ok(pkg) => Some((ResourceId::new(&pkg.name), pkg)),
 			Err(err) => {
-				error!("failed to load package: {:?}", err);
+				error!("failed to load package: {:?}", err.to_string());
 				None
 			}
 		})

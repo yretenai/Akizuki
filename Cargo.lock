@@ -42,7 +42,6 @@ dependencies = [
  "meshopt",
  "once_cell",
  "oodle-safe",
- "rayon",
  "serde",
  "serde-pickle",
  "xml",
@@ -70,7 +69,6 @@ dependencies = [
  "colored",
  "env_logger",
  "log",
- "rayon",
 ]
 
 [[package]]

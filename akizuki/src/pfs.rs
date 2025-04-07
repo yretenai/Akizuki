@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
-use crate::format::pfs::{PackageCompressionType, PackageDataStreamHeader, PackageFile, PackageFileHeader, PackageFileName, PackageName};
+use crate::format::pfs::{PackageCompressionType, PackageFile, PackageFileHeader, PackageFileName, PackageName};
 use crate::identifiers::ResourceId;
+
+#[cfg(feature = "oodle")]
+use crate::format::pfs::PackageDataStreamHeader;
 
 use binrw::io::BufReader;
 use binrw::{BinRead, BinResult, NullString, VecArgs};
@@ -17,11 +20,15 @@ use memmap2::Mmap;
 #[cfg(feature = "oodle")]
 use oodle_safe::DecodeThreadPhase;
 
-use std::cmp::min;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Cursor, Error, ErrorKind, Seek, SeekFrom::Start};
+use std::io::{Error, ErrorKind, Seek, SeekFrom::Start};
 use std::path::{Path, PathBuf};
+
+#[cfg(feature = "oodle")]
+use std::cmp::min;
+#[cfg(feature = "oodle")]
+use std::io::Cursor;
 
 pub struct PackageFileSystem {
 	pub name: String,
@@ -79,7 +86,7 @@ impl PackageFileSystem {
 		let data = match read_data_from_stream(stream, info) {
 			Ok(data) => data,
 			Err(err) => {
-				error!("{:?} errored {:?}", id, err);
+				error!("{:?} errored {:?}", id, err.to_string());
 				return None;
 			}
 		};
@@ -110,38 +117,43 @@ fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, E
 			Ok(data)
 		}
 		PackageCompressionType::Oodle => {
-			if cfg!(feature = "oodle") {
-				let mut reader = Cursor::new(stream);
-				reader.seek(Start(info.offset))?;
-				let header = match PackageDataStreamHeader::read_ne(&mut reader) {
-					Ok(header) => header,
-					Err(err) => return Err(Error::new(ErrorKind::InvalidData, err)),
-				};
+			#[cfg(feature = "oodle")]
+			return decompress_oodle(stream, info);
 
-				let mut data = vec![0; header.size as usize];
-				let mut remaining_size = info.size as usize;
-				let mut offset = (header.data_offset + header.relative_position.pos) as usize;
-				for block in header.blocks.iter().map(|x| *x as usize) {
-					let start = header.size as usize - remaining_size;
-					let size = min(remaining_size, header.block_size as usize);
-					let end = start + size;
-					match oodle_safe::decompress(&stream[offset..(offset + block)], &mut data[start..end], None, None, None, Some(DecodeThreadPhase::All)) {
-						Ok(size) => {
-							assert!(size > 0);
-							remaining_size -= size;
-						}
-						Err(err) => return Err(Error::new(ErrorKind::InvalidData, format!("oodle failed with error: {:?}", err))),
-					}
-					offset += block;
-				}
-
-				Ok(vec![0])
-			} else {
-				Err(Error::new(ErrorKind::InvalidData, "Oodle is not supported"))
-			}
+			#[cfg(not(feature = "oodle"))]
+			Err(Error::new(ErrorKind::InvalidData, "Oodle is not supported"))
 		}
 		PackageCompressionType::None => Ok(stream[info.offset as usize..(info.offset + info.size) as usize].to_vec()),
 	}
+}
+
+#[cfg(feature = "oodle")]
+fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error> {
+	let mut reader = Cursor::new(stream);
+	reader.seek(Start(info.offset))?;
+	let header = match PackageDataStreamHeader::read_ne(&mut reader) {
+		Ok(header) => header,
+		Err(err) => return Err(Error::new(ErrorKind::InvalidData, err)),
+	};
+
+	let mut data = vec![0; header.size as usize];
+	let mut remaining_size = info.size as usize;
+	let mut offset = (header.data_offset + header.relative_position.pos) as usize;
+	for block in header.blocks.iter().map(|x| *x as usize) {
+		let start = header.size as usize - remaining_size;
+		let size = min(remaining_size, header.block_size as usize);
+		let end = start + size;
+		match oodle_safe::decompress(&stream[offset..(offset + block)], &mut data[start..end], None, None, None, Some(DecodeThreadPhase::All)) {
+			Ok(size) => {
+				assert!(size > 0);
+				remaining_size -= size;
+			}
+			Err(err) => return Err(Error::new(ErrorKind::InvalidData, format!("oodle failed with error: {:?}", err.to_string()))),
+		}
+		offset += block;
+	}
+
+	Ok(data)
 }
 
 fn read_names(reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinResult<HashMap<ResourceId, (String, ResourceId)>> {

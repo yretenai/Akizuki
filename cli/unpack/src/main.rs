@@ -2,14 +2,15 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use akizuki::identifiers::ResourceId;
 use akizuki::manager::ResourceManager;
+use akizuki::pfs::PackageFileSystem;
 
 use clap::Parser;
 use colog::format::CologStyle;
 use colored::Colorize;
 use env_logger::fmt::Formatter;
 use log::{LevelFilter, Record, error, info};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use std::fs;
 use std::io::{Error, Write};
@@ -66,38 +67,42 @@ fn main() {
 	let output_path = Path::new(&args.output_path);
 
 	for package in manager.packages.values() {
-		(&package.files).into_par_iter().for_each(|(asset_id, _)| {
-			let asset_name = match asset_id.text() {
-				Some(asset_name) => asset_name,
-				None => format!("unknown/{:016x}", asset_id.value()),
-			};
+		for asset_id in package.files.keys() {
+			process_asset(&args, output_path, package, asset_id);
+		}
+	}
+}
 
-			if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
-				return;
-			}
+fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, asset_id: &ResourceId) {
+	let asset_name = match asset_id.text() {
+		Some(asset_name) => asset_name,
+		None => format!("unknown/{:016x}", asset_id.value()),
+	};
 
-			let Some(data) = package.open(asset_id, args.validate) else {
-				return;
-			};
+	if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
+		return;
+	}
 
-			info!(target: "akizuki::unpack", "Unpacking {:?}", asset_id);
+	let Some(data) = package.open(asset_id, args.validate) else {
+		return;
+	};
 
-			if args.dry {
-				return;
-			}
+	info!(target: "akizuki::unpack", "Unpacking {:?}", asset_id);
 
-			let asset_path = output_path.join(asset_name);
-			let asset_dir = asset_path.parent().unwrap_or(output_path);
+	if args.dry {
+		return;
+	}
 
-			if let Err(err) = fs::create_dir_all(asset_dir) {
-				error!(target: "akizuki::unpack", "unable to create path {:?}: {:?}", asset_dir, err);
-				return;
-			}
+	let asset_path = output_path.join(asset_name);
+	let asset_dir = asset_path.parent().unwrap_or(output_path);
 
-			if let Err(err) = fs::write(&asset_path, data) {
-				error!(target: "akizuki::unpack", "unable to write data {:?}: {:?}", asset_dir, err);
-			}
-		});
+	if let Err(err) = fs::create_dir_all(asset_dir) {
+		error!(target: "akizuki::unpack", "unable to create path {:?}: {:?}", asset_dir, err.to_string());
+		return;
+	}
+
+	if let Err(err) = fs::write(&asset_path, data) {
+		error!(target: "akizuki::unpack", "unable to write data {:?}: {:?}", asset_dir, err.to_string());
 	}
 }
 
