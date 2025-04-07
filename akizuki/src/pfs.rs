@@ -34,7 +34,7 @@ impl PackageFileSystem {
 		let mut reader = BufReader::new(File::open(idx_path)?);
 		let bw_header = BigWorldFileHeader::read_ne(&mut reader)?;
 
-		bw_header.validate(BigWorldMagic::PFSIndex, 2, validate, &mut reader)?;
+		bw_header.is_valid(BigWorldMagic::PFSIndex, 2, validate, &mut reader)?;
 
 		let header = PackageFileHeader::read_ne(&mut reader)?;
 
@@ -115,23 +115,23 @@ fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, E
 	}
 }
 
-fn read_names(mut reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinResult<HashMap<ResourceId, (String, ResourceId)>> {
+fn read_names(reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinResult<HashMap<ResourceId, (String, ResourceId)>> {
 	reader.seek(Start(header.relative_position.pos + header.name_offset))?;
 
-	let names = Vec::<PackageFileName>::read_ne_args(&mut reader, VecArgs { count: header.name_count as usize, inner: <_>::default() })?;
+	let names = Vec::<PackageFileName>::read_ne_args(reader, VecArgs { count: header.name_count as usize, inner: <_>::default() })?;
 	let mut name_map = HashMap::<ResourceId, (String, ResourceId)>::new();
 	for name in names {
 		reader.seek(Start(name.name.relative_position.pos + name.name.offset))?;
-		name_map.insert(name.name.id, (NullString::read_ne(&mut reader)?.to_string(), name.parent_id));
+		name_map.insert(name.name.id, (NullString::read_ne(reader)?.to_string(), name.parent_id));
 	}
 
 	Ok(name_map)
 }
 
-fn read_files(mut reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinResult<HashMap<ResourceId, PackageFile>> {
+fn read_files(reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinResult<HashMap<ResourceId, PackageFile>> {
 	reader.seek(Start(header.relative_position.pos + header.file_offset))?;
 
-	let files = Vec::<PackageFile>::read_ne_args(&mut reader, VecArgs { count: header.file_count as usize, inner: <_>::default() })?;
+	let files = Vec::<PackageFile>::read_ne_args(reader, VecArgs { count: header.file_count as usize, inner: <_>::default() })?;
 	let mut file_map = HashMap::<ResourceId, PackageFile>::new();
 	for file in files {
 		file_map.insert(file.id, file);
@@ -140,14 +140,14 @@ fn read_files(mut reader: &mut BufReader<File>, header: &PackageFileHeader) -> B
 	Ok(file_map)
 }
 
-fn read_streams(mut reader: &mut BufReader<File>, header: &PackageFileHeader, pkg_path: &Path) -> BinResult<HashMap<ResourceId, Mmap>> {
+fn read_streams(reader: &mut BufReader<File>, header: &PackageFileHeader, pkg_path: &Path) -> BinResult<HashMap<ResourceId, Mmap>> {
 	reader.seek(Start(header.relative_position.pos + header.pkgs_offset))?;
 
-	let names = Vec::<PackageName>::read_ne_args(&mut reader, VecArgs { count: header.pkgs_count as usize, inner: <_>::default() })?;
+	let names = Vec::<PackageName>::read_ne_args(reader, VecArgs { count: header.pkgs_count as usize, inner: <_>::default() })?;
 	let mut name_map = HashMap::<ResourceId, Mmap>::new();
 	for name in names {
 		reader.seek(Start(name.relative_position.pos + name.offset))?;
-		let string = NullString::read_ne(&mut reader)?.to_string();
+		let string = NullString::read_ne(reader)?.to_string();
 		ResourceId::insert(&name.id, &string);
 		name_map.insert(name.id, unsafe { Mmap::map(&File::open(pkg_path.join(string))?)? });
 	}

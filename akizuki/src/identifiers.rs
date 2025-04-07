@@ -10,12 +10,14 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::RwLock;
 
+#[repr(C)]
 #[derive(BinRead, Clone, Copy, PartialEq, Eq, Hash)]
 #[br(repr = u32)]
 pub struct StringId(pub u32);
 
 static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> = Lazy::new(|| RwLock::new(HashMap::new()));
 
+#[repr(C)]
 #[derive(BinRead, Clone, Copy, PartialEq, Eq, Hash)]
 #[br(repr = u64)]
 pub struct ResourceId(pub u64);
