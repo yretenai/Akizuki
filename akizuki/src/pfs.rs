@@ -4,8 +4,7 @@
 
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
 use crate::format::oodle;
-use crate::format::pfs::PackageDataStreamHeader;
-use crate::format::pfs::{PackageCompressionType, PackageFile, PackageFileHeader, PackageFileName, PackageName};
+use crate::format::pfs::{PackageCompressionType, PackageDataStreamHeader, PackageFile, PackageFileHeader, PackageFileName, PackageName};
 use crate::identifiers::ResourceId;
 
 use binrw::io::BufReader;
