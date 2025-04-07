@@ -6,4 +6,5 @@ grid_alpha,PBS_grid
 glass_material,PBS_glass
 propeller_material,PBS_transparent
 PBS_ship_metallic,PBS_ship
+PBS_ship_emissive,PBS_emissive
 PBS_wire,PBS_ship
