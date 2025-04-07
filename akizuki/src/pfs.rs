@@ -12,9 +12,9 @@ use binrw::{BinRead, BinResult, NullString, VecArgs};
 use colored::Colorize;
 use crc::Crc;
 use flate2::FlushDecompress;
-
 use log::{error, info};
 use memmap2::Mmap;
+
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Error, ErrorKind, Seek, SeekFrom::Start};
