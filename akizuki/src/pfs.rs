@@ -149,9 +149,7 @@ fn read_streams(mut reader: &mut BufReader<File>, header: &PackageFileHeader, pk
 		reader.seek(Start(name.relative_position.pos + name.offset))?;
 		let string = NullString::read_ne(&mut reader)?.to_string();
 		ResourceId::insert(&name.id, &string);
-		let mut target_pkg_path = pkg_path.to_path_buf();
-		target_pkg_path.push(string);
-		name_map.insert(name.id, unsafe { Mmap::map(&File::open(target_pkg_path)?)? });
+		name_map.insert(name.id, unsafe { Mmap::map(&File::open(pkg_path.join(string))?)? });
 	}
 
 	Ok(name_map)

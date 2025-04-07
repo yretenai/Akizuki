@@ -20,12 +20,10 @@ pub struct ResourceManager {
 
 impl ResourceManager {
 	pub fn new(install_path: &String, install_version: Option<i64>, should_validate: bool) -> Option<Self> {
-		let install = PathBuf::from(install_path);
-		let mut pkg_path = install.clone();
-		pkg_path.push("res_packages");
+		let install = Path::new(install_path);
+		let pkg_path = install.join("res_packages");
 
-		let mut idx_path = install.clone();
-		idx_path.push("bin");
+		let mut idx_path = install.join("bin");
 
 		idx_path.push(match install_version {
 			Some(install_version) => install_version.to_string(),

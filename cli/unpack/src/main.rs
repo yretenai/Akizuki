@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use akizuki::manager::ResourceManager;
+use std::fs;
 
 use clap::Parser;
 use colog::format::CologStyle;
@@ -11,6 +12,7 @@ use env_logger::fmt::Formatter;
 use log::{LevelFilter, Record, error, info};
 
 use std::io::{Error, Write};
+use std::path::Path;
 
 #[derive(Parser)]
 #[command(version, about)]
@@ -35,10 +37,13 @@ struct Cli {
 
 	#[arg(short = 'v', long, help = "output verbose information")]
 	verbose: bool,
+
+	#[arg(long, help = "Only process assets that match these strings")]
+	filter: Vec<String>,
 }
 
 fn main() {
-	let args = Cli::parse();
+	let mut args = Cli::parse();
 
 	let mut log_level = LevelFilter::Info;
 	if args.quiet {
@@ -50,6 +55,8 @@ fn main() {
 	log::set_max_level(log_level);
 	init_logging(log_level);
 
+	args.filter.dedup();
+
 	let manager = match ResourceManager::new(&args.install_path, args.install_version, args.validate) {
 		Some(manager) => manager,
 		None => {
@@ -58,15 +65,39 @@ fn main() {
 		}
 	};
 
+	let output_path = Path::new(&args.output_path);
+
 	for package in manager.packages.values() {
 		for asset in package.files.values() {
-			let Some(_data) = package.open(&asset.id, args.validate) else {
+			let asset_name = match asset.id.text() {
+				Some(asset_name) => asset_name,
+				None => format!("unknown/{:016x}", asset.id.value()),
+			};
+
+			if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
+				continue;
+			}
+
+			let Some(data) = package.open(&asset.id, args.validate) else {
 				continue;
 			};
 
 			info!(target: "akizuki::unpack", "Unpacking {:?}", asset.id);
 
 			if args.dry {
+				continue;
+			}
+
+			let asset_path = output_path.join(asset_name);
+			let asset_dir = asset_path.parent().unwrap_or(output_path);
+
+			if let Err(err) = fs::create_dir_all(asset_dir) {
+				error!("unable to create path {:?}: {:?}", asset_dir, err);
+				continue;
+			}
+
+			if let Err(err) = fs::write(&asset_path, data) {
+				error!("unable to write data {:?}: {:?}", asset_dir, err);
 				continue;
 			}
 		}
