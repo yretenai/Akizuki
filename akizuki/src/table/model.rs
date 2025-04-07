@@ -6,6 +6,7 @@ use crate::format::bigworld_table::{DyePrototypeHeader, ModelMiscType, ModelProt
 use crate::identifiers::{ResourceId, StringId};
 use binrw::BinRead;
 use binrw::{BinReaderExt, BinResult, VecArgs};
+use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
@@ -21,8 +22,7 @@ pub struct ModelPrototype {
 pub struct DyePrototype {
 	pub matter: StringId,
 	pub replaces: StringId,
-	pub tints: Vec<StringId>,
-	pub materials: Vec<ResourceId>,
+	pub tints: HashMap<StringId, ResourceId>,
 }
 
 impl ModelPrototype {
@@ -51,6 +51,11 @@ impl DyePrototype {
 		reader.seek(Start(header.relative_position.pos + header.tint_material_ids_offset))?;
 		let materials = Vec::<ResourceId>::read_ne_args(&mut reader, VecArgs { count: header.tint_count as usize, inner: <_>::default() })?;
 
-		Ok(DyePrototype { matter: header.matter_id, replaces: header.replaces_id, tints, materials })
+		let mut map = HashMap::<StringId, ResourceId>::with_capacity(header.tint_count as usize);
+		for i in 0..header.tint_count as usize {
+			map.insert(tints[i], materials[i]);
+		}
+
+		Ok(DyePrototype { matter: header.matter_id, replaces: header.replaces_id, tints: map })
 	}
 }
