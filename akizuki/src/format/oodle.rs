@@ -16,7 +16,7 @@ pub struct BC7PrepHeader {
 }
 
 #[derive(WrapperApi)]
-pub struct Oodle {
+struct Oodle {
 	OodleLZDecoder_MemorySizeNeeded: unsafe extern "C" fn(compressor: i32, size: i64) -> i32,
 	#[allow(clippy::too_many_arguments)]
 	OodleLZ_Decompress: unsafe extern "C" fn(src_buf: *const u8, src_size: i64, raw_buf: *mut u8, raw_size: i64, fuzz_safe: bool, check_crc: bool, verbosity: i32, dec_buf_base: *mut u8, dec_buf_size: i64, fp_callback: *const c_void, callback_data: *const c_void, decoder_memory: *mut u8, decoder_memory_size: i64, thread_phase: i32) -> i64,
