@@ -10,7 +10,7 @@ namespace Akizuki.Structs.Graphics;
 public record struct DDSPixelFormat() {
 	public uint Size { get; set; } = 32;
 	public DDSPixelFormatFlags Flags { get; set; } = DDSPixelFormatFlags.Identifier;
-	public uint Identifier { get; set; } = 0x30315844;
+	public D3DFORMAT Identifier { get; set; }
 	public uint RGBBitCount { get; set; }
 	public uint RBitMask { get; set; }
 	public uint GBitMask { get; set; }

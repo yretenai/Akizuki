@@ -24,14 +24,16 @@ public sealed class DDSTexture : IDisposable {
 		Surfaces = 1;
 
 		switch (header.PixelFormat.Identifier) {
-			case 0x31545844: Format = DXGIFormat.BC1_UNORM; break;
-			case 0x32545844 or 0x33545844: Format = DXGIFormat.BC2_UNORM; break;
-			case 0x34545844 or 0x35545844: Format = DXGIFormat.BC3_UNORM; break;
-			case 0x31495441 or 0x55344342: Format = DXGIFormat.BC4_UNORM; break;
-			case 0x53344342: Format = DXGIFormat.BC4_SNORM; break;
-			case 0x32495441 or 0x55354342: Format = DXGIFormat.BC5_UNORM; break;
-			case 0x53354342: Format = DXGIFormat.BC5_SNORM; break;
-			case 0x30315844: {
+			case D3DFORMAT.DXT1: Format = DXGIFormat.BC1_UNORM; break;
+			case D3DFORMAT.DXT2 or D3DFORMAT.DXT3: Format = DXGIFormat.BC2_UNORM; break;
+			case D3DFORMAT.DXT4 or D3DFORMAT.DXT5: Format = DXGIFormat.BC3_UNORM; break;
+			case D3DFORMAT.ATI1 or D3DFORMAT.BC4U: Format = DXGIFormat.BC4_UNORM; break;
+			case D3DFORMAT.BC4S: Format = DXGIFormat.BC4_SNORM; break;
+			case D3DFORMAT.ATI2 or D3DFORMAT.BC5U: Format = DXGIFormat.BC5_UNORM; break;
+			case D3DFORMAT.BC5S: Format = DXGIFormat.BC5_SNORM; break;
+			case D3DFORMAT.BC6U: Format = DXGIFormat.BC6H_UF16; break;
+			case D3DFORMAT.BC6S: Format = DXGIFormat.BC6H_SF16; break;
+			case D3DFORMAT.DX10: {
 				var dx10 = reader.Read<DX10Header>();
 				StartOffset += Unsafe.SizeOf<DX10Header>();
 				Surfaces = dx10.ArraySize;
@@ -39,15 +41,12 @@ public sealed class DDSTexture : IDisposable {
 				Format = dx10.Format;
 				break;
 			}
-			case > 0: {
-				Format = (BWImageFormat) header.PixelFormat.Identifier switch {
-					BWImageFormat.R16G16_FLOAT => DXGIFormat.R16G16_FLOAT,
-					BWImageFormat.R16G16B16A16_FLOAT => DXGIFormat.R16G16B16A16_FLOAT,
-					BWImageFormat.R32_UINT => DXGIFormat.R32_UINT,
-					_ => DXGIFormat.UNKNOWN,
-				};
-				break;
-			}
+			case D3DFORMAT.R16F: Format = DXGIFormat.R16_FLOAT; break;
+			case D3DFORMAT.G16R16F: Format = DXGIFormat.R16G16_FLOAT; break;
+			case D3DFORMAT.A16B16G16R16F: Format = DXGIFormat.R16G16B16A16_FLOAT; break;
+			case D3DFORMAT.R32F: Format = DXGIFormat.R32_FLOAT; break;
+			case D3DFORMAT.G32R32F: Format = DXGIFormat.R32G32_FLOAT; break;
+			case D3DFORMAT.A32B32G32R32F: Format = DXGIFormat.R32G32B32A32_FLOAT; break;
 			default: {
 				if ((header.PixelFormat.Flags & (DDSPixelFormatFlags.RGB | DDSPixelFormatFlags.Luminance)) == 0) {
 					throw new NotSupportedException();
@@ -55,6 +54,8 @@ public sealed class DDSTexture : IDisposable {
 
 				Format = header.PixelFormat.RGBBitCount switch {
 					8 => DXGIFormat.R8_UNORM,
+					16 when header.PixelFormat is { RBitMask: 0xf800, ABitMask: 0 } => DXGIFormat.B5G5R5A1_UNORM,
+					16 when header.PixelFormat.RBitMask == 0xf800 => DXGIFormat.B5G6R5_UNORM,
 					16 => DXGIFormat.R8G8_UNORM,
 					24 => DXGIFormat.R8G8B8_UNORM,
 					32 => DXGIFormat.R8G8B8A8_UNORM,

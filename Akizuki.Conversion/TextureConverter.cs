@@ -218,6 +218,12 @@ public static class TextureConverter {
 				case DXGIFormat.R8G8B8_UNORM:
 					frames.Add(new ImageBuffer<ColorRGB<byte>, byte>(chunk, width, height));
 					continue;
+				case DXGIFormat.B5G6R5_UNORM:
+					frames.Add(new ImageBuffer<ColorR5G6B5, float>(chunk, width, height));
+					continue;
+				case DXGIFormat.B5G5R5A1_UNORM:
+					frames.Add(new ImageBuffer<ColorB5G5R5A1, float>(chunk, width, height));
+					continue;
 				default:
 					throw new NotSupportedException();
 			}
