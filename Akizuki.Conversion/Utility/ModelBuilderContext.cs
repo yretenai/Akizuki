@@ -27,7 +27,7 @@ public record ModelBuilderContext(
 	ResourceManager Manager,
 	Stream BufferStream,
 	ModelResourceContext Resource) {
-	public Dictionary<int, int> ThicknessMaterialCache { get; } = [];
+	public Dictionary<string, int> ThicknessMaterialCache { get; } = [];
 	public Dictionary<ResourceId, PrimitiveCache> PrimCache { get; } = [];
 	public Dictionary<ResourceId, GeometryCache> GeometryCache { get; } = [];
 	public Dictionary<ResourceId, int> MaterialCache { get; } = [];

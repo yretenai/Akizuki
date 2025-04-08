@@ -16,7 +16,7 @@ public sealed class GeometryArmorPlate : IDisposable {
 	}
 
 	public int Thickness { get; set; }
-	public int Type { get; set; }
+	public uint Type { get; set; }
 	public BoundingBox BoundingBox { get; set; }
 	public IMemoryBuffer<GeometryArmorVertex> Vertices { get; set; }
 

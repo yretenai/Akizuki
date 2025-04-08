@@ -305,7 +305,7 @@ public static class GeometryConverter {
 		}
 
 		if (flags.ConvertArmor) {
-			var thicknessMaterial = new Dictionary<int, int>();
+			var thicknessMaterial = new Dictionary<string, int>();
 			foreach (var armor in geometry.Armors) {
 				ArmorConverter.CreateArmor(gltf, root, bufferStream, armor, thicknessMaterial);
 			}
