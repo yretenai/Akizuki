@@ -24,68 +24,10 @@ pub struct ResourceId(pub u64);
 
 static RESOURCE_LOOKUP: Lazy<RwLock<HashMap<u64, String>>> = Lazy::new(|| RwLock::new(HashMap::new()));
 
-#[inline]
-fn mmh3_fmix(hash: u32) -> u32 {
-	let mut h = hash;
-	h ^= h >> 16;
-	h = h.wrapping_mul(0x85ebca6b);
-	h ^= h >> 13;
-	h = h.wrapping_mul(0xc2b2ae35);
-	h ^= h >> 16;
-	h
-}
-
-#[inline]
-pub(crate) fn mmh3_32(data: impl AsRef<[u8]>) -> u32 {
-	let bytes = data.as_ref();
-
-	const C1: u32 = 0xcc9e2d51;
-	const C2: u32 = 0x1b873593;
-	const E: u32 = 0xe6546b64;
-
-	let mut h1: u32 = 0;
-	let mut k1: u32;
-
-	let mut blocks = bytes.chunks_exact(4);
-	for block in &mut blocks {
-		k1 = bytemuck::pod_read_unaligned::<u32>(block).wrapping_mul(C1);
-		k1 = k1.rotate_left(15);
-		k1 = k1.wrapping_mul(C2);
-
-		h1 ^= k1;
-		h1 = h1.rotate_left(13);
-		h1 = h1.wrapping_mul(5).wrapping_add(E);
-	}
-
-	k1 = 0;
-
-	let remainder = blocks.remainder();
-	let remainder_len = remainder.len();
-
-	// no fallthrough, not going to do a for loop.
-	if remainder_len > 2 {
-		k1 ^= (remainder[2] as u32) << 16;
-	}
-
-	if remainder_len > 1 {
-		k1 ^= (remainder[1] as u32) << 8;
-	}
-
-	if remainder_len > 0 {
-		k1 ^= remainder[0] as u32;
-		k1 = k1.wrapping_mul(C1);
-		k1 = k1.rotate_left(15);
-		k1 = k1.wrapping_mul(C2);
-		h1 ^= k1;
-	}
-
-	mmh3_fmix(h1 ^ (bytes.len() as u32))
-}
-
 impl StringId {
 	pub fn new(s: &str) -> Self {
 		// there are zero good murmurhash3_32 crates.
-		Self(mmh3_32(s))
+		Self(akizuki_common::mmh3::mmh3_32(s.as_ref()))
 	}
 
 	#[inline]

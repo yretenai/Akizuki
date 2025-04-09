@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::error::{AkizukiError, AkizukiResult};
-use crate::identifiers::mmh3_32;
+use akizuki_common::mmh3::mmh3_32;
 
 use binrw::BinRead;
 use four_char_code::four_char_code;
@@ -56,7 +56,7 @@ impl BigWorldFileHeader {
 			let mut all_data = Vec::<u8>::with_capacity(capacity as usize);
 			reader.read_to_end(&mut all_data)?;
 
-			let hash = mmh3_32(all_data);
+			let hash = mmh3_32(&all_data);
 			if hash != self.hash {
 				return Err(AkizukiError::ChecksumMismatch);
 			}

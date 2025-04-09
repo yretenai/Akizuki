@@ -24,9 +24,10 @@ dependencies = [
 name = "akizuki"
 version = "0.1.0"
 dependencies = [
+ "akizuki_common",
+ "akizuki_macro",
  "bcdec_rs",
  "binrw",
- "bytemuck",
  "cityhasher",
  "colored",
  "crc",
@@ -70,6 +71,20 @@ dependencies = [
  "colored",
  "env_logger",
  "log",
+]
+
+[[package]]
+name = "akizuki_common"
+version = "0.1.0"
+
+[[package]]
+name = "akizuki_macro"
+version = "0.1.0"
+dependencies = [
+ "akizuki_common",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.100",
 ]
 
 [[package]]

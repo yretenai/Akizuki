@@ -8,8 +8,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+akizuki_common= { path = "../akizuki_common" }
+akizuki_macro = { path = "../akizuki_macro" }
+
 binrw = "0.14.1"
-bytemuck = "1.22.0"
 cityhasher = "0.1.0"
 colored = "2.2.0"
 crc = "3.2.1"
