@@ -10,3 +10,9 @@ pub struct BigWorldDatabase {
 	pub name: String,
 	pub prototype_lookup: HashMap<ResourceId, BigWorldPrototypeRef>,
 }
+
+impl BigWorldDatabase {
+	pub(crate) fn new(_asset_bin: Vec<u8>, _validate: bool) -> Option<BigWorldDatabase> {
+		todo!()
+	}
+}

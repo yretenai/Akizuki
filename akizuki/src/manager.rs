@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use crate::bigworld::BigWorldDatabase;
 use crate::identifiers::ResourceId;
 use crate::pfs::PackageFileSystem;
 
@@ -15,6 +16,9 @@ use std::{fs, io};
 pub struct ResourceManager {
 	pub packages: HashMap<ResourceId, PackageFileSystem>,
 	pub lookup: HashMap<ResourceId, ResourceId>,
+	pub big_world_database: Option<BigWorldDatabase>,
+	pub install_path: String,
+	pub install_version: i64,
 }
 
 impl ResourceManager {
@@ -24,8 +28,8 @@ impl ResourceManager {
 
 		let mut idx_path = install.join("bin");
 
-		idx_path.push(match install_version {
-			Some(install_version) => install_version.to_string(),
+		let version = match install_version {
+			Some(install_version) => install_version,
 			_ => match find_install_version(&idx_path) {
 				Ok(version) => version,
 				Err(err) => {
@@ -33,8 +37,9 @@ impl ResourceManager {
 					return None;
 				}
 			},
-		});
+		};
 
+		idx_path.push(version.to_string());
 		idx_path.push("idx");
 
 		let packages = match load_idx(&pkg_path, &idx_path, should_validate) {
@@ -52,7 +57,22 @@ impl ResourceManager {
 			}
 		}
 
-		Some(ResourceManager { packages, lookup })
+		Some(ResourceManager { packages, lookup, install_path: install_path.clone(), install_version: version, big_world_database: None })
+	}
+
+	pub fn load_asset(&self, resource_id: &ResourceId, validate: bool) -> Option<Vec<u8>> {
+		let pkg_id = self.lookup.get(resource_id)?;
+		let pkg = self.packages.get(pkg_id)?;
+		pkg.open(resource_id, validate)
+	}
+
+	pub fn load_asset_database(&mut self, validate: bool) -> Option<&BigWorldDatabase> {
+		if self.big_world_database.is_none() {
+			let asset_bin = self.load_asset(&ResourceId::new("content/assets.bin"), false)?;
+			self.big_world_database = BigWorldDatabase::new(asset_bin, validate);
+		}
+
+		self.big_world_database.as_ref()
 	}
 }
 
@@ -65,7 +85,13 @@ fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> 
 		.filter_map(Result::ok)
 		.filter(|entry| {
 			let path = entry.path();
-			!path.is_dir() && path.extension().unwrap_or_default().to_str().unwrap_or_default() != ".idx"
+			if path.is_dir() {
+				return false;
+			}
+
+			let Some(ext) = path.extension() else { return false };
+
+			ext.eq_ignore_ascii_case(".idx")
 		})
 		.collect();
 
@@ -82,9 +108,8 @@ fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> 
 		.collect())
 }
 
-fn find_install_version(bin_path: &PathBuf) -> Result<String, io::Error> {
+fn find_install_version(bin_path: &PathBuf) -> Result<i64, io::Error> {
 	let mut max_number: i64 = 0;
-	let mut max_folder: Option<PathBuf> = Option::default();
 
 	for entry in fs::read_dir(bin_path)? {
 		let entry = entry?;
@@ -94,16 +119,18 @@ fn find_install_version(bin_path: &PathBuf) -> Result<String, io::Error> {
 			continue;
 		}
 
-		let folder_name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
-		let folder_num = folder_name.parse::<i64>().unwrap_or_default();
+		let Some(folder_name) = path.file_name().and_then(|n| n.to_str()) else {
+			continue;
+		};
+
+		let Ok(folder_num) = folder_name.parse::<i64>() else {
+			continue;
+		};
+
 		if folder_num > max_number {
 			max_number = folder_num;
-			max_folder = Some(PathBuf::from(folder_name));
 		}
 	}
 
-	match max_folder {
-		Some(folder) => Ok(folder.file_stem().unwrap_or_default().to_os_string().into_string().unwrap_or_default()),
-		_ => Err(io::Error::new(ErrorKind::NotFound, "no versions present")),
-	}
+	if max_number == 0 { Err(io::Error::new(ErrorKind::NotFound, "no versions present")) } else { Ok(max_number) }
 }
