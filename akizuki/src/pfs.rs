@@ -8,18 +8,19 @@ use crate::format::pfs::{PackageCompressionType, PackageDataStreamHeader, Packag
 use crate::identifiers::ResourceId;
 
 use binrw::io::BufReader;
-use binrw::{BinRead, BinResult, NullString, VecArgs};
+use binrw::{BinRead, NullString, VecArgs};
 use colored::Colorize;
 use crc::Crc;
 use flate2::FlushDecompress;
 use log::{debug, error, info};
 use memmap2::Mmap;
 
+use crate::error::AkizukiResult;
 use std::cmp::min;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Cursor;
-use std::io::{Error, ErrorKind, Seek, SeekFrom::Start};
+use std::io::{Seek, SeekFrom::Start};
 use std::path::{Path, PathBuf};
 
 pub struct PackageFileSystem {
@@ -29,7 +30,7 @@ pub struct PackageFileSystem {
 }
 
 impl PackageFileSystem {
-	pub fn new(pkg_directory: &Path, idx_path: &PathBuf, validate: bool) -> BinResult<PackageFileSystem> {
+	pub fn new(pkg_directory: &Path, idx_path: &PathBuf, validate: bool) -> AkizukiResult<PackageFileSystem> {
 		let name = Path::file_stem(idx_path).unwrap_or_default().to_os_string().into_string().unwrap_or_default();
 		info!("loading {}", name.green());
 
@@ -97,7 +98,7 @@ impl PackageFileSystem {
 	}
 }
 
-fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error> {
+fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> AkizukiResult<Vec<u8>> {
 	let compression_type: &PackageCompressionType = if info.compression_flags == 0 { &PackageCompressionType::None } else { &info.compression_type };
 
 	match compression_type {
@@ -116,13 +117,10 @@ fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, E
 	}
 }
 
-fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error> {
+fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> AkizukiResult<Vec<u8>> {
 	let mut reader = Cursor::new(stream);
 	reader.seek(Start(info.offset))?;
-	let header = match PackageDataStreamHeader::read_ne(&mut reader) {
-		Ok(header) => header,
-		Err(err) => return Err(Error::new(ErrorKind::InvalidData, err)),
-	};
+	let header = PackageDataStreamHeader::read_ne(&mut reader)?;
 
 	assert_eq!(header.reserved, 0);
 
@@ -133,20 +131,16 @@ fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> Result<Vec<u8>, Error>
 		let start = header.size as usize - remaining_size;
 		let size = min(remaining_size, header.block_size as usize);
 		let end = start + size;
-		match oodle::decompress_oodle_data(&stream[offset..(offset + block)], &mut data[start..end]) {
-			Ok(size) => {
-				assert!(size > 0);
-				remaining_size -= size;
-			}
-			Err(err) => return Err(Error::new(ErrorKind::InvalidData, format!("oodle failed with error: {:?}", err))),
-		}
+		let processed_bytes = oodle::decompress_oodle_data(&stream[offset..(offset + block)], &mut data[start..end])?;
+		assert!(processed_bytes > 0);
+		remaining_size -= processed_bytes;
 		offset += block;
 	}
 
 	Ok(data)
 }
 
-fn read_names(reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinResult<HashMap<ResourceId, (String, ResourceId)>> {
+fn read_names(reader: &mut BufReader<File>, header: &PackageFileHeader) -> AkizukiResult<HashMap<ResourceId, (String, ResourceId)>> {
 	reader.seek(Start(header.relative_position.pos + header.name_offset))?;
 
 	let names = Vec::<PackageFileName>::read_ne_args(reader, VecArgs { count: header.name_count as usize, inner: <_>::default() })?;
@@ -159,7 +153,7 @@ fn read_names(reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinRe
 	Ok(name_map)
 }
 
-fn read_files(reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinResult<HashMap<ResourceId, PackageFile>> {
+fn read_files(reader: &mut BufReader<File>, header: &PackageFileHeader) -> AkizukiResult<HashMap<ResourceId, PackageFile>> {
 	reader.seek(Start(header.relative_position.pos + header.file_offset))?;
 
 	let files = Vec::<PackageFile>::read_ne_args(reader, VecArgs { count: header.file_count as usize, inner: <_>::default() })?;
@@ -171,7 +165,7 @@ fn read_files(reader: &mut BufReader<File>, header: &PackageFileHeader) -> BinRe
 	Ok(file_map)
 }
 
-fn read_streams(reader: &mut BufReader<File>, header: &PackageFileHeader, pkg_path: &Path) -> BinResult<HashMap<ResourceId, Mmap>> {
+fn read_streams(reader: &mut BufReader<File>, header: &PackageFileHeader, pkg_path: &Path) -> AkizukiResult<HashMap<ResourceId, Mmap>> {
 	reader.seek(Start(header.relative_position.pos + header.pkgs_offset))?;
 
 	let names = Vec::<PackageName>::read_ne_args(reader, VecArgs { count: header.pkgs_count as usize, inner: <_>::default() })?;

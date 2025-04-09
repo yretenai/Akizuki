@@ -7,6 +7,7 @@
 
 use dlopen2::wrapper::{Container, WrapperApi};
 use once_cell::sync::Lazy;
+use thiserror::Error;
 
 use std::ffi::c_void;
 use std::ptr::{null, null_mut};
@@ -73,15 +74,22 @@ pub fn init() {
 	_ = get_oodle();
 }
 
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[non_exhaustive]
+#[derive(Error, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub enum OodleError {
+	#[error("could not find oodle library")]
 	LibraryUnavailable,
+	#[error("encountered invalid data")]
 	InvalidData,
+	#[error("internal oodle error: {0}")]
 	InternalError(i64),
+	#[error("insufficient size in output buffer, expected {0} bytes")]
 	InsufficientSize(usize),
 }
 
-pub fn decompress_oodle_data(compressed: &[u8], uncompressed: &mut [u8]) -> Result<usize, OodleError> {
+pub type OodleResult<T> = Result<T, OodleError>;
+
+pub fn decompress_oodle_data(compressed: &[u8], uncompressed: &mut [u8]) -> OodleResult<usize> {
 	let Some(oodle) = get_oodle() else { return Err(OodleError::LibraryUnavailable) };
 	let memorySize = unsafe { oodle.OodleLZDecoder_MemorySizeNeeded(-1, -1) };
 	let mut scratch: Vec<u8> = vec![0; memorySize as usize];
@@ -93,7 +101,7 @@ pub fn decompress_oodle_data(compressed: &[u8], uncompressed: &mut [u8]) -> Resu
 }
 
 #[allow(dead_code)]
-pub fn decompress_oodle_bc7(header: &BC7PrepHeader, compressed: &[u8], uncompressed: &mut [u8]) -> Result<usize, OodleError> {
+pub fn decompress_oodle_bc7(header: &BC7PrepHeader, compressed: &[u8], uncompressed: &mut [u8]) -> OodleResult<usize> {
 	let Some(oodle) = get_oodle_tex() else { return Err(OodleError::LibraryUnavailable) };
 
 	let mut blocks: i64 = 0;

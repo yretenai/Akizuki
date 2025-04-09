@@ -3,15 +3,15 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::bigworld::BigWorldDatabase;
+use crate::error::{AkizukiError, AkizukiResult};
 use crate::identifiers::ResourceId;
 use crate::pfs::PackageFileSystem;
 
 use log::error;
 
 use std::collections::HashMap;
-use std::io::ErrorKind;
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::{fs, io};
 
 pub struct ResourceManager {
 	pub packages: HashMap<ResourceId, PackageFileSystem>,
@@ -76,9 +76,9 @@ impl ResourceManager {
 	}
 }
 
-fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> io::Result<HashMap<ResourceId, PackageFileSystem>> {
+fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> AkizukiResult<HashMap<ResourceId, PackageFileSystem>> {
 	if !idx_path.is_dir() {
-		return Err(io::Error::new(ErrorKind::InvalidInput, "index path is not a folder"));
+		return Err(AkizukiError::InvalidInstall);
 	}
 
 	let entries: Vec<_> = fs::read_dir(idx_path)?
@@ -108,7 +108,7 @@ fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> 
 		.collect())
 }
 
-fn find_install_version(bin_path: &PathBuf) -> Result<i64, io::Error> {
+fn find_install_version(bin_path: &PathBuf) -> AkizukiResult<i64> {
 	let mut max_number: i64 = 0;
 
 	for entry in fs::read_dir(bin_path)? {
@@ -132,5 +132,5 @@ fn find_install_version(bin_path: &PathBuf) -> Result<i64, io::Error> {
 		}
 	}
 
-	if max_number == 0 { Err(io::Error::new(ErrorKind::NotFound, "no versions present")) } else { Ok(max_number) }
+	if max_number == 0 { Err(AkizukiError::InvalidInstall) } else { Ok(max_number) }
 }

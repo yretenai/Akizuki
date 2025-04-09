@@ -2,17 +2,17 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use crate::error::{AkizukiError, AkizukiResult};
 use crate::identifiers::mmh3_32;
 
+use binrw::BinRead;
 use binrw::io::BufReader;
-use binrw::{BinRead, BinResult};
 use four_char_code::four_char_code;
 use log::debug;
 
 use std::fs::File;
-use std::io;
 use std::io::SeekFrom::Start;
-use std::io::{ErrorKind, Read, Seek};
+use std::io::{Read, Seek};
 
 #[derive(BinRead, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[br(repr = u32)]
@@ -31,23 +31,23 @@ pub struct BigWorldFileHeader {
 }
 
 impl BigWorldFileHeader {
-	pub(crate) fn is_valid(&self, magic: BigWorldMagic, version: u32, validate: bool, reader: &mut BufReader<File>) -> BinResult<()> {
+	pub(crate) fn is_valid(&self, magic: BigWorldMagic, version: u32, validate: bool, reader: &mut BufReader<File>) -> AkizukiResult<()> {
 		let swapped_version = u32::swap_bytes(self.version_be);
 
 		if swapped_version > self.version_be {
-			return Err(io::Error::new(ErrorKind::InvalidData, "endian mismatch").into());
+			return Err(AkizukiError::InvalidEndianness);
 		}
 
 		if swapped_version != version {
-			return Err(io::Error::new(ErrorKind::InvalidData, "unsupported version").into());
+			return Err(AkizukiError::InvalidVersion { expected: version, present: swapped_version });
 		}
 
 		if self.magic != magic {
-			return Err(io::Error::new(ErrorKind::InvalidData, "no versions present").into());
+			return Err(AkizukiError::InvalidIdentifier);
 		}
 
 		if self.pointer_size != 64 {
-			return Err(io::Error::new(ErrorKind::InvalidData, "unsupported pointer size").into());
+			return Err(AkizukiError::InvalidPointerSize);
 		}
 
 		if validate {
@@ -56,7 +56,7 @@ impl BigWorldFileHeader {
 
 			let hash = mmh3_32(all_data);
 			if hash != self.hash {
-				return Err(io::Error::new(ErrorKind::InvalidData, "checksum mismatch").into());
+				return Err(AkizukiError::ChecksumMismatch);
 			}
 
 			reader.seek(Start(0x10))?;

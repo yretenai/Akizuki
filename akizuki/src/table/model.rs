@@ -2,10 +2,13 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use crate::error::AkizukiResult;
 use crate::format::bigworld_table::{DyePrototypeHeader, ModelMiscType, ModelPrototypeHeader};
 use crate::identifiers::{ResourceId, StringId};
+
 use binrw::BinRead;
-use binrw::{BinReaderExt, BinResult, VecArgs};
+use binrw::{BinReaderExt, VecArgs};
+
 use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
@@ -26,7 +29,7 @@ pub struct DyePrototype {
 }
 
 impl ModelPrototype {
-	pub fn new(mut reader: &mut Cursor<&[u8]>) -> BinResult<Self> {
+	pub fn new(mut reader: &mut Cursor<&[u8]>) -> AkizukiResult<Self> {
 		let header = reader.read_ne::<ModelPrototypeHeader>()?;
 
 		reader.seek(Start(header.relative_position.pos + header.animation_offset))?;
@@ -45,7 +48,7 @@ impl ModelPrototype {
 }
 
 impl DyePrototype {
-	fn new(mut reader: &mut Cursor<&[u8]>, header: DyePrototypeHeader) -> BinResult<Self> {
+	fn new(mut reader: &mut Cursor<&[u8]>, header: DyePrototypeHeader) -> AkizukiResult<Self> {
 		reader.seek(Start(header.relative_position.pos + header.tint_name_ids_offset))?;
 		let tints = Vec::<StringId>::read_ne_args(&mut reader, VecArgs { count: header.tint_count as usize, inner: <_>::default() })?;
 		reader.seek(Start(header.relative_position.pos + header.tint_material_ids_offset))?;

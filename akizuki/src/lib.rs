@@ -7,6 +7,7 @@ pub mod identifiers;
 
 #[cfg(feature = "data")]
 pub mod bigworld;
+pub mod error;
 pub mod manager;
 pub mod pfs;
 #[cfg(feature = "data")]

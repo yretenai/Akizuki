@@ -44,6 +44,7 @@ dependencies = [
  "once_cell",
  "serde",
  "serde-pickle",
+ "thiserror 2.0.12",
  "xml",
 ]
 
