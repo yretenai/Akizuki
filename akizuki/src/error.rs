@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::format::oodle::OodleError;
+use crate::identifiers::{ResourceId, StringId};
 
 use thiserror::Error;
 
@@ -21,12 +22,16 @@ pub enum AkizukiError {
 	InvalidPointerSize,
 	#[error("asset failed checksum verification")]
 	ChecksumMismatch,
+	#[error("asset {0:?} is not found")]
+	AssetNotFound(ResourceId),
+	#[error("table {0:?} is not supported")]
+	UnsupportedTable(StringId),
 
 	#[error("io error: {0}")]
 	Std(#[from] std::io::Error),
 	#[error("binrw error: {0}")]
 	Bin(#[from] binrw::Error),
-	#[error("decompression error: {0}")]
+	#[error("zlib error: {0}")]
 	Flate(#[from] flate2::DecompressError),
 	#[error("oodle error: {0}")]
 	Oodle(#[from] OodleError),

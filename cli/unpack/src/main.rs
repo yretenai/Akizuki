@@ -61,10 +61,15 @@ fn main() {
 
 	args.filter.dedup();
 
-	let Some(manager) = ResourceManager::new(&args.install_path, args.install_version, args.validate) else {
+	let Some(mut manager) = ResourceManager::new(&args.install_path, args.install_version, args.validate) else {
 		error!(target: "akizuki::unpack", "could not create manager");
 		return;
 	};
+
+	match &manager.load_asset_database(true) {
+		Ok(_) => {}
+		Err(err) => error!("{:?}", err),
+	}
 
 	let output_path = Path::new(&args.output_path);
 
@@ -85,7 +90,7 @@ fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, as
 		return;
 	}
 
-	let Some(data) = package.open(asset_id, args.validate) else {
+	let Ok(data) = package.open(asset_id, args.validate) else {
 		return;
 	};
 

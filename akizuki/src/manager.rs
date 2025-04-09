@@ -60,19 +60,19 @@ impl ResourceManager {
 		Some(ResourceManager { packages, lookup, install_path: install_path.clone(), install_version: version, big_world_database: None })
 	}
 
-	pub fn load_asset(&self, resource_id: &ResourceId, validate: bool) -> Option<Vec<u8>> {
-		let pkg_id = self.lookup.get(resource_id)?;
-		let pkg = self.packages.get(pkg_id)?;
+	pub fn load_asset(&self, resource_id: &ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
+		let Some(pkg_id) = self.lookup.get(resource_id) else { return Err(AkizukiError::AssetNotFound(*resource_id)) };
+		let Some(pkg) = self.packages.get(pkg_id) else { return Err(AkizukiError::AssetNotFound(*pkg_id)) };
 		pkg.open(resource_id, validate)
 	}
 
-	pub fn load_asset_database(&mut self, validate: bool) -> Option<&BigWorldDatabase> {
+	pub fn load_asset_database(&mut self, validate: bool) -> AkizukiResult<&BigWorldDatabase> {
 		if self.big_world_database.is_none() {
 			let asset_bin = self.load_asset(&ResourceId::new("content/assets.bin"), false)?;
-			self.big_world_database = BigWorldDatabase::new(asset_bin, validate);
+			self.big_world_database = Some(BigWorldDatabase::new(asset_bin, validate)?);
 		}
 
-		self.big_world_database.as_ref()
+		Ok(self.big_world_database.as_ref().expect("should not have reached this point without deserializing the database or erroring normally"))
 	}
 }
 
@@ -91,7 +91,7 @@ fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> 
 
 			let Some(ext) = path.extension() else { return false };
 
-			ext.eq_ignore_ascii_case(".idx")
+			ext.eq_ignore_ascii_case("idx")
 		})
 		.collect();
 

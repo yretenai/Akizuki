@@ -4,7 +4,11 @@
 
 use crate::identifiers::{ResourceId, StringId};
 
-use binrw::{BinRead, PosValue};
+use binrw::{BinRead, BinResult, Endian, PosValue};
+
+use std::fmt;
+use std::io::SeekFrom::Current;
+use std::io::{Read, Seek};
 
 #[derive(BinRead, Debug, Clone)]
 #[br()]
@@ -28,6 +32,8 @@ pub struct BigWorldDatabasePointer {
 #[derive(BinRead, Debug, Clone)]
 #[br()]
 pub struct BigWorldDatabaseHeader {
+	pub relative_position: PosValue<()>,
+
 	pub strings: BigWorldDatabaseMap,
 	pub string_data: BigWorldDatabasePointer,
 	pub prototypes: BigWorldDatabaseMap,
@@ -49,6 +55,26 @@ pub struct BigWorldName {
 	pub id: ResourceId,
 	pub parent_id: ResourceId,
 	pub pointer: BigWorldDatabasePointer,
+}
+
+#[derive(Debug, Clone)]
+pub struct BigWorldDatabaseKey<T: binrw::BinRead> {
+	pub id: T,
+	pub bucket: u32,
+}
+
+impl<T: BinRead> BinRead for BigWorldDatabaseKey<T> {
+	type Args<'a> = T::Args<'a>;
+
+	fn read_options<R: Read + Seek>(reader: &mut R, endian: Endian, args: Self::Args<'_>) -> BinResult<Self> {
+		let id = T::read_options(reader, endian, args)?;
+		if size_of::<T>() == 8 {
+			reader.seek(Current(4))?;
+		}
+		let bucket = u32::read_options(reader, endian, ())?;
+
+		Ok(BigWorldDatabaseKey::<T> { id, bucket })
+	}
 }
 
 #[repr(C)]
@@ -77,5 +103,11 @@ impl BigWorldPrototypeRef {
 impl From<u32> for BigWorldPrototypeRef {
 	fn from(value: u32) -> Self {
 		Self(value)
+	}
+}
+
+impl fmt::Debug for BigWorldPrototypeRef {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "ref {{ state = {:?}, table = {:?}, record = {:?} }}", self.state(), self.table_index(), self.record_index())
 	}
 }

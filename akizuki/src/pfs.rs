@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
 use crate::format::oodle;
 use crate::format::pfs::{PackageCompressionType, PackageDataStreamHeader, PackageFile, PackageFileHeader, PackageFileName, PackageName};
@@ -15,7 +16,6 @@ use flate2::FlushDecompress;
 use log::{debug, error, info};
 use memmap2::Mmap;
 
-use crate::error::AkizukiResult;
 use std::cmp::min;
 use std::collections::HashMap;
 use std::fs::File;
@@ -35,8 +35,8 @@ impl PackageFileSystem {
 		info!("loading {}", name.green());
 
 		let mut reader = BufReader::new(File::open(idx_path)?);
-		let bw_header = BigWorldFileHeader::read_ne(&mut reader)?;
 
+		let bw_header = BigWorldFileHeader::read_ne(&mut reader)?;
 		bw_header.is_valid(BigWorldMagic::PFSIndex, 2, validate, &mut reader)?;
 
 		let header = PackageFileHeader::read_ne(&mut reader)?;
@@ -45,56 +45,54 @@ impl PackageFileSystem {
 		let files = read_files(&mut reader, &header)?;
 		let streams = read_streams(&mut reader, &header, pkg_directory)?;
 
-		for file_id in files.keys() {
-			let mut target_id = file_id;
-
-			let mut path = Option::<PathBuf>::None;
-			while target_id.is_valid() {
-				let Some((file_name, parent_id)) = names.get(target_id) else {
-					break;
-				};
-
-				match path {
-					Some(some_path) => path = Some(PathBuf::from(file_name).join(some_path)),
-					None => path = Some(PathBuf::from(file_name)),
-				}
-
-				target_id = parent_id;
-			}
-
-			if let Some(path) = path {
-				ResourceId::insert(file_id, path.to_str().unwrap_or_default());
-			}
-		}
+		build_filenames(&names, &files);
 
 		Ok(PackageFileSystem { name, files, streams })
 	}
 
 	const CRC: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
 
-	pub fn open(&self, id: &ResourceId, validate: bool) -> Option<Vec<u8>> {
-		let info = self.files.get(id)?;
-		let stream = self.streams.get(&info.package_id)?;
+	pub fn open(&self, id: &ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
+		let Some(info) = self.files.get(id) else { return Err(AkizukiError::AssetNotFound(*id)) };
+		let Some(stream) = self.streams.get(&info.package_id) else { return Err(AkizukiError::AssetNotFound(info.package_id)) };
 
-		let data = match read_data_from_stream(stream, info) {
-			Ok(data) => data,
-			Err(err) => {
-				error!("{:?} errored {:?}", id, err.to_string());
-				return None;
-			}
-		};
+		let data = read_data_from_stream(stream, info)?;
 
 		if validate {
 			let hash = PackageFileSystem::CRC.checksum(data.as_slice());
 			if hash != info.hash {
 				error!("{:?} has an invalid checksum!", id);
-				return None;
+				return Err(AkizukiError::ChecksumMismatch);
 			}
 
 			debug!("{:?} passed validation", id);
 		}
 
-		Some(data)
+		Ok(data)
+	}
+}
+
+pub(crate) fn build_filenames<T>(names: &HashMap<ResourceId, (String, ResourceId)>, keys: &HashMap<ResourceId, T>) {
+	for file_id in keys.keys() {
+		let mut target_id = file_id;
+
+		let mut path = Option::<PathBuf>::None;
+		while target_id.is_valid() {
+			let Some((file_name, parent_id)) = names.get(target_id) else {
+				break;
+			};
+
+			match path {
+				Some(some_path) => path = Some(PathBuf::from(file_name).join(some_path)),
+				None => path = Some(PathBuf::from(file_name)),
+			}
+
+			target_id = parent_id;
+		}
+
+		if let Some(path) = path {
+			ResourceId::insert(file_id, path.to_str().unwrap_or_default());
+		}
 	}
 }
 

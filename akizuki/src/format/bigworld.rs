@@ -6,12 +6,10 @@ use crate::error::{AkizukiError, AkizukiResult};
 use crate::identifiers::mmh3_32;
 
 use binrw::BinRead;
-use binrw::io::BufReader;
 use four_char_code::four_char_code;
 use log::debug;
 
-use std::fs::File;
-use std::io::SeekFrom::Start;
+use std::io::SeekFrom::{End, Start};
 use std::io::{Read, Seek};
 
 #[derive(BinRead, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -31,7 +29,7 @@ pub struct BigWorldFileHeader {
 }
 
 impl BigWorldFileHeader {
-	pub(crate) fn is_valid(&self, magic: BigWorldMagic, version: u32, validate: bool, reader: &mut BufReader<File>) -> AkizukiResult<()> {
+	pub(crate) fn is_valid<T: Read + Seek>(&self, magic: BigWorldMagic, version: u32, validate: bool, reader: &mut T) -> AkizukiResult<()> {
 		let swapped_version = u32::swap_bytes(self.version_be);
 
 		if swapped_version > self.version_be {
@@ -51,7 +49,11 @@ impl BigWorldFileHeader {
 		}
 
 		if validate {
-			let mut all_data = Vec::<u8>::with_capacity(reader.capacity() - 0x10);
+			reader.seek(End(0))?;
+			let capacity = reader.stream_position()? - 0x10;
+
+			reader.seek(Start(0x10))?;
+			let mut all_data = Vec::<u8>::with_capacity(capacity as usize);
 			reader.read_to_end(&mut all_data)?;
 
 			let hash = mmh3_32(all_data);
