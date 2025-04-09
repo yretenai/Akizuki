@@ -90,10 +90,10 @@ pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 
 						#(#version_checks)||*
 					}
-				}
 
-				fn create(mut reader: &mut Cursor<&[u8]>) -> AkizukiResult<BigWorldTableRecord> {
-					Ok(BigWorldTableRecord::#name(Self::new(reader)?))
+					fn create(mut reader: &mut Cursor<&[u8]>) -> AkizukiResult<BigWorldTableRecord> {
+						Ok(BigWorldTableRecord::#name(Self::new(reader)?))
+					}
 				}
 			}
 		}

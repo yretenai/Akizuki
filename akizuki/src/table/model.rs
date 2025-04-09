@@ -5,8 +5,6 @@
 use crate::error::AkizukiResult;
 use crate::format::bigworld_table::{DyePrototypeHeader, ModelMiscType, ModelPrototypeHeader};
 use crate::identifiers::{ResourceId, StringId};
-use crate::table::{BigWorldTableRecord, TableRecord};
-use akizuki_macro::BigWorldTable;
 
 use binrw::BinRead;
 use binrw::{BinReaderExt, VecArgs};
@@ -15,8 +13,7 @@ use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
-#[derive(Debug, BigWorldTable)]
-#[table(ModelPrototype, 1)]
+#[derive(Debug)]
 pub struct ModelPrototype {
 	pub visual_prototype: ResourceId,
 	pub misc_type: ModelMiscType,
