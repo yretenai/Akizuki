@@ -53,8 +53,8 @@ impl PackageFileSystem {
 	const CRC: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
 
 	pub fn open(&self, id: &ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
-		let Some(info) = self.files.get(id) else { return Err(AkizukiError::AssetNotFound(*id)) };
-		let Some(stream) = self.streams.get(&info.package_id) else { return Err(AkizukiError::AssetNotFound(info.package_id)) };
+		let info = self.files.get(id).ok_or(AkizukiError::AssetNotFound(*id))?;
+		let stream = self.streams.get(&info.package_id).ok_or(AkizukiError::AssetNotFound(info.package_id))?;
 
 		let data = read_data_from_stream(stream, info)?;
 

@@ -7,8 +7,6 @@ use crate::error::{AkizukiError, AkizukiResult};
 use crate::identifiers::ResourceId;
 use crate::pfs::PackageFileSystem;
 
-use log::error;
-
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -30,25 +28,13 @@ impl ResourceManager {
 
 		let version = match install_version {
 			Some(install_version) => install_version,
-			_ => match find_install_version(&idx_path) {
-				Ok(version) => version,
-				Err(err) => {
-					error!("could not determine game version!\n{:?}", err.to_string());
-					return None;
-				}
-			},
+			None => find_install_version(&idx_path).ok()?,
 		};
 
 		idx_path.push(version.to_string());
 		idx_path.push("idx");
 
-		let packages = match load_idx(&pkg_path, &idx_path, should_validate) {
-			Ok(packages) => packages,
-			Err(err) => {
-				error!("could not load packages: {:?}", err.to_string());
-				return None;
-			}
-		};
+		let packages = load_idx(&pkg_path, &idx_path, should_validate).ok()?;
 
 		let mut lookup = HashMap::<ResourceId, ResourceId>::new();
 		for (package_id, package) in &packages {
@@ -61,8 +47,8 @@ impl ResourceManager {
 	}
 
 	pub fn load_asset(&self, resource_id: &ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
-		let Some(pkg_id) = self.lookup.get(resource_id) else { return Err(AkizukiError::AssetNotFound(*resource_id)) };
-		let Some(pkg) = self.packages.get(pkg_id) else { return Err(AkizukiError::AssetNotFound(*pkg_id)) };
+		let pkg_id = self.lookup.get(resource_id).ok_or(AkizukiError::AssetNotFound(*resource_id))?;
+		let pkg = self.packages.get(pkg_id).ok_or(AkizukiError::AssetNotFound(*pkg_id))?;
 		pkg.open(resource_id, validate)
 	}
 
@@ -95,17 +81,7 @@ fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> 
 		})
 		.collect();
 
-	Ok(entries
-		.into_iter()
-		.filter_map(|entry| match PackageFileSystem::new(packages_path, &entry.path(), should_validate) {
-			Ok(pkg) => Some((ResourceId::new(&pkg.name), pkg)),
-			Err(err) => {
-				error!("failed to load package: {:?}", err.to_string());
-				None
-			}
-		})
-		.filter_map(Some)
-		.collect())
+	Ok(entries.into_iter().filter_map(|entry| PackageFileSystem::new(packages_path, &entry.path(), should_validate).ok()).map(|pkg| (ResourceId::new(&pkg.name), pkg)).collect())
 }
 
 fn find_install_version(bin_path: &PathBuf) -> AkizukiResult<i64> {
@@ -119,11 +95,7 @@ fn find_install_version(bin_path: &PathBuf) -> AkizukiResult<i64> {
 			continue;
 		}
 
-		let Some(folder_name) = path.file_name().and_then(|n| n.to_str()) else {
-			continue;
-		};
-
-		let Ok(folder_num) = folder_name.parse::<i64>() else {
+		let Some(folder_num) = path.file_name().and_then(|n| n.to_str()).and_then(|s| s.parse::<i64>().ok()) else {
 			continue;
 		};
 

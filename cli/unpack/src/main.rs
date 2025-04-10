@@ -12,6 +12,7 @@ use colored::Colorize;
 use env_logger::fmt::Formatter;
 use log::{LevelFilter, Record, error, info};
 
+use akizuki::error::AkizukiResult;
 use std::fs;
 use std::io::{Error, Write};
 use std::path::Path;
@@ -61,56 +62,41 @@ fn main() {
 
 	args.filter.dedup();
 
-	let Some(mut manager) = ResourceManager::new(&args.install_path, args.install_version, args.validate) else {
-		error!(target: "akizuki::unpack", "could not create manager");
-		return;
-	};
-
-	match &manager.load_asset_database(true) {
-		Ok(_) => {}
-		Err(err) => error!("{:?}", err),
-	}
+	let mut manager = ResourceManager::new(&args.install_path, args.install_version, args.validate).expect("could not create manager");
+	let _ = &manager.load_asset_database(true).expect("database failed to load");
 
 	let output_path = Path::new(&args.output_path);
 
 	for package in manager.packages.values() {
 		for asset_id in package.files.keys() {
-			process_asset(&args, output_path, package, asset_id);
+			if let Err(err) = process_asset(&args, output_path, package, asset_id) {
+				error!(target: "akizuki::unpack", "unable to export asset {:?}: {:?}", asset_id, err.to_string());
+			}
 		}
 	}
 }
 
-fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, asset_id: &ResourceId) {
-	let asset_name = match asset_id.text() {
-		Some(asset_name) => asset_name,
-		None => format!("unknown/{:016x}", asset_id.value()),
-	};
+fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, asset_id: &ResourceId) -> AkizukiResult<()> {
+	let asset_name = asset_id.text().unwrap_or_else(|| format!("unknown/{:016x}", asset_id.value()));
 
 	if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
-		return;
+		return Ok(());
 	}
 
-	let Ok(data) = package.open(asset_id, args.validate) else {
-		return;
-	};
+	let data = package.open(asset_id, args.validate)?;
 
 	info!(target: "akizuki::unpack", "Unpacking {:?}", asset_id);
 
 	if args.dry {
-		return;
+		return Ok(());
 	}
 
 	let asset_path = output_path.join(asset_name);
 	let asset_dir = asset_path.parent().unwrap_or(output_path);
 
-	if let Err(err) = fs::create_dir_all(asset_dir) {
-		error!(target: "akizuki::unpack", "unable to create path {:?}: {:?}", asset_dir, err.to_string());
-		return;
-	}
-
-	if let Err(err) = fs::write(&asset_path, data) {
-		error!(target: "akizuki::unpack", "unable to write data {:?}: {:?}", asset_dir, err.to_string());
-	}
+	fs::create_dir_all(asset_dir)?;
+	fs::write(&asset_path, data)?;
+	Ok(())
 }
 
 pub struct PrefixModule;

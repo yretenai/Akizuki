@@ -61,12 +61,12 @@ static OODLE_TEX: Lazy<Option<Container<OodleTex>>> = Lazy::new(|| match unsafe 
 	Err(_) => None,
 });
 
-fn get_oodle() -> &'static Option<Container<Oodle>> {
-	&OODLE
+fn get_oodle() -> Option<&'static Container<Oodle>> {
+	OODLE.as_ref()
 }
 
-fn get_oodle_tex() -> &'static Option<Container<OodleTex>> {
-	&OODLE_TEX
+fn get_oodle_tex() -> Option<&'static Container<OodleTex>> {
+	OODLE_TEX.as_ref()
 }
 
 pub fn init() {
@@ -90,19 +90,22 @@ pub enum OodleError {
 pub type OodleResult<T> = Result<T, OodleError>;
 
 pub fn decompress_oodle_data(compressed: &[u8], uncompressed: &mut [u8]) -> OodleResult<usize> {
-	let Some(oodle) = get_oodle() else { return Err(OodleError::LibraryUnavailable) };
+	let oodle = get_oodle().ok_or(OodleError::LibraryUnavailable)?;
+
 	let memorySize = unsafe { oodle.OodleLZDecoder_MemorySizeNeeded(-1, -1) };
 	let mut scratch: Vec<u8> = vec![0; memorySize as usize];
+
 	let in_ref = compressed.as_ptr();
 	let out_ref = uncompressed.as_mut_ptr();
 	let scratch_ref = scratch.as_mut_ptr();
+
 	let result = unsafe { oodle.OodleLZ_Decompress(in_ref, compressed.len() as i64, out_ref, uncompressed.len() as i64, true, false, 0, null_mut(), 0, null(), null(), scratch_ref, scratch.len() as i64, 3) };
 	if result > 0 { Ok(result as usize) } else { Err(OodleError::InternalError(result)) }
 }
 
 #[allow(dead_code)]
 pub fn decompress_oodle_bc7(header: &BC7PrepHeader, compressed: &[u8], uncompressed: &mut [u8]) -> OodleResult<usize> {
-	let Some(oodle) = get_oodle_tex() else { return Err(OodleError::LibraryUnavailable) };
+	let oodle = get_oodle_tex().ok_or(OodleError::LibraryUnavailable)?;
 
 	let mut blocks: i64 = 0;
 	let mut payload_size: i64 = 0;
@@ -116,9 +119,11 @@ pub fn decompress_oodle_bc7(header: &BC7PrepHeader, compressed: &[u8], uncompres
 
 	let memorySize = unsafe { oodle.OodleTexRT_BC7Prep_MinDecodeScratchSize(blocks) };
 	let mut scratch: Vec<u8> = vec![0; memorySize as usize];
+
 	let in_ref = compressed.as_ptr();
 	let out_ref = uncompressed.as_mut_ptr();
 	let scratch_ref = scratch.as_mut_ptr();
+
 	let result = unsafe { oodle.OodleTexRT_BC7Prep_Decode(out_ref, uncompressed.len() as i64, in_ref, compressed.len() as i64, header, 0, scratch_ref, scratch.len() as i64) };
 	if result > 0 { Ok(result as usize) } else { Err(OodleError::InternalError(result)) }
 }
