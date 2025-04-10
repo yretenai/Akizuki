@@ -43,11 +43,20 @@ impl ResourceManager {
 			}
 		}
 
-		Some(ResourceManager { packages, lookup, install_path: install_path.clone(), install_version: version, big_world_database: None })
+		Some(ResourceManager {
+			packages,
+			lookup,
+			install_path: install_path.clone(),
+			install_version: version,
+			big_world_database: None,
+		})
 	}
 
 	pub fn load_asset(&self, resource_id: &ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
-		let pkg_id = self.lookup.get(resource_id).ok_or(AkizukiError::AssetNotFound(*resource_id))?;
+		let pkg_id = self
+			.lookup
+			.get(resource_id)
+			.ok_or(AkizukiError::AssetNotFound(*resource_id))?;
 		let pkg = self.packages.get(pkg_id).ok_or(AkizukiError::AssetNotFound(*pkg_id))?;
 		pkg.open(resource_id, validate)
 	}
@@ -58,11 +67,18 @@ impl ResourceManager {
 			self.big_world_database = Some(BigWorldDatabase::new(asset_bin, validate)?);
 		}
 
-		Ok(self.big_world_database.as_ref().expect("should not have reached this point without deserializing the database or erroring normally"))
+		Ok(self
+			.big_world_database
+			.as_ref()
+			.expect("should not have reached this point without deserializing the database or erroring normally"))
 	}
 }
 
-fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> AkizukiResult<HashMap<ResourceId, PackageFileSystem>> {
+fn load_idx(
+	packages_path: &Path,
+	idx_path: &PathBuf,
+	should_validate: bool,
+) -> AkizukiResult<HashMap<ResourceId, PackageFileSystem>> {
 	if !idx_path.is_dir() {
 		return Err(AkizukiError::InvalidInstall);
 	}
@@ -81,7 +97,11 @@ fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> 
 		})
 		.collect();
 
-	Ok(entries.into_iter().filter_map(|entry| PackageFileSystem::new(packages_path, &entry.path(), should_validate).ok()).map(|pkg| (ResourceId::new(&pkg.name), pkg)).collect())
+	Ok(entries
+		.into_iter()
+		.filter_map(|entry| PackageFileSystem::new(packages_path, &entry.path(), should_validate).ok())
+		.map(|pkg| (ResourceId::new(&pkg.name), pkg))
+		.collect())
 }
 
 fn find_install_version(bin_path: &PathBuf) -> AkizukiResult<i64> {
@@ -95,7 +115,11 @@ fn find_install_version(bin_path: &PathBuf) -> AkizukiResult<i64> {
 			continue;
 		}
 
-		let Some(folder_num) = path.file_name().and_then(|n| n.to_str()).and_then(|s| s.parse::<i64>().ok()) else {
+		let Some(folder_num) = path
+			.file_name()
+			.and_then(|n| n.to_str())
+			.and_then(|s| s.parse::<i64>().ok())
+		else {
 			continue;
 		};
 
@@ -104,5 +128,9 @@ fn find_install_version(bin_path: &PathBuf) -> AkizukiResult<i64> {
 		}
 	}
 
-	if max_number == 0 { Err(AkizukiError::InvalidInstall) } else { Ok(max_number) }
+	if max_number == 0 {
+		Err(AkizukiError::InvalidInstall)
+	} else {
+		Ok(max_number)
+	}
 }

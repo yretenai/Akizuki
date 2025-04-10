@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 
 edition = "2024"
-max_width = 1000
+max_width = 120
 hard_tabs = true
 
 reorder_imports = true

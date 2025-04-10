@@ -168,6 +168,9 @@ mod tests {
 		ResourceId::insert(&ResourceId(0x0df5a921212a899e), TEST_STR);
 
 		SHOULD_COLORIZE.set_override(false);
-		assert_eq!(format!("{:?}", ResourceId(0x0df5a921212a899e)), "\"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\" (0x0df5a921212a899e)");
+		assert_eq!(
+			format!("{:?}", ResourceId(0x0df5a921212a899e)),
+			"\"content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model\" (0x0df5a921212a899e)"
+		);
 	}
 }

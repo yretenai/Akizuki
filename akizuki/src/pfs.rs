@@ -5,7 +5,9 @@
 use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
 use crate::format::oodle;
-use crate::format::pfs::{PackageCompressionType, PackageDataStreamHeader, PackageFile, PackageFileHeader, PackageFileName, PackageName};
+use crate::format::pfs::{
+	PackageCompressionType, PackageDataStreamHeader, PackageFile, PackageFileHeader, PackageFileName, PackageName,
+};
 use crate::identifiers::ResourceId;
 
 use binrw::io::BufReader;
@@ -31,7 +33,11 @@ pub struct PackageFileSystem {
 
 impl PackageFileSystem {
 	pub fn new(pkg_directory: &Path, idx_path: &PathBuf, validate: bool) -> AkizukiResult<PackageFileSystem> {
-		let name = Path::file_stem(idx_path).unwrap_or_default().to_os_string().into_string().unwrap_or_default();
+		let name = Path::file_stem(idx_path)
+			.unwrap_or_default()
+			.to_os_string()
+			.into_string()
+			.unwrap_or_default();
 		info!("loading {}", name.green());
 
 		let mut reader = BufReader::new(File::open(idx_path)?);
@@ -54,7 +60,10 @@ impl PackageFileSystem {
 
 	pub fn open(&self, id: &ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
 		let info = self.files.get(id).ok_or(AkizukiError::AssetNotFound(*id))?;
-		let stream = self.streams.get(&info.package_id).ok_or(AkizukiError::AssetNotFound(info.package_id))?;
+		let stream = self
+			.streams
+			.get(&info.package_id)
+			.ok_or(AkizukiError::AssetNotFound(info.package_id))?;
 
 		let data = read_data_from_stream(stream, info)?;
 
@@ -97,7 +106,11 @@ pub(crate) fn build_filenames<T>(names: &HashMap<ResourceId, (String, ResourceId
 }
 
 fn read_data_from_stream(stream: &Mmap, info: &PackageFile) -> AkizukiResult<Vec<u8>> {
-	let compression_type: &PackageCompressionType = if info.compression_flags == 0 { &PackageCompressionType::None } else { &info.compression_type };
+	let compression_type: &PackageCompressionType = if info.compression_flags == 0 {
+		&PackageCompressionType::None
+	} else {
+		&info.compression_type
+	};
 
 	match compression_type {
 		PackageCompressionType::Deflate => {
@@ -138,10 +151,19 @@ fn decompress_oodle(stream: &Mmap, info: &PackageFile) -> AkizukiResult<Vec<u8>>
 	Ok(data)
 }
 
-fn read_names(reader: &mut BufReader<File>, header: &PackageFileHeader) -> AkizukiResult<HashMap<ResourceId, (String, ResourceId)>> {
+fn read_names(
+	reader: &mut BufReader<File>,
+	header: &PackageFileHeader,
+) -> AkizukiResult<HashMap<ResourceId, (String, ResourceId)>> {
 	reader.seek(Start(header.relative_position.pos + header.name_offset))?;
 
-	let names = Vec::<PackageFileName>::read_ne_args(reader, VecArgs { count: header.name_count as usize, inner: <_>::default() })?;
+	let names = Vec::<PackageFileName>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.name_count as usize,
+			inner: <_>::default(),
+		},
+	)?;
 	let mut name_map = HashMap::<ResourceId, (String, ResourceId)>::new();
 	for name in names {
 		reader.seek(Start(name.name.relative_position.pos + name.name.offset))?;
@@ -151,10 +173,19 @@ fn read_names(reader: &mut BufReader<File>, header: &PackageFileHeader) -> Akizu
 	Ok(name_map)
 }
 
-fn read_files(reader: &mut BufReader<File>, header: &PackageFileHeader) -> AkizukiResult<HashMap<ResourceId, PackageFile>> {
+fn read_files(
+	reader: &mut BufReader<File>,
+	header: &PackageFileHeader,
+) -> AkizukiResult<HashMap<ResourceId, PackageFile>> {
 	reader.seek(Start(header.relative_position.pos + header.file_offset))?;
 
-	let files = Vec::<PackageFile>::read_ne_args(reader, VecArgs { count: header.file_count as usize, inner: <_>::default() })?;
+	let files = Vec::<PackageFile>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.file_count as usize,
+			inner: <_>::default(),
+		},
+	)?;
 	let mut file_map = HashMap::<ResourceId, PackageFile>::new();
 	for file in files {
 		file_map.insert(file.id, file);
@@ -163,10 +194,20 @@ fn read_files(reader: &mut BufReader<File>, header: &PackageFileHeader) -> Akizu
 	Ok(file_map)
 }
 
-fn read_streams(reader: &mut BufReader<File>, header: &PackageFileHeader, pkg_path: &Path) -> AkizukiResult<HashMap<ResourceId, Mmap>> {
+fn read_streams(
+	reader: &mut BufReader<File>,
+	header: &PackageFileHeader,
+	pkg_path: &Path,
+) -> AkizukiResult<HashMap<ResourceId, Mmap>> {
 	reader.seek(Start(header.relative_position.pos + header.pkgs_offset))?;
 
-	let names = Vec::<PackageName>::read_ne_args(reader, VecArgs { count: header.pkgs_count as usize, inner: <_>::default() })?;
+	let names = Vec::<PackageName>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.pkgs_count as usize,
+			inner: <_>::default(),
+		},
+	)?;
 	let mut name_map = HashMap::<ResourceId, Mmap>::new();
 	for name in names {
 		reader.seek(Start(name.relative_position.pos + name.offset))?;

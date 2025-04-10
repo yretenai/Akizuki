@@ -108,6 +108,12 @@ impl From<u32> for BigWorldPrototypeRef {
 
 impl fmt::Debug for BigWorldPrototypeRef {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "ref {{ state = {:?}, table = {:?}, record = {:?} }}", self.state(), self.table_index(), self.record_index())
+		write!(
+			f,
+			"ref {{ state = {:?}, table = {:?}, record = {:?} }}",
+			self.state(),
+			self.table_index(),
+			self.record_index()
+		)
 	}
 }

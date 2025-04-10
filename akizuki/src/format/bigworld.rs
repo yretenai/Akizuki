@@ -29,7 +29,13 @@ pub struct BigWorldFileHeader {
 }
 
 impl BigWorldFileHeader {
-	pub(crate) fn is_valid<T: Read + Seek>(&self, magic: BigWorldMagic, version: u32, validate: bool, reader: &mut T) -> AkizukiResult<()> {
+	pub(crate) fn is_valid<T: Read + Seek>(
+		&self,
+		magic: BigWorldMagic,
+		version: u32,
+		validate: bool,
+		reader: &mut T,
+	) -> AkizukiResult<()> {
 		let swapped_version = u32::swap_bytes(self.version_be);
 
 		if swapped_version > self.version_be {
@@ -37,7 +43,10 @@ impl BigWorldFileHeader {
 		}
 
 		if swapped_version != version {
-			return Err(AkizukiError::InvalidVersion { expected: version, present: swapped_version });
+			return Err(AkizukiError::InvalidVersion {
+				expected: version,
+				present: swapped_version,
+			});
 		}
 
 		if self.magic != magic {

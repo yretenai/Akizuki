@@ -49,7 +49,11 @@ impl Parse for BigWorldTableParams {
 pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);
 	let name = &input.ident;
-	let attribute = input.attrs.iter().find(|attr| attr.path().is_ident("table")).expect("table attribute required for deriving BigWorldTable");
+	let attribute = input
+		.attrs
+		.iter()
+		.find(|attr| attr.path().is_ident("table"))
+		.expect("table attribute required for deriving BigWorldTable");
 	let params: BigWorldTableParams = attribute.parse_args().expect("invalid params");
 	let hash = mmh3_32(params.0.to_string().as_ref());
 

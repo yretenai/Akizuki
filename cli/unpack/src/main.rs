@@ -26,7 +26,10 @@ struct Cli {
 	#[arg(index = 2, required = true, help = "path to the game installation directory")]
 	install_path: String,
 
-	#[arg(index = 3, help = "version number of the game, if not set will try to find the latest version")]
+	#[arg(
+		index = 3,
+		help = "version number of the game, if not set will try to find the latest version"
+	)]
 	install_version: Option<i64>,
 
 	#[arg(long, help = "validate the data that's being processed")]
@@ -62,7 +65,8 @@ fn main() {
 
 	args.filter.dedup();
 
-	let mut manager = ResourceManager::new(&args.install_path, args.install_version, args.validate).expect("could not create manager");
+	let mut manager = ResourceManager::new(&args.install_path, args.install_version, args.validate)
+		.expect("could not create manager");
 	let _ = &manager.load_asset_database(true).expect("database failed to load");
 
 	let output_path = Path::new(&args.output_path);
@@ -76,8 +80,15 @@ fn main() {
 	}
 }
 
-fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, asset_id: &ResourceId) -> AkizukiResult<()> {
-	let asset_name = asset_id.text().unwrap_or_else(|| format!("unknown/{:016x}", asset_id.value()));
+fn process_asset(
+	args: &Cli,
+	output_path: &Path,
+	package: &PackageFileSystem,
+	asset_id: &ResourceId,
+) -> AkizukiResult<()> {
+	let asset_name = asset_id
+		.text()
+		.unwrap_or_else(|| format!("unknown/{:016x}", asset_id.value()));
 
 	if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
 		return Ok(());
@@ -106,8 +117,20 @@ impl CologStyle for PrefixModule {
 		let prefix = self.prefix_token(&record.level());
 
 		write!(buf, "{}", prefix)?;
-		write!(buf, "{}{}{}", "[".blue().bold(), format!("{}", buf.timestamp()).bright_cyan(), "]".blue().bold())?;
-		write!(buf, "{}{}{}", "[".blue().bold(), record.target().bright_purple(), "] ".blue().bold())?;
+		write!(
+			buf,
+			"{}{}{}",
+			"[".blue().bold(),
+			format!("{}", buf.timestamp()).bright_cyan(),
+			"]".blue().bold()
+		)?;
+		write!(
+			buf,
+			"{}{}{}",
+			"[".blue().bold(),
+			record.target().bright_purple(),
+			"] ".blue().bold()
+		)?;
 		writeln!(buf, "{}", record.args().to_string().replace('\n', &sep))?;
 
 		Ok(())

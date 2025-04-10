@@ -37,7 +37,10 @@ impl BigWorldDatabase {
 		pfs::build_filenames(&names, &prototype_lookup);
 		// let tables = read_tables(&mut reader, &bwdb_header);
 
-		Ok(BigWorldDatabase { prototype_lookup, tables: Vec::<Vec<BigWorldTableRecord>>::new() })
+		Ok(BigWorldDatabase {
+			prototype_lookup,
+			tables: Vec::<Vec<BigWorldTableRecord>>::new(),
+		})
 	}
 }
 
@@ -45,10 +48,22 @@ fn read_strings(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -
 	let base = header.relative_position.pos + header.string_data.offset;
 
 	reader.seek(Start(header.relative_position.pos + header.strings.key_offset))?;
-	let keys = Vec::<BigWorldDatabaseKey<StringId>>::read_ne_args(reader, VecArgs { count: header.strings.count as usize, inner: <_>::default() })?;
+	let keys = Vec::<BigWorldDatabaseKey<StringId>>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.strings.count as usize,
+			inner: <_>::default(),
+		},
+	)?;
 
 	reader.seek(Start(header.relative_position.pos + header.strings.value_offset))?;
-	let values = Vec::<u32>::read_ne_args(reader, VecArgs { count: header.strings.count as usize, inner: <_>::default() })?;
+	let values = Vec::<u32>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.strings.count as usize,
+			inner: <_>::default(),
+		},
+	)?;
 
 	for (key, offset) in keys.iter().zip(values) {
 		if (key.bucket & 0x80000000) == 0 {
@@ -63,10 +78,19 @@ fn read_strings(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -
 	Ok(())
 }
 
-fn read_names(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -> AkizukiResult<HashMap<ResourceId, (String, ResourceId)>> {
+fn read_names(
+	reader: &mut Cursor<Vec<u8>>,
+	header: &BigWorldDatabaseHeader,
+) -> AkizukiResult<HashMap<ResourceId, (String, ResourceId)>> {
 	reader.seek(Start(header.paths.relative_position.pos + header.paths.offset))?;
 
-	let names = Vec::<BigWorldName>::read_ne_args(reader, VecArgs { count: header.paths.count as usize, inner: <_>::default() })?;
+	let names = Vec::<BigWorldName>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.paths.count as usize,
+			inner: <_>::default(),
+		},
+	)?;
 	let mut name_map = HashMap::<ResourceId, (String, ResourceId)>::new();
 	for name in names {
 		reader.seek(Start(name.pointer.relative_position.pos + name.pointer.offset))?;
@@ -76,12 +100,31 @@ fn read_names(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -> 
 	Ok(name_map)
 }
 
-fn read_prototype_lookup(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -> AkizukiResult<HashMap<ResourceId, BigWorldPrototypeRef>> {
-	reader.seek(Start(header.prototypes.relative_position.pos + header.prototypes.key_offset))?;
-	let keys = Vec::<BigWorldDatabaseKey<ResourceId>>::read_ne_args(reader, VecArgs { count: header.prototypes.count as usize, inner: <_>::default() })?;
+fn read_prototype_lookup(
+	reader: &mut Cursor<Vec<u8>>,
+	header: &BigWorldDatabaseHeader,
+) -> AkizukiResult<HashMap<ResourceId, BigWorldPrototypeRef>> {
+	reader.seek(Start(
+		header.prototypes.relative_position.pos + header.prototypes.key_offset,
+	))?;
+	let keys = Vec::<BigWorldDatabaseKey<ResourceId>>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.prototypes.count as usize,
+			inner: <_>::default(),
+		},
+	)?;
 
-	reader.seek(Start(header.prototypes.relative_position.pos + header.prototypes.value_offset))?;
-	let values = Vec::<BigWorldPrototypeRef>::read_ne_args(reader, VecArgs { count: header.prototypes.count as usize, inner: <_>::default() })?;
+	reader.seek(Start(
+		header.prototypes.relative_position.pos + header.prototypes.value_offset,
+	))?;
+	let values = Vec::<BigWorldPrototypeRef>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.prototypes.count as usize,
+			inner: <_>::default(),
+		},
+	)?;
 
 	let mut prototype_map = HashMap::<ResourceId, BigWorldPrototypeRef>::new();
 	for (key, value) in keys.iter().zip(values) {
