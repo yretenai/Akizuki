@@ -8,8 +8,8 @@ hard_tabs = true
 
 reorder_imports = true
 reorder_modules = true
-normalize_comments = true
-normalize_doc_attributes = true
+# normalize_comments = true
+# normalize_doc_attributes = true
 newline_style = "Unix"
-hex_literal_case = "Lower"
-group_imports = "StdExternalCrate"
+# hex_literal_case = "Lower"
+# group_imports = "StdExternalCrate"
