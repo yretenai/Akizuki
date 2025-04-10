@@ -45,6 +45,24 @@ impl Parse for BigWorldTableCheckParams {
 	}
 }
 
+struct BigWorldTableBranchParams(Path, Path, Ident, Ident, Ident, Ident);
+impl Parse for BigWorldTableBranchParams {
+	fn parse(content: ParseStream) -> Result<Self> {
+		let target: Path = content.parse()?;
+		content.parse::<Token![,]>()?;
+		let func: Path = content.parse()?;
+		content.parse::<Token![,]>()?;
+		let tables: Ident = content.parse()?;
+		content.parse::<Token![,]>()?;
+		let states: Ident = content.parse()?;
+		content.parse::<Token![,]>()?;
+		let header: Ident = content.parse()?;
+		content.parse::<Token![,]>()?;
+		let reader: Ident = content.parse()?;
+		Ok(BigWorldTableBranchParams(target, func, tables, states, header, reader))
+	}
+}
+
 #[proc_macro]
 pub fn bigworld_table_version(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as BigWorldTableVersionsParams);
@@ -67,6 +85,30 @@ pub fn bigworld_table_check(input: TokenStream) -> TokenStream {
 		if #name::is_valid_for(&#header.id, #header.version) {
 			return true;
 		}
+	})
+}
+
+#[proc_macro]
+pub fn bigworld_table_branch(input: TokenStream) -> TokenStream {
+	let input = parse_macro_input!(input as BigWorldTableBranchParams);
+	let target = input.0;
+	let func = input.1;
+	let tables = input.2;
+	let states = input.3;
+	let header = input.4;
+	let reader = input.5;
+
+	TokenStream::from(quote! {
+		if #target::is_supported(&#header) {
+			#states.push(None);
+			#tables.push(#func::<#target>(#reader, #header)?);
+			continue;
+		}
+
+		#states.push(Some(TableError::UnsupportedTableVersion(
+			#header.id,
+			#header.version,
+		)));
 	})
 }
 

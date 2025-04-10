@@ -8,7 +8,7 @@ use crate::format::bigworld_data::*;
 use crate::identifiers::{ResourceId, StringId};
 use crate::table::{BigWorldTableRecord, TableRecord};
 use crate::{pfs, table};
-use akizuki_macro::akizuki_id;
+use akizuki_macro::{akizuki_id, bigworld_table_branch};
 
 use binrw::{BinRead, NullString, VecArgs};
 use log::info;
@@ -104,17 +104,14 @@ fn read_tables(
 	for table_header in values {
 		match &table_header.id {
 			akizuki_id!("ModelPrototype") => {
-				// todo: macro this
-				if table::model::ModelPrototype::is_supported(&table_header) {
-					table_states.push(None);
-					tables.push(construct_table::<table::model::ModelPrototype>(reader, table_header)?);
-					continue;
-				}
-
-				table_states.push(Some(TableError::UnsupportedTableVersion(
-					table_header.id,
-					table_header.version,
-				)));
+				bigworld_table_branch!(
+					table::model::ModelPrototype,
+					construct_table,
+					tables,
+					table_states,
+					table_header,
+					reader
+				);
 			}
 			&_ => {
 				table_states.push(Some(TableError::UnsupportedTable(table_header.id)));
