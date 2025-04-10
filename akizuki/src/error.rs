@@ -24,6 +24,12 @@ pub enum AkizukiError {
 	ChecksumMismatch,
 	#[error("asset {0:?} is not found")]
 	AssetNotFound(ResourceId),
+	#[error("asset {0:?} is deleted")]
+	DeletedAsset(ResourceId),
+	#[error("asset {0:?} is referencing an invalid table")]
+	InvalidTable(ResourceId),
+	#[error("asset {0:?} is referencing an invalid record")]
+	InvalidRecord(ResourceId),
 	#[error("table {0:?} is not supported")]
 	UnsupportedTable(StringId),
 

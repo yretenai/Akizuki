@@ -83,16 +83,17 @@ impl<T: BinRead> BinRead for BigWorldDatabaseKey<T> {
 pub struct BigWorldPrototypeRef(pub u32);
 
 impl BigWorldPrototypeRef {
+	// todo: 0 = normal, 3 = deleted. what is 1 and 2?
 	pub fn state(&self) -> i32 {
 		(self.0 & 3) as i32
 	}
 
-	pub fn table_index(&self) -> i32 {
-		((self.0 >> 2) & 0x3F) as i32
+	pub fn table_index(&self) -> usize {
+		((self.0 >> 2) & 0x3F) as usize
 	}
 
-	pub fn record_index(&self) -> i32 {
-		(self.0 >> 8) as i32
+	pub fn record_index(&self) -> usize {
+		(self.0 >> 8) as usize
 	}
 
 	pub fn is_valid(&self) -> bool {

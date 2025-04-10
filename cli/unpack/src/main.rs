@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use akizuki::error::AkizukiResult;
 use akizuki::identifiers::ResourceId;
 use akizuki::manager::ResourceManager;
 use akizuki::pfs::PackageFileSystem;
@@ -12,7 +13,6 @@ use colored::Colorize;
 use env_logger::fmt::Formatter;
 use log::{LevelFilter, Record, error, info};
 
-use akizuki::error::AkizukiResult;
 use std::fs;
 use std::io::{Error, Write};
 use std::path::Path;

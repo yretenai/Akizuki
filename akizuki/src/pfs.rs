@@ -5,9 +5,7 @@
 use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
 use crate::format::oodle;
-use crate::format::pfs::{
-	PackageCompressionType, PackageDataStreamHeader, PackageFile, PackageFileHeader, PackageFileName, PackageName,
-};
+use crate::format::pfs::*;
 use crate::identifiers::ResourceId;
 
 use binrw::io::BufReader;

@@ -5,18 +5,19 @@
 extern crate proc_macro;
 
 use akizuki_common::mmh3::mmh3_32;
+
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{DeriveInput, LitByteStr, LitInt, Result, Token, parse_macro_input};
+use syn::{DeriveInput, LitInt, LitStr, Result, Token, parse_macro_input};
 
 #[proc_macro]
 pub fn akizuki_id(input: TokenStream) -> TokenStream {
-	let input = parse_macro_input!(input as LitByteStr);
-	let bytes = input.value();
+	let input = parse_macro_input!(input as LitStr);
+	let str = input.value();
 
-	let hash = mmh3_32(&bytes);
+	let hash = mmh3_32(str.as_ref());
 
 	TokenStream::from(quote! {
 		#hash as u32

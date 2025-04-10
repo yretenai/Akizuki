@@ -3,10 +3,12 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::identifiers::{ResourceId, StringId};
+
 use binrw::{BinRead, PosValue};
 
 #[derive(BinRead, Debug, Clone, Copy, Ord, PartialOrd, PartialEq, Eq, Hash)]
 #[br(repr = u8)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum ModelMiscType {
 	Structural,
 	Necessary,

@@ -6,6 +6,7 @@ use binrw::BinRead;
 use colored::Colorize;
 use once_cell::sync::Lazy;
 
+use akizuki_macro::akizuki_id;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::RwLock;
@@ -15,7 +16,37 @@ use std::sync::RwLock;
 #[br(repr = u32)]
 pub struct StringId(pub u32);
 
-static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> = Lazy::new(|| RwLock::new(HashMap::new()));
+static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> = Lazy::new(|| {
+	let mut result = HashMap::<u32, String>::new();
+
+	result.insert(akizuki_id!("MaterialPrototype"), "MaterialPrototype".to_string());
+	result.insert(akizuki_id!("VisualPrototype"), "VisualPrototype".to_string());
+	result.insert(akizuki_id!("ModelPrototype"), "ModelPrototype".to_string());
+	result.insert(akizuki_id!("SkeletonPrototype"), "SkeletonPrototype".to_string());
+	result.insert(akizuki_id!("PointLightPrototype"), "PointLightPrototype".to_string());
+	result.insert(akizuki_id!("AtlasContourProto"), "AtlasContourProto".to_string());
+	result.insert(akizuki_id!("EffectPrototype"), "EffectPrototype".to_string());
+	result.insert(akizuki_id!("TrailPrototype"), "TrailPrototype".to_string());
+	result.insert(akizuki_id!("MiscTypePrototype"), "MiscTypePrototype".to_string());
+	result.insert(
+		akizuki_id!("MiscSettingsPrototype"),
+		"MiscSettingsPrototype".to_string(),
+	);
+	result.insert(
+		akizuki_id!("VelocityFieldPrototype"),
+		"VelocityFieldPrototype".to_string(),
+	);
+	result.insert(
+		akizuki_id!("EffectPresetPrototype"),
+		"EffectPresetPrototype".to_string(),
+	);
+	result.insert(
+		akizuki_id!("EffectMetadataPrototype"),
+		"EffectMetadataPrototype".to_string(),
+	);
+
+	RwLock::new(result)
+});
 
 #[repr(C)]
 #[derive(BinRead, Clone, Copy, PartialEq, Eq, Hash)]
@@ -102,6 +133,40 @@ impl From<u32> for StringId {
 impl From<u64> for ResourceId {
 	fn from(value: u64) -> Self {
 		Self(value)
+	}
+}
+
+#[cfg(feature = "serialize")]
+impl serde::Serialize for StringId {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		if serializer.is_human_readable() {
+			match self.text() {
+				Some(text) => serializer.serialize_str(&text),
+				None => serializer.serialize_u32(self.0),
+			}
+		} else {
+			serializer.serialize_u32(self.0)
+		}
+	}
+}
+
+#[cfg(feature = "serialize")]
+impl serde::Serialize for ResourceId {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		if serializer.is_human_readable() {
+			match self.text() {
+				Some(text) => serializer.serialize_str(&text),
+				None => serializer.serialize_u64(self.0),
+			}
+		} else {
+			serializer.serialize_u64(self.0)
+		}
 	}
 }
 

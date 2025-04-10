@@ -45,8 +45,8 @@ dependencies = [
  "once_cell",
  "serde",
  "serde-pickle",
+ "serde-xml-rs",
  "thiserror 2.0.12",
- "xml",
 ]
 
 [[package]]
@@ -1310,6 +1310,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-xml-rs"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb3aa78ecda1ebc9ec9847d5d3aba7d618823446a049ba2491940506da6e2782"
+dependencies = [
+ "log",
+ "serde",
+ "thiserror 1.0.69",
+ "xml-rs",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.219"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1707,15 +1719,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e97b544156e9bebe1a0ffbc03484fc1ffe3100cbce3ffb17eac35f7cdd7ab36"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "xml"
-version = "0.8.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ede1c99c55b4b3ad0349018ef0eccbe954ce9c342334410707ee87177fcf2ab4"
-dependencies = [
- "xml-rs",
 ]
 
 [[package]]

@@ -14,6 +14,7 @@ use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ModelPrototype {
 	pub visual_prototype: ResourceId,
 	pub misc_type: ModelMiscType,
@@ -22,6 +23,7 @@ pub struct ModelPrototype {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct DyePrototype {
 	pub matter: StringId,
 	pub replaces: StringId,

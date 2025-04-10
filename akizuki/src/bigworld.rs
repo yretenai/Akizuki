@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::error::AkizukiResult;
+use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
 use crate::format::bigworld_data::{BigWorldDatabaseHeader, BigWorldDatabaseKey, BigWorldName, BigWorldPrototypeRef};
 use crate::identifiers::{ResourceId, StringId};
@@ -16,9 +16,13 @@ use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
+type Table = Vec<BigWorldTableRecord>;
+type TableState = Option<StringId>;
+
 pub struct BigWorldDatabase {
 	pub prototype_lookup: HashMap<ResourceId, BigWorldPrototypeRef>,
-	pub tables: Vec<Vec<BigWorldTableRecord>>,
+	pub tables: Vec<Table>,
+	pub table_state: Vec<TableState>,
 }
 
 impl BigWorldDatabase {
@@ -35,13 +39,45 @@ impl BigWorldDatabase {
 		let names = read_names(&mut reader, &bwdb_header)?;
 		let prototype_lookup = read_prototype_lookup(&mut reader, &bwdb_header)?;
 		pfs::build_filenames(&names, &prototype_lookup);
-		// let tables = read_tables(&mut reader, &bwdb_header);
+		let (tables, table_state) = read_tables(&mut reader, &bwdb_header)?;
 
 		Ok(BigWorldDatabase {
 			prototype_lookup,
-			tables: Vec::<Vec<BigWorldTableRecord>>::new(),
+			tables,
+			table_state,
 		})
 	}
+
+	pub fn open(&self, id: &ResourceId) -> AkizukiResult<&BigWorldTableRecord> {
+		let info = self.prototype_lookup.get(id).ok_or(AkizukiError::AssetNotFound(*id))?;
+		if !info.is_valid() {
+			return Err(AkizukiError::DeletedAsset(*id));
+		}
+
+		let table_index = info.table_index();
+
+		// check if the table is valid and supported
+		self.table_state
+			.get(table_index)
+			.ok_or(AkizukiError::InvalidTable(*id))?
+			.as_ref()
+			.map(|table_state| Err(AkizukiError::UnsupportedTable(*table_state)))
+			.unwrap_or(Ok(()))?;
+
+		// return the record if it exists
+		self.tables
+			.get(table_index)
+			.ok_or(AkizukiError::InvalidTable(*id))?
+			.get(info.record_index())
+			.ok_or(AkizukiError::InvalidRecord(*id))
+	}
+}
+
+fn read_tables(
+	_reader: &mut Cursor<Vec<u8>>,
+	_header: &BigWorldDatabaseHeader,
+) -> AkizukiResult<(Vec<Table>, Vec<TableState>)> {
+	todo!()
 }
 
 fn read_strings(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -> AkizukiResult<()> {
