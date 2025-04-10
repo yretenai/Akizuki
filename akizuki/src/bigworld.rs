@@ -4,10 +4,11 @@
 
 use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
-use crate::format::bigworld_data::{BigWorldDatabaseHeader, BigWorldDatabaseKey, BigWorldName, BigWorldPrototypeRef};
+use crate::format::bigworld_data::*;
 use crate::identifiers::{ResourceId, StringId};
-use crate::pfs;
-use crate::table::BigWorldTableRecord;
+use crate::table::{BigWorldTableRecord, TableRecord};
+use crate::{pfs, table};
+use akizuki_macro::akizuki_id;
 
 use binrw::{BinRead, NullString, VecArgs};
 use log::info;
@@ -17,12 +18,18 @@ use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
 type Table = Vec<BigWorldTableRecord>;
-type TableState = Option<StringId>;
+type TableState = Option<TableError>;
+
+#[derive(Debug)]
+enum TableError {
+	UnsupportedTable(StringId),
+	UnsupportedTableVersion(StringId, u32),
+}
 
 pub struct BigWorldDatabase {
 	pub prototype_lookup: HashMap<ResourceId, BigWorldPrototypeRef>,
 	pub tables: Vec<Table>,
-	pub table_state: Vec<TableState>,
+	table_state: Vec<TableState>,
 }
 
 impl BigWorldDatabase {
@@ -61,7 +68,12 @@ impl BigWorldDatabase {
 			.get(table_index)
 			.ok_or(AkizukiError::InvalidTable(*id))?
 			.as_ref()
-			.map(|table_state| Err(AkizukiError::UnsupportedTable(*table_state)))
+			.map(|table_state| match table_state {
+				TableError::UnsupportedTable(id) => Err(AkizukiError::UnsupportedTable(*id)),
+				TableError::UnsupportedTableVersion(id, version) => {
+					Err(AkizukiError::UnsupportedTableVersion(*id, *version))
+				}
+			})
 			.unwrap_or(Ok(()))?;
 
 		// return the record if it exists
@@ -74,10 +86,60 @@ impl BigWorldDatabase {
 }
 
 fn read_tables(
-	_reader: &mut Cursor<Vec<u8>>,
-	_header: &BigWorldDatabaseHeader,
+	reader: &mut Cursor<Vec<u8>>,
+	header: &BigWorldDatabaseHeader,
 ) -> AkizukiResult<(Vec<Table>, Vec<TableState>)> {
-	todo!()
+	reader.seek(Start(header.relative_position.pos + header.tables.offset))?;
+	let values = Vec::<BigWorldTableHeader>::read_ne_args(
+		reader,
+		VecArgs {
+			count: header.tables.count as usize,
+			inner: <_>::default(),
+		},
+	)?;
+
+	let mut tables = Vec::<Table>::new();
+	let mut table_states = Vec::<TableState>::new();
+
+	for table_header in values {
+		match &table_header.id {
+			akizuki_id!("ModelPrototype") => {
+				// todo: macro this
+				if table::model::ModelPrototype::is_supported(&table_header) {
+					table_states.push(None);
+					tables.push(construct_table::<table::model::ModelPrototype>(reader, table_header)?);
+					continue;
+				}
+
+				table_states.push(Some(TableError::UnsupportedTableVersion(
+					table_header.id,
+					table_header.version,
+				)));
+			}
+			&_ => {
+				table_states.push(Some(TableError::UnsupportedTable(table_header.id)));
+			}
+		}
+
+		tables.push(Table::new());
+	}
+
+	Ok((tables, table_states))
+}
+
+fn construct_table<T>(reader: &mut Cursor<Vec<u8>>, header: BigWorldTableHeader) -> AkizukiResult<Table>
+where
+	T: TableRecord,
+	BigWorldTableRecord: From<T>,
+{
+	reader.seek(Start(header.pointer.relative_position.pos + header.pointer.offset))?;
+	let mut table = Table::new();
+
+	for _ in 0..header.pointer.count {
+		table.push(T::new(reader, &header)?.into());
+	}
+
+	Ok(table)
 }
 
 fn read_strings(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -> AkizukiResult<()> {

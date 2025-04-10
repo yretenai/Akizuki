@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+pub mod model;
+pub mod v14;
+
 use crate::error::AkizukiResult;
-use crate::identifiers::StringId;
+use crate::format::bigworld_data::BigWorldTableHeader;
 use crate::table::model::ModelPrototype;
 
 use std::io::Cursor;
-
-pub mod model;
 
 pub enum BigWorldTableRecord {
 	ModelPrototype(ModelPrototype),
@@ -16,6 +17,8 @@ pub enum BigWorldTableRecord {
 
 #[allow(dead_code)]
 pub(crate) trait TableRecord {
-	fn is_valid_for(hash: &StringId, version: u32) -> bool;
-	fn create(reader: &mut Cursor<&[u8]>) -> AkizukiResult<BigWorldTableRecord>;
+	fn new(reader: &mut Cursor<Vec<u8>>, header: &BigWorldTableHeader) -> AkizukiResult<Self>
+	where
+		Self: Sized;
+	fn is_supported(header: &BigWorldTableHeader) -> bool;
 }

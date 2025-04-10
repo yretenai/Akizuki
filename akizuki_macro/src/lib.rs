@@ -10,17 +10,63 @@ use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{DeriveInput, LitInt, LitStr, Result, Token, parse_macro_input};
+use syn::{DeriveInput, LitInt, LitStr, Path, Result, Token, parse_macro_input};
 
 #[proc_macro]
 pub fn akizuki_id(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as LitStr);
 	let str = input.value();
-
 	let hash = mmh3_32(str.as_ref());
 
 	TokenStream::from(quote! {
-		#hash as u32
+		StringId(#hash)
+	})
+}
+
+struct BigWorldTableVersionsParams(Path, Ident, Ident);
+impl Parse for BigWorldTableVersionsParams {
+	fn parse(content: ParseStream) -> Result<Self> {
+		let name: Path = content.parse()?;
+		content.parse::<Token![,]>()?;
+		let reader: Ident = content.parse()?;
+		content.parse::<Token![,]>()?;
+		let header: Ident = content.parse()?;
+		Ok(BigWorldTableVersionsParams(name, header, reader))
+	}
+}
+
+struct BigWorldTableCheckParams(Path, Ident);
+impl Parse for BigWorldTableCheckParams {
+	fn parse(content: ParseStream) -> Result<Self> {
+		let name: Path = content.parse()?;
+		content.parse::<Token![,]>()?;
+		let header: Ident = content.parse()?;
+		Ok(BigWorldTableCheckParams(name, header))
+	}
+}
+
+#[proc_macro]
+pub fn bigworld_table_version(input: TokenStream) -> TokenStream {
+	let input = parse_macro_input!(input as BigWorldTableVersionsParams);
+	let name = input.0;
+	let header = input.1;
+	let reader = input.2;
+	TokenStream::from(quote! {
+		if #name::is_valid_for(&#header.id, #header.version) {
+			return Ok(#name::new(#reader)?.into());
+		}
+	})
+}
+
+#[proc_macro]
+pub fn bigworld_table_check(input: TokenStream) -> TokenStream {
+	let input = parse_macro_input!(input as BigWorldTableCheckParams);
+	let name = input.0;
+	let header = input.1;
+	TokenStream::from(quote! {
+		if #name::is_valid_for(&#header.id, #header.version) {
+			return true;
+		}
 	})
 }
 
@@ -32,10 +78,10 @@ impl Parse for BigWorldTableParams {
 		if content.peek(Token![,]) {
 			content.parse::<Token![,]>()?;
 
-			while !content.is_empty() {
-				let version: LitInt = content.parse()?;
-				versions.push(version);
+			let version: LitInt = content.parse()?;
+			versions.push(version);
 
+			while !content.is_empty() {
 				if content.peek(Token![,]) {
 					content.parse::<Token![,]>()?;
 				}
@@ -59,45 +105,24 @@ pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 	let hash = mmh3_32(params.0.to_string().as_ref());
 
 	let expanded = match params.1.as_slice() {
-		[] => quote! {
-			impl TableRecord for #name {
-				fn is_valid_for(hash: &StringId, _version: u32) -> bool {
-					const _table_id: StringId = StringId(#hash);
-					hash.eq(&_table_id)
-				}
-
-				fn create(mut reader: &mut Cursor<&[u8]>) -> AkizukiResult<BigWorldTableRecord> {
-					Ok(BigWorldTableRecord::#name(Self::new(reader)?))
-				}
-			}
-		},
+		[] => panic!("need at least one version"),
 		[single] => quote! {
-			impl TableRecord for #name {
-				fn is_valid_for(hash: &StringId, version: u32) -> bool {
-					const _table_id: StringId = StringId(#hash);
-					hash.eq(&_table_id) && version == #single
-				}
-
-				fn create(mut reader: &mut Cursor<&[u8]>) -> AkizukiResult<BigWorldTableRecord> {
-					Ok(BigWorldTableRecord::#name(Self::new(reader)?))
+			impl #name {
+				pub fn is_valid_for(hash: &StringId, version: u32) -> bool {
+					hash == &StringId(#hash) && version == #single
 				}
 			}
 		},
 		multiple => {
 			let version_checks = multiple.iter().map(|v| quote! { version == #v }).collect::<Vec<_>>();
 			quote! {
-				impl TableRecord for #name {
-					fn is_valid_for(hash: &StringId, version: u32) -> bool {
-						const _table_id: StringId = StringId(#hash);
-						if !hash.eq(&_table_id) {
+				impl #name {
+					pub fn is_valid_for(hash: &StringId, version: u32) -> bool {
+						if hash == &StringId(#hash) {
 							return false;
 						}
 
 						#(#version_checks)||*
-					}
-
-					fn create(mut reader: &mut Cursor<&[u8]>) -> AkizukiResult<BigWorldTableRecord> {
-						Ok(BigWorldTableRecord::#name(Self::new(reader)?))
 					}
 				}
 			}

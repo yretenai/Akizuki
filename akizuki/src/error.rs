@@ -32,6 +32,8 @@ pub enum AkizukiError {
 	InvalidRecord(ResourceId),
 	#[error("table {0:?} is not supported")]
 	UnsupportedTable(StringId),
+	#[error("table {0:?} is has an unsupported version {1:?}")]
+	UnsupportedTableVersion(StringId, u32),
 
 	#[error("io error: {0}")]
 	Std(#[from] std::io::Error),

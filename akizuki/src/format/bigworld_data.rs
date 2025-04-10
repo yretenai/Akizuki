@@ -45,7 +45,7 @@ pub struct BigWorldDatabaseHeader {
 #[br()]
 pub struct BigWorldTableHeader {
 	pub id: StringId,
-	pub hash: u32,
+	pub version: u32,
 	pub pointer: BigWorldDatabasePointer,
 }
 

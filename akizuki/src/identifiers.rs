@@ -19,29 +19,29 @@ pub struct StringId(pub u32);
 static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> = Lazy::new(|| {
 	let mut result = HashMap::<u32, String>::new();
 
-	result.insert(akizuki_id!("MaterialPrototype"), "MaterialPrototype".to_string());
-	result.insert(akizuki_id!("VisualPrototype"), "VisualPrototype".to_string());
-	result.insert(akizuki_id!("ModelPrototype"), "ModelPrototype".to_string());
-	result.insert(akizuki_id!("SkeletonPrototype"), "SkeletonPrototype".to_string());
-	result.insert(akizuki_id!("PointLightPrototype"), "PointLightPrototype".to_string());
-	result.insert(akizuki_id!("AtlasContourProto"), "AtlasContourProto".to_string());
-	result.insert(akizuki_id!("EffectPrototype"), "EffectPrototype".to_string());
-	result.insert(akizuki_id!("TrailPrototype"), "TrailPrototype".to_string());
-	result.insert(akizuki_id!("MiscTypePrototype"), "MiscTypePrototype".to_string());
+	result.insert(akizuki_id!("MaterialPrototype").0, "MaterialPrototype".to_string());
+	result.insert(akizuki_id!("VisualPrototype").0, "VisualPrototype".to_string());
+	result.insert(akizuki_id!("ModelPrototype").0, "ModelPrototype".to_string());
+	result.insert(akizuki_id!("SkeletonPrototype").0, "SkeletonPrototype".to_string());
+	result.insert(akizuki_id!("PointLightPrototype").0, "PointLightPrototype".to_string());
+	result.insert(akizuki_id!("AtlasContourProto").0, "AtlasContourProto".to_string());
+	result.insert(akizuki_id!("EffectPrototype").0, "EffectPrototype".to_string());
+	result.insert(akizuki_id!("TrailPrototype").0, "TrailPrototype".to_string());
+	result.insert(akizuki_id!("MiscTypePrototype").0, "MiscTypePrototype".to_string());
 	result.insert(
-		akizuki_id!("MiscSettingsPrototype"),
+		akizuki_id!("MiscSettingsPrototype").0,
 		"MiscSettingsPrototype".to_string(),
 	);
 	result.insert(
-		akizuki_id!("VelocityFieldPrototype"),
+		akizuki_id!("VelocityFieldPrototype").0,
 		"VelocityFieldPrototype".to_string(),
 	);
 	result.insert(
-		akizuki_id!("EffectPresetPrototype"),
+		akizuki_id!("EffectPresetPrototype").0,
 		"EffectPresetPrototype".to_string(),
 	);
 	result.insert(
-		akizuki_id!("EffectMetadataPrototype"),
+		akizuki_id!("EffectMetadataPrototype").0,
 		"EffectMetadataPrototype".to_string(),
 	);
 

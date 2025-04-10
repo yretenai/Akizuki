@@ -2,98 +2,48 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::error::AkizukiResult;
-use crate::format::bigworld_table::{DyePrototypeHeader, ModelMiscType, ModelPrototypeHeader};
+use crate::error::{AkizukiError, AkizukiResult};
+use crate::format::bigworld_data::BigWorldTableHeader;
+use crate::format::bigworld_table::ModelMiscType;
 use crate::identifiers::{ResourceId, StringId};
-
-use binrw::BinRead;
-use binrw::{BinReaderExt, VecArgs};
+use crate::table::{BigWorldTableRecord, TableRecord, v14};
+use akizuki_macro::{akizuki_id, bigworld_table_check, bigworld_table_version};
 
 use std::collections::HashMap;
-use std::io::SeekFrom::Start;
-use std::io::{Cursor, Seek};
+use std::io::Cursor;
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ModelPrototype {
-	pub visual_prototype: ResourceId,
-	pub misc_type: ModelMiscType,
-	pub animations: Vec<ResourceId>,
-	pub dyes: Vec<DyePrototype>,
+	pub visual_prototype: Option<ResourceId>,
+	pub misc_type: Option<ModelMiscType>,
+	pub animations: Option<Vec<ResourceId>>,
+	pub dyes: Option<Vec<DyePrototype>>,
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct DyePrototype {
-	pub matter: StringId,
-	pub replaces: StringId,
-	pub tints: HashMap<StringId, ResourceId>,
+	pub matter: Option<StringId>,
+	pub replaces: Option<StringId>,
+	pub tints: Option<HashMap<StringId, ResourceId>>,
 }
 
-impl ModelPrototype {
-	pub fn new(mut reader: &mut Cursor<&[u8]>) -> AkizukiResult<Self> {
-		let header = reader.read_ne::<ModelPrototypeHeader>()?;
-
-		reader.seek(Start(header.relative_position.pos + header.animation_offset))?;
-		let animations = Vec::<ResourceId>::read_ne_args(
-			&mut reader,
-			VecArgs {
-				count: header.animation_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
-
-		reader.seek(Start(header.relative_position.pos + header.dye_offset))?;
-		let dye_headers = Vec::<DyePrototypeHeader>::read_ne_args(
-			&mut reader,
-			VecArgs {
-				count: header.dye_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
-		let mut dyes = Vec::<DyePrototype>::with_capacity(header.dye_count as usize);
-
-		for dye_header in dye_headers {
-			dyes.push(DyePrototype::new(reader, dye_header)?);
+impl TableRecord for ModelPrototype {
+	fn new(reader: &mut Cursor<Vec<u8>>, header: &BigWorldTableHeader) -> AkizukiResult<Self> {
+		if header.id != akizuki_id!("ModelPrototype") {
+			return Err(AkizukiError::UnsupportedTable(header.id));
 		}
 
-		Ok(ModelPrototype {
-			visual_prototype: header.visual_resource_id,
-			misc_type: header.misc_type,
-			animations,
-			dyes,
-		})
+		bigworld_table_version!(v14::model::ModelPrototype14, reader, header);
+
+		Err(AkizukiError::UnsupportedTableVersion(header.id, header.version))
+	}
+
+	fn is_supported(header: &BigWorldTableHeader) -> bool {
+		bigworld_table_check!(v14::model::ModelPrototype14, header);
+		false
 	}
 }
 
-impl DyePrototype {
-	fn new(mut reader: &mut Cursor<&[u8]>, header: DyePrototypeHeader) -> AkizukiResult<Self> {
-		reader.seek(Start(header.relative_position.pos + header.tint_name_ids_offset))?;
-		let tints = Vec::<StringId>::read_ne_args(
-			&mut reader,
-			VecArgs {
-				count: header.tint_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
-		reader.seek(Start(header.relative_position.pos + header.tint_material_ids_offset))?;
-		let materials = Vec::<ResourceId>::read_ne_args(
-			&mut reader,
-			VecArgs {
-				count: header.tint_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
-
-		let mut map = HashMap::<StringId, ResourceId>::with_capacity(header.tint_count as usize);
-		for i in 0..header.tint_count as usize {
-			map.insert(tints[i], materials[i]);
-		}
-
-		Ok(DyePrototype {
-			matter: header.matter_id,
-			replaces: header.replaces_id,
-			tints: map,
-		})
+impl From<ModelPrototype> for BigWorldTableRecord {
+	fn from(value: ModelPrototype) -> Self {
+		BigWorldTableRecord::ModelPrototype(value)
 	}
 }
