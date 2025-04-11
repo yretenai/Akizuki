@@ -18,24 +18,28 @@ use std::io::Cursor;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(tag = "version")]
 pub enum VisualPrototypeVersion {
 	V14(VisualPrototype14),
 }
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(tag = "version")]
 pub enum SkeletonPrototypeVersion {
 	V14(SkeletonPrototype14),
 }
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(tag = "version")]
 pub enum RenderSetPrototypeVersion {
 	V14(RenderSetPrototype14),
 }
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(tag = "version")]
 pub enum LODPrototypeVersion {
 	V14(LODPrototype14),
 }

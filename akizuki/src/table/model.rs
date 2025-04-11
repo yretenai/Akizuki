@@ -16,12 +16,14 @@ use std::io::Cursor;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(tag = "version")]
 pub enum ModelPrototypeVersion {
 	V14(ModelPrototype14),
 }
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(tag = "version")]
 pub enum DyePrototypeVersion {
 	V14(DyePrototype14),
 }

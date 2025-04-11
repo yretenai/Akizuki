@@ -13,6 +13,7 @@ use crate::format::bigworld_data::BigWorldTableHeader;
 use std::io::Cursor;
 
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(tag = "version")]
 pub enum BigWorldTableRecord {
 	VisualPrototype(visual::VisualPrototypeVersion),
 	SkeletonPrototype(visual::SkeletonPrototypeVersion),

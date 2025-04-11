@@ -79,13 +79,14 @@ pub struct LODPrototypeHeader14 {
 
 #[derive(BigWorldTable, Debug)]
 #[table(VisualPrototype, 0x3167064b)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize), serde_with::serde_as)]
 pub struct VisualPrototype14 {
 	pub skeleton_prototype: SkeletonPrototypeVersion,
 	pub merged_geometry_path: ResourceId,
 	pub is_underwater_model: bool,
 	pub is_abovewater_model: bool,
 	pub bounding_box: BoundingBox,
+	#[serde_as(as = "HashMap<u32, _>")]
 	pub render_sets: HashMap<StringId, RenderSetPrototypeVersion>,
 	pub lods: Vec<LODPrototypeVersion>,
 }
