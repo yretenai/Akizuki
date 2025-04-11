@@ -78,6 +78,8 @@ pub fn bigworld_table_branch(input: TokenStream) -> TokenStream {
 			continue;
 		}
 
+		warn!("table {:?} (version {:08x}) is not implememented", table_header.id, table_header.version);
+
 		#states.push(Some(TableError::UnsupportedTableVersion(
 			#header.id,
 			#header.version,
@@ -89,7 +91,7 @@ pub fn bigworld_table_branch(input: TokenStream) -> TokenStream {
 /// generates a is_valid_for function for the given TableName, to be used by the super implementation.
 /// usually accessed via [bigworld_table_version] and [bigworld_table_check].
 ///
-///	#\[derive(BigWorldTable)]
+/// #\[derive(BigWorldTable)]
 /// #\[table(TableName, versions...)]
 pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);

@@ -11,7 +11,7 @@ use crate::{pfs, table};
 use akizuki_macro::{akizuki_id, bigworld_table_branch};
 
 use binrw::{BinRead, NullString, VecArgs};
-use log::info;
+use log::{info, warn};
 
 use std::collections::HashMap;
 use std::io::SeekFrom::Start;
@@ -114,6 +114,10 @@ fn read_tables(
 				);
 			}
 			&_ => {
+				warn!(
+					"table {:?} (version {:08x}) is not implememented",
+					table_header.id, table_header.version
+				);
 				table_states.push(Some(TableError::UnsupportedTable(table_header.id)));
 			}
 		}
@@ -129,10 +133,13 @@ where
 	T: TableRecord,
 	BigWorldTableRecord: From<T>,
 {
-	reader.seek(Start(header.pointer.relative_position.pos + header.pointer.offset))?;
+	reader.seek(Start(header.relative_position.pos + header.pointer.offset))?;
+
+	let pointer = BigWorldDatabasePointer::read_ne(reader)?;
+	reader.seek(Start(pointer.relative_position.pos + pointer.offset))?;
 	let mut table = Table::new();
 
-	for _ in 0..header.pointer.count {
+	for _ in 0..pointer.count {
 		table.push(T::new(reader, &header)?.into());
 	}
 

@@ -44,6 +44,8 @@ pub struct BigWorldDatabaseHeader {
 #[derive(BinRead, Debug, Clone)]
 #[br()]
 pub struct BigWorldTableHeader {
+	pub relative_position: PosValue<()>,
+
 	pub id: StringId,
 	pub version: u32,
 	pub pointer: BigWorldDatabasePointer,

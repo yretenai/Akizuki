@@ -19,7 +19,7 @@ pub enum ModelMiscType {
 
 #[derive(BinRead, Debug, Clone)]
 #[br()]
-pub struct ModelPrototypeHeader {
+pub struct ModelPrototypeHeader14 {
 	pub relative_position: PosValue<()>,
 
 	pub visual_resource_id: ResourceId,
@@ -29,11 +29,13 @@ pub struct ModelPrototypeHeader {
 	pub dye_count: u8,
 	pub animation_offset: u64,
 	pub dye_offset: u64,
+
+	pub end_position: PosValue<()>,
 }
 
 #[derive(BinRead, Debug, Clone)]
 #[br()]
-pub struct DyePrototypeHeader {
+pub struct DyePrototypeHeader14 {
 	pub relative_position: PosValue<()>,
 
 	pub matter_id: StringId,

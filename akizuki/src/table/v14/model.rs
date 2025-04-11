@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use crate::error::AkizukiResult;
-use crate::format::bigworld_table::{DyePrototypeHeader, ModelMiscType, ModelPrototypeHeader};
+use crate::format::bigworld_table::{DyePrototypeHeader14, ModelMiscType, ModelPrototypeHeader14};
 use crate::identifiers::{ResourceId, StringId};
 use crate::table::model::{DyePrototype, ModelPrototype};
 use akizuki_macro::BigWorldTable;
@@ -16,7 +16,7 @@ use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
 #[derive(Debug, BigWorldTable)]
-#[table(ModelPrototype, 0xA95414D5)]
+#[table(ModelPrototype, 0xd6b11569)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ModelPrototype14 {
 	pub visual_prototype: ResourceId,
@@ -35,7 +35,7 @@ pub struct DyePrototype14 {
 
 impl ModelPrototype14 {
 	pub fn new(mut reader: &mut Cursor<Vec<u8>>) -> AkizukiResult<Self> {
-		let header = reader.read_ne::<ModelPrototypeHeader>()?;
+		let header = reader.read_ne::<ModelPrototypeHeader14>()?;
 
 		reader.seek(Start(header.relative_position.pos + header.animation_offset))?;
 		let animations = Vec::<ResourceId>::read_ne_args(
@@ -47,7 +47,7 @@ impl ModelPrototype14 {
 		)?;
 
 		reader.seek(Start(header.relative_position.pos + header.dye_offset))?;
-		let dye_headers = Vec::<DyePrototypeHeader>::read_ne_args(
+		let dye_headers = Vec::<DyePrototypeHeader14>::read_ne_args(
 			&mut reader,
 			VecArgs {
 				count: header.dye_count as usize,
@@ -59,6 +59,8 @@ impl ModelPrototype14 {
 		for dye_header in dye_headers {
 			dyes.push(DyePrototype14::new(reader, dye_header)?);
 		}
+
+		reader.seek(Start(header.end_position.pos))?;
 
 		Ok(ModelPrototype14 {
 			visual_prototype: header.visual_resource_id,
@@ -81,7 +83,7 @@ impl From<ModelPrototype14> for ModelPrototype {
 }
 
 impl DyePrototype14 {
-	fn new(mut reader: &mut Cursor<Vec<u8>>, header: DyePrototypeHeader) -> AkizukiResult<Self> {
+	fn new(mut reader: &mut Cursor<Vec<u8>>, header: DyePrototypeHeader14) -> AkizukiResult<Self> {
 		reader.seek(Start(header.relative_position.pos + header.tint_name_ids_offset))?;
 		let tints = Vec::<StringId>::read_ne_args(
 			&mut reader,

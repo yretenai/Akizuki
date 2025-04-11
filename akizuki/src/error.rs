@@ -14,7 +14,7 @@ pub enum AkizukiError {
 	InvalidInstall,
 	#[error("file endianness does not match host endianness")]
 	InvalidEndianness,
-	#[error("version mismatch, expected {expected:?} got {present:?}")]
+	#[error("version mismatch, expected {expected:08x} got {present:08x}")]
 	InvalidVersion { expected: u32, present: u32 },
 	#[error("identifier mismatch")]
 	InvalidIdentifier,
@@ -32,7 +32,7 @@ pub enum AkizukiError {
 	InvalidRecord(ResourceId),
 	#[error("table {0:?} is not supported")]
 	UnsupportedTable(StringId),
-	#[error("table {0:?} is has an unsupported version {1:?}")]
+	#[error("table {0:?} is has an unsupported version {1:08x}")]
 	UnsupportedTableVersion(StringId, u32),
 
 	#[error("io error: {0}")]
