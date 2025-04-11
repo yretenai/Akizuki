@@ -78,7 +78,6 @@ impl StringId {
 	}
 
 	#[inline]
-	#[allow(unused_results)]
 	pub fn insert(id: StringId, s: &str) {
 		if !id.is_valid() {
 			return;
@@ -117,7 +116,6 @@ impl ResourceId {
 	}
 
 	#[inline]
-	#[allow(unused_results)]
 	pub fn insert(id: ResourceId, s: &str) {
 		if !id.is_valid() {
 			return;
