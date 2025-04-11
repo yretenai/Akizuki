@@ -14,9 +14,27 @@ use std::io::Cursor;
 
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum BigWorldTableRecord {
-	VisualPrototype(visual::VisualPrototype),
-	SkeletonPrototype(visual::SkeletonPrototype),
-	ModelPrototype(model::ModelPrototype),
+	VisualPrototype(visual::VisualPrototypeVersion),
+	SkeletonPrototype(visual::SkeletonPrototypeVersion),
+	ModelPrototype(model::ModelPrototypeVersion),
+}
+
+#[macro_export]
+macro_rules! bigworld_table_check {
+	($name:ident, $version:path, $reader:ident, $header:ident) => {
+		if $name::is_valid_for($header.id, $header.version) {
+			return Ok($version($name::new($reader)?.into()));
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! bigworld_table_version {
+	($name:ident, $header:ident) => {
+		if $name::is_valid_for($header.id, $header.version) {
+			return true;
+		}
+	};
 }
 
 #[allow(dead_code)]

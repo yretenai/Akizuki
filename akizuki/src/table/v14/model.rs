@@ -5,7 +5,7 @@
 use crate::error::AkizukiResult;
 use crate::format::bigworld_table::ModelMiscType;
 use crate::identifiers::{ResourceId, StringId};
-use crate::table::model::{DyePrototype, ModelPrototype};
+use crate::table::model::DyePrototypeVersion;
 use akizuki_macro::BigWorldTable;
 
 use binrw::{BinRead, PosValue};
@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, Debug)]
 #[br()]
 pub struct ModelPrototypeHeader14 {
 	pub relative_position: PosValue<()>,
@@ -31,7 +31,7 @@ pub struct ModelPrototypeHeader14 {
 	pub end_position: PosValue<()>,
 }
 
-#[derive(BinRead, Debug, Clone)]
+#[derive(BinRead, Debug)]
 #[br()]
 pub struct DyePrototypeHeader14 {
 	pub relative_position: PosValue<()>,
@@ -39,21 +39,23 @@ pub struct DyePrototypeHeader14 {
 	pub matter_id: StringId,
 	pub replaces_id: StringId,
 	pub tint_count: u32,
-	#[br(pad_after = 4)]
+	#[br(pad_before = 4)]
 	pub tint_name_ids_offset: u64,
 	pub tint_material_ids_offset: u64,
 }
 
 #[derive(Debug, BigWorldTable)]
 #[table(ModelPrototype, 0xd6b11569)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ModelPrototype14 {
 	pub visual_resource: ResourceId,
 	pub misc_type: ModelMiscType,
 	pub animations: Vec<ResourceId>,
-	pub dyes: Vec<DyePrototype14>,
+	pub dyes: Vec<DyePrototypeVersion>,
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct DyePrototype14 {
 	pub matter: StringId,
 	pub replaces: StringId,
@@ -82,9 +84,9 @@ impl ModelPrototype14 {
 			},
 		)?;
 
-		let mut dyes = Vec::<DyePrototype14>::with_capacity(header.dye_count as usize);
+		let mut dyes = Vec::<DyePrototypeVersion>::with_capacity(header.dye_count as usize);
 		for dye_header in dye_headers {
-			dyes.push(DyePrototype14::new(reader, dye_header)?);
+			dyes.push(DyePrototypeVersion::V14(DyePrototype14::new(reader, dye_header)?));
 		}
 
 		reader.seek(Start(header.end_position.pos))?;
@@ -95,17 +97,6 @@ impl ModelPrototype14 {
 			animations,
 			dyes,
 		})
-	}
-}
-
-impl From<ModelPrototype14> for ModelPrototype {
-	fn from(val: ModelPrototype14) -> ModelPrototype {
-		ModelPrototype {
-			visual_resource: Some(val.visual_resource),
-			misc_type: Some(val.misc_type),
-			animations: Some(val.animations),
-			dyes: Some(val.dyes.into_iter().map(Into::into).collect()),
-		}
 	}
 }
 
@@ -138,15 +129,5 @@ impl DyePrototype14 {
 			replaces: header.replaces_id,
 			tints: map,
 		})
-	}
-}
-
-impl From<DyePrototype14> for DyePrototype {
-	fn from(val: DyePrototype14) -> DyePrototype {
-		DyePrototype {
-			matter: Some(val.matter),
-			replaces: Some(val.replaces),
-			tints: Some(val.tints),
-		}
 	}
 }

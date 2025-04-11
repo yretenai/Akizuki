@@ -6,6 +6,7 @@ use binrw::BinRead;
 use colored::Colorize;
 use once_cell::sync::Lazy;
 
+use crate::error::AkizukiError;
 use akizuki_macro::akizuki_id;
 use std::collections::HashMap;
 use std::fmt;
@@ -70,19 +71,24 @@ impl StringId {
 	#[inline]
 	pub fn text(&self) -> Option<String> {
 		if self.is_valid() {
-			STRING_LOOKUP.read().unwrap().get(&self.0).cloned()
+			STRING_LOOKUP.read().ok()?.get(&self.0).cloned()
 		} else {
 			None
 		}
 	}
 
 	#[inline]
+	#[allow(unused_results)]
 	pub fn insert(id: StringId, s: &str) {
 		if !id.is_valid() {
 			return;
 		}
 
-		STRING_LOOKUP.write().unwrap().insert(id.0, s.to_owned());
+		let Ok(mut map) = STRING_LOOKUP.write() else {
+			return;
+		};
+
+		let _ = map.insert(id.0, s.to_owned()).ok_or(AkizukiError::InvalidIdentifier);
 	}
 
 	pub fn is_valid(&self) -> bool {
@@ -104,19 +110,24 @@ impl ResourceId {
 	#[inline]
 	pub fn text(&self) -> Option<String> {
 		if self.is_valid() {
-			RESOURCE_LOOKUP.read().unwrap().get(&self.0).cloned()
+			RESOURCE_LOOKUP.read().ok()?.get(&self.0).cloned()
 		} else {
 			None
 		}
 	}
 
 	#[inline]
+	#[allow(unused_results)]
 	pub fn insert(id: ResourceId, s: &str) {
 		if !id.is_valid() {
 			return;
 		}
 
-		RESOURCE_LOOKUP.write().unwrap().insert(id.0, s.to_owned());
+		let Ok(mut map) = RESOURCE_LOOKUP.write() else {
+			return;
+		};
+
+		let _ = map.insert(id.0, s.to_owned()).ok_or(AkizukiError::InvalidIdentifier);
 	}
 
 	pub fn is_valid(&self) -> bool {

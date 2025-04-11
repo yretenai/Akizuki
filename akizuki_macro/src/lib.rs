@@ -10,7 +10,7 @@ use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{DeriveInput, LitInt, LitStr, Path, Result, Token, parse_macro_input};
+use syn::{DeriveInput, LitInt, LitStr, Result, Token, parse_macro_input};
 
 #[proc_macro]
 /// construct a string id at compile time based on the given string.
@@ -23,37 +23,6 @@ pub fn akizuki_id(input: TokenStream) -> TokenStream {
 
 	TokenStream::from(quote! {
 		StringId(#hash)
-	})
-}
-
-#[proc_macro]
-/// generates a block of code to check if a version is valid, and constructs that version.
-///
-/// bigworld_table_version(path::to:table, header, reader)
-pub fn bigworld_table_version(input: TokenStream) -> TokenStream {
-	let input = parse_macro_input!(input as BigWorldTableVersionsParams);
-	let name = input.0;
-	let header = input.1;
-	let reader = input.2;
-	TokenStream::from(quote! {
-		if #name::is_valid_for(#header.id, #header.version) {
-			return Ok(#name::new(#reader)?.into());
-		}
-	})
-}
-
-#[proc_macro]
-/// generates a block of code to check if a version is valid, returning bool true if so.
-///
-/// bigworld_table_check(path::to:table, header)
-pub fn bigworld_table_check(input: TokenStream) -> TokenStream {
-	let input = parse_macro_input!(input as BigWorldTableCheckParams);
-	let name = input.0;
-	let header = input.1;
-	TokenStream::from(quote! {
-		if #name::is_valid_for(#header.id, #header.version) {
-			return true;
-		}
 	})
 }
 
@@ -100,28 +69,6 @@ pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 	};
 
 	expanded.into()
-}
-
-struct BigWorldTableVersionsParams(Path, Ident, Ident);
-impl Parse for BigWorldTableVersionsParams {
-	fn parse(content: ParseStream) -> Result<Self> {
-		let name: Path = content.parse()?;
-		content.parse::<Token![,]>()?;
-		let reader: Ident = content.parse()?;
-		content.parse::<Token![,]>()?;
-		let header: Ident = content.parse()?;
-		Ok(BigWorldTableVersionsParams(name, header, reader))
-	}
-}
-
-struct BigWorldTableCheckParams(Path, Ident);
-impl Parse for BigWorldTableCheckParams {
-	fn parse(content: ParseStream) -> Result<Self> {
-		let name: Path = content.parse()?;
-		content.parse::<Token![,]>()?;
-		let header: Ident = content.parse()?;
-		Ok(BigWorldTableCheckParams(name, header))
-	}
 }
 
 struct BigWorldTableParams(Ident, Vec<LitInt>);

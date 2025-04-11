@@ -121,16 +121,16 @@ fn read_tables(
 	let mut tables = Vec::<Table>::new();
 	let mut table_states = Vec::<TableState>::new();
 
-	use crate::table::model::ModelPrototype;
-	use crate::table::visual::VisualPrototype;
+	use crate::table::model::ModelPrototypeVersion;
+	use crate::table::visual::VisualPrototypeVersion;
 
 	for table_header in values {
 		match &table_header.id {
 			akizuki_id!("VisualPrototype") => {
-				table_branch!(VisualPrototype, table_header, reader, tables, table_states);
+				table_branch!(VisualPrototypeVersion, table_header, reader, tables, table_states);
 			}
 			akizuki_id!("ModelPrototype") => {
-				table_branch!(ModelPrototype, table_header, reader, tables, table_states);
+				table_branch!(ModelPrototypeVersion, table_header, reader, tables, table_states);
 			}
 			&_ => {
 				warn!(
