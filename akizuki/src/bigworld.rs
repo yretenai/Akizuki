@@ -6,9 +6,9 @@ use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
 use crate::format::bigworld_data::*;
 use crate::identifiers::{ResourceId, StringId};
+use crate::pfs;
 use crate::table::{BigWorldTableRecord, TableRecord};
-use crate::{pfs, table};
-use akizuki_macro::{akizuki_id, bigworld_table_branch};
+use akizuki_macro::akizuki_id;
 
 use binrw::{BinRead, NullString, VecArgs};
 use log::{info, warn};
@@ -30,6 +30,26 @@ pub struct BigWorldDatabase {
 	pub prototype_lookup: HashMap<ResourceId, BigWorldPrototypeRef>,
 	pub tables: Vec<Table>,
 	table_state: Vec<TableState>,
+}
+
+macro_rules! table_branch {
+	($target:ident, $table_header:ident, $reader:ident, $tables:ident, $table_states:ident) => {
+		if $target::is_supported(&$table_header) {
+			$table_states.push(None);
+			$tables.push(construct_table::<$target>($reader, $table_header)?);
+			continue;
+		}
+
+		warn!(
+			"table {:?} (version {:08x}) is not implememented",
+			$table_header.id, $table_header.version
+		);
+
+		$table_states.push(Some(TableError::UnsupportedTableVersion(
+			$table_header.id,
+			$table_header.version,
+		)));
+	};
 }
 
 impl BigWorldDatabase {
@@ -55,10 +75,10 @@ impl BigWorldDatabase {
 		})
 	}
 
-	pub fn open(&self, id: &ResourceId) -> AkizukiResult<&BigWorldTableRecord> {
-		let info = self.prototype_lookup.get(id).ok_or(AkizukiError::AssetNotFound(*id))?;
+	pub fn open(&self, id: ResourceId) -> AkizukiResult<&BigWorldTableRecord> {
+		let info = self.prototype_lookup.get(&id).ok_or(AkizukiError::AssetNotFound(id))?;
 		if !info.is_valid() {
-			return Err(AkizukiError::DeletedAsset(*id));
+			return Err(AkizukiError::DeletedAsset(id));
 		}
 
 		let table_index = info.table_index();
@@ -66,7 +86,7 @@ impl BigWorldDatabase {
 		// check if the table is valid and supported
 		self.table_state
 			.get(table_index)
-			.ok_or(AkizukiError::InvalidTable(*id))?
+			.ok_or(AkizukiError::InvalidTable(id))?
 			.as_ref()
 			.map(|table_state| match table_state {
 				TableError::UnsupportedTable(id) => Err(AkizukiError::UnsupportedTable(*id)),
@@ -79,9 +99,9 @@ impl BigWorldDatabase {
 		// return the record if it exists
 		self.tables
 			.get(table_index)
-			.ok_or(AkizukiError::InvalidTable(*id))?
+			.ok_or(AkizukiError::InvalidTable(id))?
 			.get(info.record_index())
-			.ok_or(AkizukiError::InvalidRecord(*id))
+			.ok_or(AkizukiError::InvalidRecord(id))
 	}
 }
 
@@ -101,17 +121,16 @@ fn read_tables(
 	let mut tables = Vec::<Table>::new();
 	let mut table_states = Vec::<TableState>::new();
 
+	use crate::table::model::ModelPrototype;
+	use crate::table::visual::VisualPrototype;
+
 	for table_header in values {
 		match &table_header.id {
+			akizuki_id!("VisualPrototype") => {
+				table_branch!(VisualPrototype, table_header, reader, tables, table_states);
+			}
 			akizuki_id!("ModelPrototype") => {
-				bigworld_table_branch!(
-					table::model::ModelPrototype,
-					construct_table,
-					tables,
-					table_states,
-					table_header,
-					reader
-				);
+				table_branch!(ModelPrototype, table_header, reader, tables, table_states);
 			}
 			&_ => {
 				warn!(
@@ -174,7 +193,7 @@ fn read_strings(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -
 
 		reader.seek(Start(base + offset as u64))?;
 		let string = NullString::read_ne(reader)?.to_string();
-		StringId::insert(&key.id, &string);
+		StringId::insert(key.id, &string);
 	}
 
 	Ok(())

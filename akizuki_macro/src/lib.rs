@@ -36,7 +36,7 @@ pub fn bigworld_table_version(input: TokenStream) -> TokenStream {
 	let header = input.1;
 	let reader = input.2;
 	TokenStream::from(quote! {
-		if #name::is_valid_for(&#header.id, #header.version) {
+		if #name::is_valid_for(#header.id, #header.version) {
 			return Ok(#name::new(#reader)?.into());
 		}
 	})
@@ -51,39 +51,9 @@ pub fn bigworld_table_check(input: TokenStream) -> TokenStream {
 	let name = input.0;
 	let header = input.1;
 	TokenStream::from(quote! {
-		if #name::is_valid_for(&#header.id, #header.version) {
+		if #name::is_valid_for(#header.id, #header.version) {
 			return true;
 		}
-	})
-}
-
-#[proc_macro]
-/// checks if the table is supported, if so constructs and pushes the table states and continues.
-/// if not, pushes a TableError to the states.
-///
-/// bigworld_table_branch(path::to:table, construct_table, tables, table_states, header, reader)
-pub fn bigworld_table_branch(input: TokenStream) -> TokenStream {
-	let input = parse_macro_input!(input as BigWorldTableBranchParams);
-	let target = input.0;
-	let func = input.1;
-	let tables = input.2;
-	let states = input.3;
-	let header = input.4;
-	let reader = input.5;
-
-	TokenStream::from(quote! {
-		if #target::is_supported(&#header) {
-			#states.push(None);
-			#tables.push(#func::<#target>(#reader, #header)?);
-			continue;
-		}
-
-		warn!("table {:?} (version {:08x}) is not implememented", table_header.id, table_header.version);
-
-		#states.push(Some(TableError::UnsupportedTableVersion(
-			#header.id,
-			#header.version,
-		)));
 	})
 }
 
@@ -108,8 +78,8 @@ pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 		[] => panic!("need at least one version"),
 		[single] => quote! {
 			impl #name {
-				pub fn is_valid_for(hash: &StringId, version: u32) -> bool {
-					hash == &StringId(#hash) && version == #single
+				pub fn is_valid_for(hash: StringId, version: u32) -> bool {
+					hash == #hash && version == #single
 				}
 			}
 		},
@@ -117,8 +87,8 @@ pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 			let version_checks = multiple.iter().map(|v| quote! { version == #v }).collect::<Vec<_>>();
 			quote! {
 				impl #name {
-					pub fn is_valid_for(hash: &StringId, version: u32) -> bool {
-						if hash == &StringId(#hash) {
+					pub fn is_valid_for(hash: StringId, version: u32) -> bool {
+						if hash == #hash {
 							return false;
 						}
 
@@ -151,24 +121,6 @@ impl Parse for BigWorldTableCheckParams {
 		content.parse::<Token![,]>()?;
 		let header: Ident = content.parse()?;
 		Ok(BigWorldTableCheckParams(name, header))
-	}
-}
-
-struct BigWorldTableBranchParams(Path, Path, Ident, Ident, Ident, Ident);
-impl Parse for BigWorldTableBranchParams {
-	fn parse(content: ParseStream) -> Result<Self> {
-		let target: Path = content.parse()?;
-		content.parse::<Token![,]>()?;
-		let func: Path = content.parse()?;
-		content.parse::<Token![,]>()?;
-		let tables: Ident = content.parse()?;
-		content.parse::<Token![,]>()?;
-		let states: Ident = content.parse()?;
-		content.parse::<Token![,]>()?;
-		let header: Ident = content.parse()?;
-		content.parse::<Token![,]>()?;
-		let reader: Ident = content.parse()?;
-		Ok(BigWorldTableBranchParams(target, func, tables, states, header, reader))
 	}
 }
 

@@ -52,18 +52,18 @@ impl ResourceManager {
 		})
 	}
 
-	pub fn load_asset(&self, resource_id: &ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
+	pub fn load_asset(&self, resource_id: ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
 		let pkg_id = self
 			.lookup
-			.get(resource_id)
-			.ok_or(AkizukiError::AssetNotFound(*resource_id))?;
+			.get(&resource_id)
+			.ok_or(AkizukiError::AssetNotFound(resource_id))?;
 		let pkg = self.packages.get(pkg_id).ok_or(AkizukiError::AssetNotFound(*pkg_id))?;
 		pkg.open(resource_id, validate)
 	}
 
 	pub fn load_asset_database(&mut self, validate: bool) -> AkizukiResult<&BigWorldDatabase> {
 		if self.big_world_database.is_none() {
-			let asset_bin = self.load_asset(&ResourceId::new("content/assets.bin"), false)?;
+			let asset_bin = self.load_asset(ResourceId::new("content/assets.bin"), false)?;
 			self.big_world_database = Some(BigWorldDatabase::new(asset_bin, validate)?);
 		}
 

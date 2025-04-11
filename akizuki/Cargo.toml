@@ -46,7 +46,7 @@ geometry = ["glam", "gltf", "half", "meshopt"]
 texture = ["bcdec_rs", "image"]
 locale = ["gettext"]
 data = ["glam", "serde", "serde-pickle", "serde-xml-rs"]
-serialize = ["serde"]
+serialize = ["serde", "glam/serde"]
 
 art = ["texture", "geometry"]
 default = ["art", "data", "locale", "serialize"]

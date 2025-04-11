@@ -56,8 +56,8 @@ impl PackageFileSystem {
 
 	const CRC: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
 
-	pub fn open(&self, id: &ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
-		let info = self.files.get(id).ok_or(AkizukiError::AssetNotFound(*id))?;
+	pub fn open(&self, id: ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
+		let info = self.files.get(&id).ok_or(AkizukiError::AssetNotFound(id))?;
 		let stream = self
 			.streams
 			.get(&info.package_id)
@@ -98,7 +98,7 @@ pub(crate) fn build_filenames<T>(names: &HashMap<ResourceId, (String, ResourceId
 		}
 
 		if let Some(path) = path {
-			ResourceId::insert(file_id, path.to_str().unwrap_or_default());
+			ResourceId::insert(*file_id, path.to_str().unwrap_or_default());
 		}
 	}
 }
@@ -210,7 +210,7 @@ fn read_streams(
 	for name in names {
 		reader.seek(Start(name.relative_position.pos + name.offset))?;
 		let string = NullString::read_ne(reader)?.to_string();
-		ResourceId::insert(&name.id, &string);
+		ResourceId::insert(name.id, &string);
 		name_map.insert(name.id, unsafe { Mmap::map(&File::open(pkg_path.join(string))?)? });
 	}
 

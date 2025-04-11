@@ -2,17 +2,21 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-pub mod model;
 pub mod v14;
+
+pub mod model;
+pub mod visual;
 
 use crate::error::AkizukiResult;
 use crate::format::bigworld_data::BigWorldTableHeader;
-use crate::table::model::ModelPrototype;
 
 use std::io::Cursor;
 
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum BigWorldTableRecord {
-	ModelPrototype(ModelPrototype),
+	VisualPrototype(visual::VisualPrototype),
+	SkeletonPrototype(visual::SkeletonPrototype),
+	ModelPrototype(model::ModelPrototype),
 }
 
 #[allow(dead_code)]

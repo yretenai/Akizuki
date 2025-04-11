@@ -12,13 +12,15 @@ use akizuki_macro::{akizuki_id, bigworld_table_check, bigworld_table_version};
 use std::collections::HashMap;
 use std::io::Cursor;
 
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ModelPrototype {
-	pub visual_prototype: Option<ResourceId>,
+	pub visual_resource: Option<ResourceId>,
 	pub misc_type: Option<ModelMiscType>,
 	pub animations: Option<Vec<ResourceId>>,
 	pub dyes: Option<Vec<DyePrototype>>,
 }
 
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct DyePrototype {
 	pub matter: Option<StringId>,
 	pub replaces: Option<StringId>,

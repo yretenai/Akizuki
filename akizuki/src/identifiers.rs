@@ -63,16 +63,25 @@ impl StringId {
 
 	#[inline]
 	pub fn value(&self) -> u32 {
-		self.0
+		if self.is_valid() { self.0 } else { 0xFFFFFFFF }
 	}
 
+	//noinspection DuplicatedCode
 	#[inline]
 	pub fn text(&self) -> Option<String> {
-		STRING_LOOKUP.read().unwrap().get(&self.0).cloned()
+		if self.is_valid() {
+			STRING_LOOKUP.read().unwrap().get(&self.0).cloned()
+		} else {
+			None
+		}
 	}
 
 	#[inline]
-	pub fn insert(id: &StringId, s: &str) {
+	pub fn insert(id: StringId, s: &str) {
+		if !id.is_valid() {
+			return;
+		}
+
 		STRING_LOOKUP.write().unwrap().insert(id.0, s.to_owned());
 	}
 
@@ -88,21 +97,42 @@ impl ResourceId {
 
 	#[inline]
 	pub fn value(&self) -> u64 {
-		self.0
+		if self.is_valid() { self.0 } else { 0xFFFFFFFFFFFFFFFF }
 	}
 
+	//noinspection DuplicatedCode
 	#[inline]
 	pub fn text(&self) -> Option<String> {
-		RESOURCE_LOOKUP.read().unwrap().get(&self.0).cloned()
+		if self.is_valid() {
+			RESOURCE_LOOKUP.read().unwrap().get(&self.0).cloned()
+		} else {
+			None
+		}
 	}
 
 	#[inline]
-	pub fn insert(id: &ResourceId, s: &str) {
+	pub fn insert(id: ResourceId, s: &str) {
+		if !id.is_valid() {
+			return;
+		}
+
 		RESOURCE_LOOKUP.write().unwrap().insert(id.0, s.to_owned());
 	}
 
 	pub fn is_valid(&self) -> bool {
 		self.0 > 0 && self.0 < 0xFFFFFFFFFFFFFFFF
+	}
+}
+
+impl PartialEq<u32> for StringId {
+	fn eq(&self, other: &u32) -> bool {
+		self.0.eq(other)
+	}
+}
+
+impl PartialEq<u64> for ResourceId {
+	fn eq(&self, other: &u64) -> bool {
+		self.0.eq(other)
 	}
 }
 
@@ -193,7 +223,7 @@ mod tests {
 	#[test]
 	fn test_string_text() {
 		const TEST_STR: &str = "Akizuki";
-		StringId::insert(&StringId(0x8d949450), TEST_STR);
+		StringId::insert(StringId(0x8d949450), TEST_STR);
 
 		assert_eq!(StringId::new(TEST_STR).text().unwrap(), TEST_STR);
 	}
@@ -201,7 +231,7 @@ mod tests {
 	#[test]
 	fn test_string_debug() {
 		const TEST_STR: &str = "Akizuki";
-		StringId::insert(&StringId(0x8d949450), TEST_STR);
+		StringId::insert(StringId(0x8d949450), TEST_STR);
 
 		SHOULD_COLORIZE.set_override(false);
 		assert_eq!(format!("{:?}", StringId(0x8d949450)), "\"Akizuki\" (0x8d949450)");
@@ -222,7 +252,7 @@ mod tests {
 	#[test]
 	fn test_resource_text() {
 		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
-		ResourceId::insert(&ResourceId(0x0df5a921212a899e), TEST_STR);
+		ResourceId::insert(ResourceId(0x0df5a921212a899e), TEST_STR);
 
 		assert_eq!(ResourceId(0x0df5a921212a899e).text().unwrap(), TEST_STR);
 	}
@@ -230,7 +260,7 @@ mod tests {
 	#[test]
 	fn test_resource_debug() {
 		const TEST_STR: &str = "content/gameplay/japan/ship/destroyer/JSD011_Akizuki_1944/JSD011_Akizuki_1944.model";
-		ResourceId::insert(&ResourceId(0x0df5a921212a899e), TEST_STR);
+		ResourceId::insert(ResourceId(0x0df5a921212a899e), TEST_STR);
 
 		SHOULD_COLORIZE.set_override(false);
 		assert_eq!(

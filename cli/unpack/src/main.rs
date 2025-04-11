@@ -73,7 +73,7 @@ fn main() {
 
 	for package in manager.packages.values() {
 		for asset_id in package.files.keys() {
-			if let Err(err) = process_asset(&args, output_path, package, asset_id) {
+			if let Err(err) = process_asset(&args, output_path, package, *asset_id) {
 				error!(target: "akizuki::unpack", "unable to export asset {:?}: {:?}", asset_id, err.to_string());
 			}
 		}
@@ -84,7 +84,7 @@ fn process_asset(
 	args: &Cli,
 	output_path: &Path,
 	package: &PackageFileSystem,
-	asset_id: &ResourceId,
+	asset_id: ResourceId,
 ) -> AkizukiResult<()> {
 	let asset_name = asset_id
 		.text()
