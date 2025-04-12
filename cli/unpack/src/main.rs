@@ -2,24 +2,25 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use akizuki::bigworld::BigWorldDatabase;
-use akizuki::error::AkizukiResult;
-use akizuki::identifiers::{ResourceId, StringId};
-use akizuki::manager::ResourceManager;
-use akizuki::pfs::PackageFileSystem;
+mod asset;
+mod db;
+mod index;
 
-use anyhow::{Error, Result};
+use asset::*;
+use db::*;
+use index::*;
+
+use akizuki::manager::ResourceManager;
+
+use anyhow::Result;
 use clap::Parser;
 use colog::format::CologStyle;
 use colored::Colorize;
 use env_logger::fmt::Formatter;
-use log::{LevelFilter, Record, error, info};
+use log::{LevelFilter, Record, error};
 
-use std::collections::HashMap;
-use std::fs;
-use std::fs::File;
-use std::io::{BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::io::Write;
+use std::path::Path;
 
 const NEWLINE: [u8; 1] = [0xA];
 
@@ -101,96 +102,6 @@ fn main() {
 			}
 		}
 	}
-}
-
-fn process_index(output_path: &Path) -> Result<()> {
-	let asset_dir = &output_path.join("idx/");
-	fs::create_dir_all(asset_dir)?;
-
-	save_index(asset_dir.join("resource.json"), ResourceId::clone_map())?;
-	save_index(asset_dir.join("string.json"), StringId::clone_map())?;
-
-	Ok(())
-}
-
-fn save_index<T: serde::ser::Serialize>(asset_path: PathBuf, map: Option<HashMap<T, String>>) -> Result<()> {
-	let map = map.ok_or(Error::msg("no id data?"))?;
-
-	if map.is_empty() {
-		return Ok(());
-	}
-
-	let file = File::create(asset_path)?;
-	file.set_len(0)?;
-	let mut writer = BufWriter::new(file);
-	serde_json::to_writer_pretty(&mut writer, &map)?;
-	writer.write_all(&NEWLINE)?;
-	Ok(())
-}
-
-fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, asset_id: ResourceId) -> Result<()> {
-	let asset_name = asset_id
-		.text()
-		.unwrap_or_else(|| format!("unknown/{:016x}", asset_id.value()));
-
-	if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
-		return Ok(());
-	}
-
-	let data = package.open(asset_id, args.validate)?;
-
-	info!(target: "akizuki::unpack", "Unpacking {:?}", asset_id);
-
-	if args.dry {
-		return Ok(());
-	}
-
-	let asset_path = output_path.join(asset_name);
-	let asset_dir = asset_path.parent().unwrap_or(output_path);
-
-	fs::create_dir_all(asset_dir)?;
-	fs::write(&asset_path, data)?;
-	Ok(())
-}
-
-fn process_db(args: &Cli, output_path: &Path, db: AkizukiResult<&BigWorldDatabase>) -> Result<()> {
-	let db = db?;
-
-	for record_id in db.prototype_lookup.keys() {
-		if let Err(err) = process_db_asset(args, output_path, db, *record_id) {
-			error!(target: "akizuki::unpack", "unable to export data {:?}: {}", record_id, err);
-		}
-	}
-
-	Ok(())
-}
-
-fn process_db_asset(args: &Cli, output_path: &Path, db: &BigWorldDatabase, record_id: ResourceId) -> Result<()> {
-	let record = db.open(record_id)?;
-	let asset_name = record_id
-		.text()
-		.unwrap_or_else(|| format!("unknown/{:016x}", record_id.value()));
-
-	if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
-		return Ok(());
-	}
-
-	info!(target: "akizuki::unpack", "Saving {:?}", record_id);
-
-	if args.dry {
-		return Ok(());
-	}
-
-	let asset_path = output_path.join(asset_name + ".json");
-	let asset_dir = asset_path.parent().unwrap_or(output_path);
-
-	fs::create_dir_all(asset_dir)?;
-	let file = File::create(asset_path)?;
-	file.set_len(0)?;
-	let mut writer = BufWriter::new(file);
-	serde_json::to_writer_pretty(&mut writer, record)?;
-	writer.write_all(&NEWLINE)?;
-	Ok(())
 }
 
 pub struct PrefixModule;
