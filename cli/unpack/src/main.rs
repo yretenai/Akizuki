@@ -4,21 +4,24 @@
 
 use akizuki::bigworld::BigWorldDatabase;
 use akizuki::error::AkizukiResult;
-use akizuki::identifiers::ResourceId;
+use akizuki::identifiers::{ResourceId, StringId};
 use akizuki::manager::ResourceManager;
 use akizuki::pfs::PackageFileSystem;
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use clap::Parser;
 use colog::format::CologStyle;
 use colored::Colorize;
 use env_logger::fmt::Formatter;
 use log::{LevelFilter, Record, error, info};
 
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+const NEWLINE: [u8; 1] = [0xA];
 
 #[derive(Parser)]
 #[command(version, about)]
@@ -81,7 +84,13 @@ fn main() {
 
 	if args.save_meta_assets {
 		if let Err(err) = process_db(&args, output_path, manager.load_asset_database(args.validate)) {
-			error!(target: "akizuki::unpack", "unable to export data {:?}", err);
+			error!(target: "akizuki::unpack", "unable to export data: {:?}", err);
+		}
+	}
+
+	if args.save_index && !args.dry {
+		if let Err(err) = process_index(output_path) {
+			error!(target: "akizuki::unpack", "unable to saave index: {:?}", err);
 		}
 	}
 
@@ -92,6 +101,31 @@ fn main() {
 			}
 		}
 	}
+}
+
+fn process_index(output_path: &Path) -> Result<()> {
+	let asset_dir = &output_path.join("idx/");
+	fs::create_dir_all(asset_dir)?;
+
+	save_index(asset_dir.join("resource.json"), ResourceId::clone_map())?;
+	save_index(asset_dir.join("string.json"), StringId::clone_map())?;
+
+	Ok(())
+}
+
+fn save_index<T: serde::ser::Serialize>(asset_path: PathBuf, map: Option<HashMap<T, String>>) -> Result<()> {
+	let map = map.ok_or(Error::msg("no id data?"))?;
+
+	if map.is_empty() {
+		return Ok(());
+	}
+
+	let file = File::create(asset_path)?;
+	file.set_len(0)?;
+	let mut writer = BufWriter::new(file);
+	serde_json::to_writer_pretty(&mut writer, &map)?;
+	writer.write_all(&NEWLINE)?;
+	Ok(())
 }
 
 fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, asset_id: ResourceId) -> Result<()> {
@@ -155,7 +189,6 @@ fn process_db_asset(args: &Cli, output_path: &Path, db: &BigWorldDatabase, recor
 	file.set_len(0)?;
 	let mut writer = BufWriter::new(file);
 	serde_json::to_writer_pretty(&mut writer, record)?;
-	const NEWLINE: [u8; 1] = [0xA];
 	writer.write_all(&NEWLINE)?;
 	Ok(())
 }

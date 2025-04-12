@@ -78,6 +78,11 @@ impl StringId {
 	}
 
 	#[inline]
+	pub fn is_valid(&self) -> bool {
+		self.0 > 0 && self.0 < 0xFFFFFFFF
+	}
+
+	#[inline]
 	pub fn insert(id: StringId, s: &str) {
 		if !id.is_valid() {
 			return;
@@ -90,8 +95,8 @@ impl StringId {
 		let _ = map.insert(id.0, s.to_owned()).ok_or(AkizukiError::InvalidIdentifier);
 	}
 
-	pub fn is_valid(&self) -> bool {
-		self.0 > 0 && self.0 < 0xFFFFFFFF
+	pub fn clone_map() -> Option<HashMap<u32, String>> {
+		Some(STRING_LOOKUP.read().ok()?.clone())
 	}
 }
 
@@ -116,6 +121,11 @@ impl ResourceId {
 	}
 
 	#[inline]
+	pub fn is_valid(&self) -> bool {
+		self.0 > 0 && self.0 < 0xFFFFFFFFFFFFFFFF
+	}
+
+	#[inline]
 	pub fn insert(id: ResourceId, s: &str) {
 		if !id.is_valid() {
 			return;
@@ -128,8 +138,8 @@ impl ResourceId {
 		let _ = map.insert(id.0, s.to_owned()).ok_or(AkizukiError::InvalidIdentifier);
 	}
 
-	pub fn is_valid(&self) -> bool {
-		self.0 > 0 && self.0 < 0xFFFFFFFFFFFFFFFF
+	pub fn clone_map() -> Option<HashMap<u64, String>> {
+		Some(RESOURCE_LOOKUP.read().ok()?.clone())
 	}
 }
 
