@@ -67,11 +67,13 @@ name = "akizuki-unpack"
 version = "0.1.0"
 dependencies = [
  "akizuki",
+ "anyhow",
  "clap",
  "colog",
  "colored",
  "env_logger",
  "log",
+ "serde_json",
 ]
 
 [[package]]

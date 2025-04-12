@@ -2,11 +2,13 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use akizuki::bigworld::BigWorldDatabase;
 use akizuki::error::AkizukiResult;
 use akizuki::identifiers::ResourceId;
 use akizuki::manager::ResourceManager;
 use akizuki::pfs::PackageFileSystem;
 
+use anyhow::Result;
 use clap::Parser;
 use colog::format::CologStyle;
 use colored::Colorize;
@@ -14,7 +16,8 @@ use env_logger::fmt::Formatter;
 use log::{LevelFilter, Record, error, info};
 
 use std::fs;
-use std::io::{Error, Write};
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 
 #[derive(Parser)]
@@ -31,6 +34,12 @@ struct Cli {
 		help = "version number of the game, if not set will try to find the latest version"
 	)]
 	install_version: Option<i64>,
+
+	#[arg(long, help = "save asset indexes as JSON")]
+	save_index: bool,
+
+	#[arg(long, help = "save meta assets as JSON")]
+	save_meta_assets: bool,
 
 	#[arg(long, help = "validate the data that's being processed")]
 	validate: bool,
@@ -67,25 +76,25 @@ fn main() {
 
 	let mut manager = ResourceManager::new(&args.install_path, args.install_version, args.validate)
 		.expect("could not create manager");
-	let _ = &manager.load_asset_database(true).expect("database failed to load");
 
 	let output_path = Path::new(&args.output_path);
+
+	if args.save_meta_assets {
+		if let Err(err) = process_db(&args, output_path, manager.load_asset_database(args.validate)) {
+			error!(target: "akizuki::unpack", "unable to export data {:?}", err);
+		}
+	}
 
 	for package in manager.packages.values() {
 		for asset_id in package.files.keys() {
 			if let Err(err) = process_asset(&args, output_path, package, *asset_id) {
-				error!(target: "akizuki::unpack", "unable to export asset {:?}: {:?}", asset_id, err.to_string());
+				error!(target: "akizuki::unpack", "unable to export asset {:?}: {}", asset_id, err);
 			}
 		}
 	}
 }
 
-fn process_asset(
-	args: &Cli,
-	output_path: &Path,
-	package: &PackageFileSystem,
-	asset_id: ResourceId,
-) -> AkizukiResult<()> {
+fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, asset_id: ResourceId) -> Result<()> {
 	let asset_name = asset_id
 		.text()
 		.unwrap_or_else(|| format!("unknown/{:016x}", asset_id.value()));
@@ -110,9 +119,50 @@ fn process_asset(
 	Ok(())
 }
 
+fn process_db(args: &Cli, output_path: &Path, db: AkizukiResult<&BigWorldDatabase>) -> Result<()> {
+	let db = db?;
+
+	for record_id in db.prototype_lookup.keys() {
+		if let Err(err) = process_db_asset(args, output_path, db, *record_id) {
+			error!(target: "akizuki::unpack", "unable to export data {:?}: {}", record_id, err);
+		}
+	}
+
+	Ok(())
+}
+
+fn process_db_asset(args: &Cli, output_path: &Path, db: &BigWorldDatabase, record_id: ResourceId) -> Result<()> {
+	let record = db.open(record_id)?;
+	let asset_name = record_id
+		.text()
+		.unwrap_or_else(|| format!("unknown/{:016x}", record_id.value()));
+
+	if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
+		return Ok(());
+	}
+
+	info!(target: "akizuki::unpack", "Saving {:?}", record_id);
+
+	if args.dry {
+		return Ok(());
+	}
+
+	let asset_path = output_path.join(asset_name + ".json");
+	let asset_dir = asset_path.parent().unwrap_or(output_path);
+
+	fs::create_dir_all(asset_dir)?;
+	let file = File::create(asset_path)?;
+	file.set_len(0)?;
+	let mut writer = BufWriter::new(file);
+	serde_json::to_writer_pretty(&mut writer, record)?;
+	const NEWLINE: [u8; 1] = [0xA];
+	writer.write_all(&NEWLINE)?;
+	Ok(())
+}
+
 pub struct PrefixModule;
 impl CologStyle for PrefixModule {
-	fn format(&self, buf: &mut Formatter, record: &Record<'_>) -> Result<(), Error> {
+	fn format(&self, buf: &mut Formatter, record: &Record<'_>) -> Result<(), std::io::Error> {
 		let sep = self.line_separator();
 		let prefix = self.prefix_token(&record.level());
 
