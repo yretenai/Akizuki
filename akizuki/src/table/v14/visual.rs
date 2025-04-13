@@ -10,6 +10,7 @@ use akizuki_macro::BigWorldTable;
 
 use binrw::{BinRead, BinReaderExt, PosValue, VecArgs};
 
+use crate::bigworld_read_array;
 use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
@@ -78,7 +79,7 @@ pub struct LODPrototypeHeader14 {
 }
 
 #[derive(BigWorldTable, Debug)]
-#[table(VisualPrototype, 0x3167064b)]
+#[table("VisualPrototype", 0x3167064b)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize), serde_with::serde_as)]
 pub struct VisualPrototype14 {
 	pub skeleton_prototype: SkeletonPrototypeVersion,
@@ -125,28 +126,27 @@ impl VisualPrototype14 {
 
 		let skeleton_prototype = SkeletonPrototype14::new(reader, header.skeleton_prototype)?;
 
-		reader.seek(Start(header.relative_position.pos + header.lods_offset))?;
-		let lod_headers = Vec::<LODPrototypeHeader14>::read_ne_args(
+		bigworld_read_array!(
 			reader,
-			VecArgs {
-				count: header.lod_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
+			header,
+			lod_headers,
+			lod_count,
+			lods_offset,
+			LODPrototypeHeader14
+		);
+		bigworld_read_array!(
+			reader,
+			header,
+			render_set_headers,
+			render_sets_count,
+			render_sets_offset,
+			RenderSetPrototypeHeader14
+		);
 
 		let mut lods = Vec::<LODPrototypeVersion>::with_capacity(header.lod_count as usize);
 		for lod_header in lod_headers {
 			lods.push(LODPrototypeVersion::V14(LODPrototype14::new(reader, lod_header)?));
 		}
-
-		reader.seek(Start(header.relative_position.pos + header.render_sets_offset))?;
-		let render_set_headers = Vec::<RenderSetPrototypeHeader14>::read_ne_args(
-			reader,
-			VecArgs {
-				count: header.render_sets_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
 
 		let mut render_sets = Vec::<RenderSetPrototypeVersion>::with_capacity(header.render_sets_count as usize);
 		for render_set_header in render_set_headers {
@@ -175,31 +175,9 @@ impl VisualPrototype14 {
 
 impl SkeletonPrototype14 {
 	fn new(reader: &mut Cursor<Vec<u8>>, header: SkeletonPrototypeHeader14) -> AkizukiResult<Self> {
-		reader.seek(Start(header.relative_position.pos + header.name_ids_offset))?;
-
-		let names = Vec::<StringId>::read_ne_args(
-			reader,
-			VecArgs {
-				count: header.node_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
-
-		let matrices = Vec::<Mat4>::read_ne_args(
-			reader,
-			VecArgs {
-				count: header.node_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
-
-		let parent_ids = Vec::<u16>::read_ne_args(
-			reader,
-			VecArgs {
-				count: header.node_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
+		bigworld_read_array!(reader, header, names, node_count, name_ids_offset, StringId);
+		bigworld_read_array!(reader, header, matrices, node_count, matrices_offset, Mat4);
+		bigworld_read_array!(reader, header, parent_ids, node_count, parent_ids_offset, u16);
 
 		Ok(SkeletonPrototype14 {
 			names,
@@ -211,15 +189,14 @@ impl SkeletonPrototype14 {
 
 impl LODPrototype14 {
 	fn new(reader: &mut Cursor<Vec<u8>>, header: LODPrototypeHeader14) -> AkizukiResult<Self> {
-		reader.seek(Start(header.relative_position.pos + header.render_set_offset))?;
-
-		let render_sets = Vec::<StringId>::read_ne_args(
+		bigworld_read_array!(
 			reader,
-			VecArgs {
-				count: header.render_set_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
+			header,
+			render_sets,
+			render_set_count,
+			render_set_offset,
+			StringId
+		);
 
 		Ok(LODPrototype14 {
 			extent: header.extent,
@@ -231,15 +208,7 @@ impl LODPrototype14 {
 
 impl RenderSetPrototype14 {
 	fn new(reader: &mut Cursor<Vec<u8>>, header: RenderSetPrototypeHeader14) -> AkizukiResult<Self> {
-		reader.seek(Start(header.relative_position.pos + header.node_offset))?;
-
-		let nodes = Vec::<StringId>::read_ne_args(
-			reader,
-			VecArgs {
-				count: header.node_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
+		bigworld_read_array!(reader, header, nodes, node_count, node_offset, StringId);
 
 		Ok(RenderSetPrototype14 {
 			name: header.name,

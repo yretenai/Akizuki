@@ -63,13 +63,13 @@ impl TableRecord for VisualPrototypeVersion {
 
 impl From<VisualPrototypeVersion> for BigWorldTableRecord {
 	fn from(value: VisualPrototypeVersion) -> Self {
-		BigWorldTableRecord::VisualPrototype(value)
+		BigWorldTableRecord::VisualPrototype(value.into())
 	}
 }
 
 impl From<SkeletonPrototypeVersion> for BigWorldTableRecord {
 	fn from(value: SkeletonPrototypeVersion) -> Self {
-		BigWorldTableRecord::SkeletonPrototype(value)
+		BigWorldTableRecord::SkeletonPrototype(value.into())
 	}
 }
 

@@ -7,18 +7,6 @@ use std::io::{Read, Seek};
 
 // wrappers for BinRead...
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Vec2(glam::Vec2);
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Vec3(glam::Vec3);
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Vec4(glam::Vec4);
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Mat4(glam::Mat4);
-
 #[derive(BinRead, Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 #[br(repr = u8)]
 pub enum FlagBool {
@@ -36,8 +24,27 @@ pub struct BoundingBox {
 	pub max: Vec3,
 }
 
-macro_rules! passthrough_serialize {
+impl From<FlagBool> for bool {
+	fn from(value: FlagBool) -> Self {
+		match value {
+			FlagBool::False => false,
+			FlagBool::True => true,
+		}
+	}
+}
+
+macro_rules! passthrough_impl {
 	($name:ident) => {
+		#[derive(Debug, Clone, Copy, PartialEq)]
+		pub struct $name(glam::$name);
+
+		impl From<$name> for glam::$name {
+			fn from(value: $name) -> glam::$name {
+				value.0
+			}
+		}
+
+		#[cfg(feature = "serialize")]
 		impl serde::Serialize for $name {
 			fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 			where
@@ -60,12 +67,6 @@ macro_rules! passthrough_read {
 				)))
 			}
 		}
-
-		impl From<$name> for glam::$name {
-			fn from(value: $name) -> glam::$name {
-				value.0
-			}
-		}
 	};
 }
 
@@ -80,36 +81,15 @@ macro_rules! passthrough_ref_read {
 				)))
 			}
 		}
-
-		impl From<$name> for glam::$name {
-			fn from(value: $name) -> glam::$name {
-				value.0
-			}
-		}
 	};
 }
 
-#[cfg(feature = "serialize")]
-passthrough_serialize!(Vec2);
+passthrough_impl!(Vec2);
+passthrough_impl!(Vec3);
+passthrough_impl!(Vec4);
+passthrough_impl!(Mat4);
+
 passthrough_read!(Vec2, f32, 2);
-
-#[cfg(feature = "serialize")]
-passthrough_serialize!(Vec3);
 passthrough_read!(Vec3, f32, 3);
-
-#[cfg(feature = "serialize")]
-passthrough_serialize!(Vec4);
 passthrough_read!(Vec4, f32, 4);
-
-#[cfg(feature = "serialize")]
-passthrough_serialize!(Mat4);
 passthrough_ref_read!(Mat4, from_cols_array, f32, 16);
-
-impl From<FlagBool> for bool {
-	fn from(value: FlagBool) -> Self {
-		match value {
-			FlagBool::False => false,
-			FlagBool::True => true,
-		}
-	}
-}

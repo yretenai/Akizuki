@@ -7,7 +7,6 @@ extern crate proc_macro;
 use akizuki_common::mmh3::mmh3_32;
 
 use proc_macro::TokenStream;
-use proc_macro2::Ident;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::{DeriveInput, LitInt, LitStr, Result, Token, parse_macro_input};
@@ -41,7 +40,7 @@ pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 		.find(|attr| attr.path().is_ident("table"))
 		.expect("table attribute required for deriving BigWorldTable");
 	let params: BigWorldTableParams = attribute.parse_args().expect("invalid params");
-	let hash = mmh3_32(params.0.to_string().as_ref());
+	let hash = mmh3_32(params.0.value().as_ref());
 
 	let expanded = match params.1.as_slice() {
 		[] => panic!("need at least one version"),
@@ -71,10 +70,10 @@ pub fn bigworld_table_derive(input: TokenStream) -> TokenStream {
 	expanded.into()
 }
 
-struct BigWorldTableParams(Ident, Vec<LitInt>);
+struct BigWorldTableParams(LitStr, Vec<LitInt>);
 impl Parse for BigWorldTableParams {
 	fn parse(content: ParseStream) -> Result<Self> {
-		let name: Ident = content.parse()?;
+		let name: LitStr = content.parse()?;
 		let mut versions = Vec::<LitInt>::new();
 		if content.peek(Token![,]) {
 			content.parse::<Token![,]>()?;

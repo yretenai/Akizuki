@@ -11,6 +11,7 @@ use akizuki_macro::BigWorldTable;
 use binrw::{BinRead, PosValue};
 use binrw::{BinReaderExt, VecArgs};
 
+use crate::bigworld_read_array;
 use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
@@ -44,8 +45,8 @@ pub struct DyePrototypeHeader14 {
 	pub tint_material_ids_offset: u64,
 }
 
-#[derive(Debug, BigWorldTable)]
-#[table(ModelPrototype, 0xd6b11569)]
+#[derive(BigWorldTable, Debug)]
+#[table("ModelPrototype", 0xd6b11569)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ModelPrototype14 {
 	pub visual_resource: ResourceId,
@@ -66,23 +67,15 @@ impl ModelPrototype14 {
 	pub fn new(reader: &mut Cursor<Vec<u8>>) -> AkizukiResult<Self> {
 		let header = reader.read_ne::<ModelPrototypeHeader14>()?;
 
-		reader.seek(Start(header.relative_position.pos + header.animation_offset))?;
-		let animations = Vec::<ResourceId>::read_ne_args(
+		bigworld_read_array!(
 			reader,
-			VecArgs {
-				count: header.animation_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
-
-		reader.seek(Start(header.relative_position.pos + header.dye_offset))?;
-		let dye_headers = Vec::<DyePrototypeHeader14>::read_ne_args(
-			reader,
-			VecArgs {
-				count: header.dye_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
+			header,
+			animations,
+			animation_count,
+			animation_offset,
+			ResourceId
+		);
+		bigworld_read_array!(reader, header, dye_headers, dye_count, dye_offset, DyePrototypeHeader14);
 
 		let mut dyes = Vec::<DyePrototypeVersion>::with_capacity(header.dye_count as usize);
 		for dye_header in dye_headers {
@@ -102,22 +95,15 @@ impl ModelPrototype14 {
 
 impl DyePrototype14 {
 	fn new(reader: &mut Cursor<Vec<u8>>, header: DyePrototypeHeader14) -> AkizukiResult<Self> {
-		reader.seek(Start(header.relative_position.pos + header.tint_name_ids_offset))?;
-		let tints = Vec::<StringId>::read_ne_args(
+		bigworld_read_array!(reader, header, tints, tint_count, tint_name_ids_offset, StringId);
+		bigworld_read_array!(
 			reader,
-			VecArgs {
-				count: header.tint_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
-		reader.seek(Start(header.relative_position.pos + header.tint_material_ids_offset))?;
-		let materials = Vec::<ResourceId>::read_ne_args(
-			reader,
-			VecArgs {
-				count: header.tint_count as usize,
-				inner: <_>::default(),
-			},
-		)?;
+			header,
+			materials,
+			tint_count,
+			tint_material_ids_offset,
+			ResourceId
+		);
 
 		let mut map = HashMap::<StringId, ResourceId>::with_capacity(header.tint_count as usize);
 		for i in 0..header.tint_count as usize {

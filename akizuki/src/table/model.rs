@@ -47,7 +47,7 @@ impl TableRecord for ModelPrototypeVersion {
 
 impl From<ModelPrototypeVersion> for BigWorldTableRecord {
 	fn from(value: ModelPrototypeVersion) -> Self {
-		BigWorldTableRecord::ModelPrototype(value)
+		BigWorldTableRecord::ModelPrototype(value.into())
 	}
 }
 

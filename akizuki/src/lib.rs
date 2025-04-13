@@ -14,3 +14,5 @@ pub mod manager;
 pub mod pfs;
 #[cfg(feature = "data")]
 pub mod table;
+
+mod macros;
