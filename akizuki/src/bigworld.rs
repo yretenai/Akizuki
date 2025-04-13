@@ -34,15 +34,9 @@ macro_rules! table_branch {
 			continue;
 		}
 
-		warn!(
-			"table {:?} (version {:08x}) is not implememented",
-			$table_header.id, $table_header.version
-		);
+		warn!("table {:?} (version {:08x}) is not implememented", $table_header.id, $table_header.version);
 
-		$table_states.push(Some(TableError::UnsupportedTableVersion(
-			$table_header.id,
-			$table_header.version,
-		)));
+		$table_states.push(Some(TableError::UnsupportedTableVersion($table_header.id, $table_header.version)));
 	};
 }
 
@@ -92,18 +86,13 @@ impl BigWorldDatabase {
 			.as_ref()
 			.map(|table_state| match table_state {
 				TableError::UnsupportedTable(id) => Err(AkizukiError::UnsupportedTable(*id)),
-				TableError::UnsupportedTableVersion(id, version) => {
-					Err(AkizukiError::UnsupportedTableVersion(*id, *version))
-				}
+				TableError::UnsupportedTableVersion(id, version) => Err(AkizukiError::UnsupportedTableVersion(*id, *version)),
 			})
 			.unwrap_or(Ok(()))?;
 
 		// return the record if it exists
-		self.tables
-			.get(table_index)
-			.ok_or(AkizukiError::InvalidTable(id))?
-			.get(info.record_index())
-			.ok_or(AkizukiError::InvalidRecord(id))
+		let records = self.tables.get(table_index).ok_or(AkizukiError::InvalidTable(id))?;
+		records.get(info.record_index()).ok_or(AkizukiError::InvalidRecord(id))
 	}
 
 	pub fn load_table_slice<'a>(&self, data: &'a [u8], header: &BigWorldTableHeader) -> &'a [u8] {
@@ -139,10 +128,7 @@ fn read_tables(
 				table_branch!(ModelPrototypeVersion, table_header, reader, tables, table_states);
 			}
 			&_ => {
-				warn!(
-					"table {:?} (version {:08x}) is not implememented",
-					table_header.id, table_header.version
-				);
+				warn!("table {:?} (version {:08x}) is not implememented", table_header.id, table_header.version);
 				table_states.push(Some(TableError::UnsupportedTable(table_header.id)));
 			}
 		}
@@ -205,10 +191,7 @@ fn read_strings(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -
 	Ok(())
 }
 
-fn read_names(
-	reader: &mut Cursor<Vec<u8>>,
-	header: &BigWorldDatabaseHeader,
-) -> AkizukiResult<HashMap<ResourceId, (String, ResourceId)>> {
+fn read_names(reader: &mut Cursor<Vec<u8>>, header: &BigWorldDatabaseHeader) -> AkizukiResult<HashMap<ResourceId, (String, ResourceId)>> {
 	reader.seek(Start(header.paths.relative_position.pos + header.paths.offset))?;
 
 	let names = Vec::<BigWorldName>::read_ne_args(
@@ -231,9 +214,7 @@ fn read_prototype_lookup(
 	reader: &mut Cursor<Vec<u8>>,
 	header: &BigWorldDatabaseHeader,
 ) -> AkizukiResult<HashMap<ResourceId, BigWorldPrototypeRef>> {
-	reader.seek(Start(
-		header.prototypes.relative_position.pos + header.prototypes.key_offset,
-	))?;
+	reader.seek(Start(header.prototypes.relative_position.pos + header.prototypes.key_offset))?;
 	let keys = Vec::<BigWorldDatabaseKey<ResourceId>>::read_ne_args(
 		reader,
 		VecArgs {
@@ -242,9 +223,7 @@ fn read_prototype_lookup(
 		},
 	)?;
 
-	reader.seek(Start(
-		header.prototypes.relative_position.pos + header.prototypes.value_offset,
-	))?;
+	reader.seek(Start(header.prototypes.relative_position.pos + header.prototypes.value_offset))?;
 	let values = Vec::<BigWorldPrototypeRef>::read_ne_args(
 		reader,
 		VecArgs {

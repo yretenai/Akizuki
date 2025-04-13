@@ -43,8 +43,7 @@ struct Oodle {
 
 #[derive(WrapperApi)]
 struct OodleTex {
-	OodleTexRT_BC7Prep_ReadHeader:
-		unsafe extern "C" fn(header: *const BC7PrepHeader, num_blocks: *mut i64, payload_size: *mut i64) -> i32,
+	OodleTexRT_BC7Prep_ReadHeader: unsafe extern "C" fn(header: *const BC7PrepHeader, num_blocks: *mut i64, payload_size: *mut i64) -> i32,
 	OodleTexRT_BC7Prep_MinDecodeScratchSize: unsafe extern "C" fn(num_blocks: i64) -> i64,
 	OodleTexRT_BC7Prep_Decode: unsafe extern "C" fn(
 		output_buf: *const u8,
@@ -81,11 +80,10 @@ static OODLE: Lazy<Option<Container<Oodle>>> = Lazy::new(|| match unsafe { Conta
 	Err(_) => None,
 });
 
-static OODLE_TEX: Lazy<Option<Container<OodleTex>>> =
-	Lazy::new(|| match unsafe { Container::<OodleTex>::load(OODLE_TEX_NAME) } {
-		Ok(oodle) => Some(oodle),
-		Err(_) => None,
-	});
+static OODLE_TEX: Lazy<Option<Container<OodleTex>>> = Lazy::new(|| match unsafe { Container::<OodleTex>::load(OODLE_TEX_NAME) } {
+	Ok(oodle) => Some(oodle),
+	Err(_) => None,
+});
 
 fn get_oodle() -> Option<&'static Container<Oodle>> {
 	OODLE.as_ref()
@@ -143,11 +141,7 @@ pub fn decompress_oodle_data(compressed: &[u8], uncompressed: &mut [u8]) -> Oodl
 			3,
 		)
 	};
-	if result > 0 {
-		Ok(result as usize)
-	} else {
-		Err(OodleError::InternalError(result))
-	}
+	if result > 0 { Ok(result as usize) } else { Err(OodleError::InternalError(result)) }
 }
 
 #[allow(dead_code)]
@@ -183,9 +177,5 @@ pub fn decompress_oodle_bc7(header: &BC7PrepHeader, compressed: &[u8], uncompres
 			scratch.len() as i64,
 		)
 	};
-	if result > 0 {
-		Ok(result as usize)
-	} else {
-		Err(OodleError::InternalError(result))
-	}
+	if result > 0 { Ok(result as usize) } else { Err(OodleError::InternalError(result)) }
 }

@@ -23,10 +23,7 @@ pub fn process_index(output_path: &Path) -> anyhow::Result<()> {
 	Ok(())
 }
 
-pub fn save_index<T: serde::ser::Serialize>(
-	asset_path: PathBuf,
-	map: Option<HashMap<T, String>>,
-) -> anyhow::Result<()> {
+pub fn save_index<T: serde::ser::Serialize>(asset_path: PathBuf, map: Option<HashMap<T, String>>) -> anyhow::Result<()> {
 	let map = map.ok_or(Error::msg("no id data?"))?;
 
 	if map.is_empty() {

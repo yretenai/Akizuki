@@ -75,7 +75,10 @@ impl<T: BinRead> BinRead for BigWorldDatabaseKey<T> {
 		}
 		let bucket = u32::read_options(reader, endian, ())?;
 
-		Ok(BigWorldDatabaseKey::<T> { id, bucket })
+		Ok(BigWorldDatabaseKey::<T> {
+			id,
+			bucket,
+		})
 	}
 }
 
@@ -111,12 +114,6 @@ impl From<u32> for BigWorldPrototypeRef {
 
 impl fmt::Debug for BigWorldPrototypeRef {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(
-			f,
-			"ref {{ state = {:?}, table = {:?}, record = {:?} }}",
-			self.state(),
-			self.table_index(),
-			self.record_index()
-		)
+		write!(f, "ref {{ state = {:?}, table = {:?}, record = {:?} }}", self.state(), self.table_index(), self.record_index())
 	}
 }

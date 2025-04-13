@@ -62,9 +62,7 @@ macro_rules! passthrough_read {
 			type Args<'a> = ();
 
 			fn read_options<R: Read + Seek>(reader: &mut R, endian: Endian, _args: Self::Args<'_>) -> BinResult<Self> {
-				Ok($name(glam::$name::from_array(
-					reader.read_type::<[$inner; $count]>(endian)?,
-				)))
+				Ok($name(glam::$name::from_array(reader.read_type::<[$inner; $count]>(endian)?)))
 			}
 		}
 	};
@@ -76,9 +74,7 @@ macro_rules! passthrough_ref_read {
 			type Args<'a> = ();
 
 			fn read_options<R: Read + Seek>(reader: &mut R, endian: Endian, _args: Self::Args<'_>) -> BinResult<Self> {
-				Ok($name(glam::$name::$func(
-					&reader.read_type::<[$inner; $count]>(endian)?,
-				)))
+				Ok($name(glam::$name::$func(&reader.read_type::<[$inner; $count]>(endian)?)))
 			}
 		}
 	};

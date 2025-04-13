@@ -33,10 +33,7 @@ struct Cli {
 	#[arg(index = 2, required = true, help = "path to the game installation directory")]
 	install_path: String,
 
-	#[arg(
-		index = 3,
-		help = "version number of the game, if not set will try to find the latest version"
-	)]
+	#[arg(index = 3, help = "version number of the game, if not set will try to find the latest version")]
 	install_version: Option<i64>,
 
 	#[arg(long, help = "save asset indexes as JSON")]
@@ -81,8 +78,7 @@ fn main() {
 
 	args.filter.dedup();
 
-	let mut manager = ResourceManager::new(&args.install_path, args.install_version, args.validate)
-		.expect("could not create manager");
+	let mut manager = ResourceManager::new(&args.install_path, args.install_version, args.validate).expect("could not create manager");
 
 	let output_path = Path::new(&args.output_path);
 
@@ -128,20 +124,8 @@ impl CologStyle for PrefixModule {
 		let prefix = self.prefix_token(&record.level());
 
 		write!(buf, "{}", prefix)?;
-		write!(
-			buf,
-			"{}{}{}",
-			"[".blue().bold(),
-			format!("{}", buf.timestamp()).bright_cyan(),
-			"]".blue().bold()
-		)?;
-		write!(
-			buf,
-			"{}{}{}",
-			"[".blue().bold(),
-			record.target().bright_purple(),
-			"] ".blue().bold()
-		)?;
+		write!(buf, "{}{}{}", "[".blue().bold(), format!("{}", buf.timestamp()).bright_cyan(), "]".blue().bold())?;
+		write!(buf, "{}{}{}", "[".blue().bold(), record.target().bright_purple(), "] ".blue().bold())?;
 		writeln!(buf, "{}", record.args().to_string().replace('\n', &sep))?;
 
 		Ok(())

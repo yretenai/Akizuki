@@ -25,7 +25,7 @@ pub struct PackageFile {
 	pub id: ResourceId,
 	pub package_id: ResourceId,
 	pub offset: u64,
-	pub compression_flags: u32,
+	pub flags: u32,
 	pub compression_type: PackageCompressionType,
 	pub compressed_size: u32,
 	pub hash: u32,

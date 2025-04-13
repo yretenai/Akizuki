@@ -31,11 +31,7 @@ pub fn process_db_tables(args: &Cli, output_path: &Path, manager: &ResourceManag
 	let asset_bin = manager.load_asset(ResourceId::new("content/assets.bin"), false)?;
 
 	for header in &db.table_headers {
-		let asset_name = format!(
-			"{}_{:08x}.bin",
-			header.id.text().unwrap_or_else(|| format!("{:08x}", header.id.value())),
-			header.version
-		);
+		let asset_name = format!("{}_{:08x}.bin", header.id.text().unwrap_or_else(|| format!("{:08x}", header.id.value())), header.version);
 
 		let data = db.load_table_slice(&asset_bin, header);
 
@@ -55,16 +51,9 @@ pub fn process_db_tables(args: &Cli, output_path: &Path, manager: &ResourceManag
 	Ok(())
 }
 
-pub fn process_db_asset(
-	args: &Cli,
-	output_path: &Path,
-	db: &BigWorldDatabase,
-	record_id: ResourceId,
-) -> anyhow::Result<()> {
+pub fn process_db_asset(args: &Cli, output_path: &Path, db: &BigWorldDatabase, record_id: ResourceId) -> anyhow::Result<()> {
 	let record = db.open(record_id)?;
-	let asset_name = record_id
-		.text()
-		.unwrap_or_else(|| format!("unknown/{:016x}", record_id.value()));
+	let asset_name = record_id.text().unwrap_or_else(|| format!("unknown/{:016x}", record_id.value()));
 
 	if !args.filter.is_empty() && !args.filter.iter().any(|v| asset_name.contains(v)) {
 		return Ok(());

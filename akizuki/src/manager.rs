@@ -53,10 +53,7 @@ impl ResourceManager {
 	}
 
 	pub fn load_asset(&self, resource_id: ResourceId, validate: bool) -> AkizukiResult<Vec<u8>> {
-		let pkg_id = self
-			.lookup
-			.get(&resource_id)
-			.ok_or(AkizukiError::AssetNotFound(resource_id))?;
+		let pkg_id = self.lookup.get(&resource_id).ok_or(AkizukiError::AssetNotFound(resource_id))?;
 		let pkg = self.packages.get(pkg_id).ok_or(AkizukiError::AssetNotFound(*pkg_id))?;
 		pkg.open(resource_id, validate)
 	}
@@ -74,11 +71,7 @@ impl ResourceManager {
 	}
 }
 
-fn load_idx(
-	packages_path: &Path,
-	idx_path: &PathBuf,
-	should_validate: bool,
-) -> AkizukiResult<HashMap<ResourceId, PackageFileSystem>> {
+fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> AkizukiResult<HashMap<ResourceId, PackageFileSystem>> {
 	if !idx_path.is_dir() {
 		return Err(AkizukiError::InvalidInstall);
 	}
@@ -115,11 +108,7 @@ fn find_install_version(bin_path: &PathBuf) -> AkizukiResult<i64> {
 			continue;
 		}
 
-		let Some(folder_num) = path
-			.file_name()
-			.and_then(|n| n.to_str())
-			.and_then(|s| s.parse::<i64>().ok())
-		else {
+		let Some(folder_num) = path.file_name().and_then(|n| n.to_str()).and_then(|s| s.parse::<i64>().ok()) else {
 			continue;
 		};
 
@@ -128,9 +117,5 @@ fn find_install_version(bin_path: &PathBuf) -> AkizukiResult<i64> {
 		}
 	}
 
-	if max_number == 0 {
-		Err(AkizukiError::InvalidInstall)
-	} else {
-		Ok(max_number)
-	}
+	if max_number == 0 { Err(AkizukiError::InvalidInstall) } else { Ok(max_number) }
 }

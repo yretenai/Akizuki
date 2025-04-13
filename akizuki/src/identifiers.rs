@@ -29,22 +29,10 @@ static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> = Lazy::new(|| {
 	result.insert(akizuki_id!("EffectPrototype").0, "EffectPrototype".to_string());
 	result.insert(akizuki_id!("TrailPrototype").0, "TrailPrototype".to_string());
 	result.insert(akizuki_id!("MiscTypePrototype").0, "MiscTypePrototype".to_string());
-	result.insert(
-		akizuki_id!("MiscSettingsPrototype").0,
-		"MiscSettingsPrototype".to_string(),
-	);
-	result.insert(
-		akizuki_id!("VelocityFieldPrototype").0,
-		"VelocityFieldPrototype".to_string(),
-	);
-	result.insert(
-		akizuki_id!("EffectPresetPrototype").0,
-		"EffectPresetPrototype".to_string(),
-	);
-	result.insert(
-		akizuki_id!("EffectMetadataPrototype").0,
-		"EffectMetadataPrototype".to_string(),
-	);
+	result.insert(akizuki_id!("MiscSettingsPrototype").0, "MiscSettingsPrototype".to_string());
+	result.insert(akizuki_id!("VelocityFieldPrototype").0, "VelocityFieldPrototype".to_string());
+	result.insert(akizuki_id!("EffectPresetPrototype").0, "EffectPresetPrototype".to_string());
+	result.insert(akizuki_id!("EffectMetadataPrototype").0, "EffectMetadataPrototype".to_string());
 
 	RwLock::new(result)
 });
@@ -70,11 +58,7 @@ impl StringId {
 	//noinspection DuplicatedCode
 	#[inline]
 	pub fn text(&self) -> Option<String> {
-		if self.is_valid() {
-			STRING_LOOKUP.read().ok()?.get(&self.0).cloned()
-		} else {
-			None
-		}
+		if self.is_valid() { STRING_LOOKUP.read().ok()?.get(&self.0).cloned() } else { None }
 	}
 
 	#[inline]
@@ -113,11 +97,7 @@ impl ResourceId {
 	//noinspection DuplicatedCode
 	#[inline]
 	pub fn text(&self) -> Option<String> {
-		if self.is_valid() {
-			RESOURCE_LOOKUP.read().ok()?.get(&self.0).cloned()
-		} else {
-			None
-		}
+		if self.is_valid() { RESOURCE_LOOKUP.read().ok()?.get(&self.0).cloned() } else { None }
 	}
 
 	#[inline]

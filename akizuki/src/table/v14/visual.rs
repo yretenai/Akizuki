@@ -24,11 +24,11 @@ pub struct VisualPrototypeHeader14 {
 	pub merged_geometry_path: ResourceId,
 	pub is_underwater_model: FlagBool,
 	pub is_abovewater_model: FlagBool,
-	pub render_sets_count: u16,
+	pub sets_count: u16,
 	pub lod_count: u8,
 	#[br(pad_before = 3)]
 	pub bounding_box: BoundingBox,
-	pub render_sets_offset: u64,
+	pub sets_offset: u64,
 	pub lods_offset: u64,
 
 	pub end_position: PosValue<()>,
@@ -126,34 +126,17 @@ impl VisualPrototype14 {
 
 		let skeleton_prototype = SkeletonPrototype14::new(reader, header.skeleton_prototype)?;
 
-		bigworld_read_array!(
-			reader,
-			header,
-			lod_headers,
-			lod_count,
-			lods_offset,
-			LODPrototypeHeader14
-		);
-		bigworld_read_array!(
-			reader,
-			header,
-			render_set_headers,
-			render_sets_count,
-			render_sets_offset,
-			RenderSetPrototypeHeader14
-		);
+		bigworld_read_array!(reader, header, lod_headers, lod_count, lods_offset, LODPrototypeHeader14);
+		bigworld_read_array!(reader, header, render_set_headers, sets_count, sets_offset, RenderSetPrototypeHeader14);
 
 		let mut lods = Vec::<LODPrototypeVersion>::with_capacity(header.lod_count as usize);
 		for lod_header in lod_headers {
 			lods.push(LODPrototypeVersion::V14(LODPrototype14::new(reader, lod_header)?));
 		}
 
-		let mut render_sets = Vec::<RenderSetPrototypeVersion>::with_capacity(header.render_sets_count as usize);
+		let mut render_sets = Vec::<RenderSetPrototypeVersion>::with_capacity(header.sets_count as usize);
 		for render_set_header in render_set_headers {
-			render_sets.push(RenderSetPrototypeVersion::V14(RenderSetPrototype14::new(
-				reader,
-				render_set_header,
-			)?));
+			render_sets.push(RenderSetPrototypeVersion::V14(RenderSetPrototype14::new(reader, render_set_header)?));
 		}
 
 		reader.seek(Start(header.end_position.pos))?;
@@ -164,10 +147,7 @@ impl VisualPrototype14 {
 			is_underwater_model: header.is_underwater_model.into(),
 			is_abovewater_model: header.is_abovewater_model.into(),
 			bounding_box: header.bounding_box,
-			render_sets: render_sets
-				.into_iter()
-				.map(|render_set| (render_set.name(), render_set))
-				.collect(),
+			render_sets: render_sets.into_iter().map(|render_set| (render_set.name(), render_set)).collect(),
 			lods,
 		})
 	}
@@ -189,14 +169,7 @@ impl SkeletonPrototype14 {
 
 impl LODPrototype14 {
 	fn new(reader: &mut Cursor<Vec<u8>>, header: LODPrototypeHeader14) -> AkizukiResult<Self> {
-		bigworld_read_array!(
-			reader,
-			header,
-			render_sets,
-			render_set_count,
-			render_set_offset,
-			StringId
-		);
+		bigworld_read_array!(reader, header, render_sets, render_set_count, render_set_offset, StringId);
 
 		Ok(LODPrototype14 {
 			extent: header.extent,

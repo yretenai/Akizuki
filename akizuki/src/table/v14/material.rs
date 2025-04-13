@@ -113,83 +113,17 @@ impl MaterialPrototype14 {
 	pub fn new(reader: &mut Cursor<Vec<u8>>) -> AkizukiResult<Self> {
 		let header = reader.read_ne::<MaterialPrototypeHeader14>()?;
 
-		bigworld_read_array!(
-			reader,
-			header,
-			property_names,
-			property_count,
-			property_name_ids_offset,
-			StringId
-		);
-
-		bigworld_read_array!(
-			reader,
-			header,
-			property_ids,
-			property_count,
-			property_ids_offset,
-			MaterialPropertyId14
-		);
-
-		bigworld_read_array!(
-			reader,
-			header,
-			bool_values,
-			bool_values_count,
-			bool_values_offset,
-			FlagBool
-		);
-
+		bigworld_read_array!(reader, header, property_names, property_count, property_name_ids_offset, StringId);
+		bigworld_read_array!(reader, header, property_ids, property_count, property_ids_offset, MaterialPropertyId14);
+		bigworld_read_array!(reader, header, bool_values, bool_values_count, bool_values_offset, FlagBool);
 		bigworld_read_array!(reader, header, i32_values, int_values_count, int_values_offset, i32);
-
 		bigworld_read_array!(reader, header, u32_values, uint_values_count, uint_values_offset, u32);
-
 		bigworld_read_array!(reader, header, f32_values, float_values_count, float_values_offset, f32);
-
-		bigworld_read_array!(
-			reader,
-			header,
-			texture_values,
-			texture_values_count,
-			texture_values_offset,
-			ResourceId
-		);
-
-		bigworld_read_array!(
-			reader,
-			header,
-			vec2_values,
-			vector2_values_count,
-			int_values_offset,
-			Vec2
-		);
-
-		bigworld_read_array!(
-			reader,
-			header,
-			vec3_values,
-			vector3_values_count,
-			int_values_offset,
-			Vec3
-		);
-
-		bigworld_read_array!(
-			reader,
-			header,
-			vec4_values,
-			vector4_values_count,
-			int_values_offset,
-			Vec4
-		);
-
-		bigworld_read_array!(
-			reader,
-			header,
-			matrix_values,
-			matrix_values_count,
-			matrix_values_offset,
-			Mat4
-		);
+		bigworld_read_array!(reader, header, texture_values, texture_values_count, texture_values_offset, ResourceId);
+		bigworld_read_array!(reader, header, vec2_values, vector2_values_count, int_values_offset, Vec2);
+		bigworld_read_array!(reader, header, vec3_values, vector3_values_count, int_values_offset, Vec3);
+		bigworld_read_array!(reader, header, vec4_values, vector4_values_count, int_values_offset, Vec4);
+		bigworld_read_array!(reader, header, matrix_values, matrix_values_count, matrix_values_offset, Mat4);
 
 		let mut bools = HashMap::<StringId, bool>::new();
 		let mut ints = HashMap::<StringId, i32>::new();

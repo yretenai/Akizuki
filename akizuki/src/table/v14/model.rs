@@ -67,14 +67,7 @@ impl ModelPrototype14 {
 	pub fn new(reader: &mut Cursor<Vec<u8>>) -> AkizukiResult<Self> {
 		let header = reader.read_ne::<ModelPrototypeHeader14>()?;
 
-		bigworld_read_array!(
-			reader,
-			header,
-			animations,
-			animation_count,
-			animation_offset,
-			ResourceId
-		);
+		bigworld_read_array!(reader, header, animations, animation_count, animation_offset, ResourceId);
 		bigworld_read_array!(reader, header, dye_headers, dye_count, dye_offset, DyePrototypeHeader14);
 
 		let mut dyes = Vec::<DyePrototypeVersion>::with_capacity(header.dye_count as usize);
@@ -96,14 +89,7 @@ impl ModelPrototype14 {
 impl DyePrototype14 {
 	fn new(reader: &mut Cursor<Vec<u8>>, header: DyePrototypeHeader14) -> AkizukiResult<Self> {
 		bigworld_read_array!(reader, header, tints, tint_count, tint_name_ids_offset, StringId);
-		bigworld_read_array!(
-			reader,
-			header,
-			materials,
-			tint_count,
-			tint_material_ids_offset,
-			ResourceId
-		);
+		bigworld_read_array!(reader, header, materials, tint_count, tint_material_ids_offset, ResourceId);
 
 		let mut map = HashMap::<StringId, ResourceId>::with_capacity(header.tint_count as usize);
 		for i in 0..header.tint_count as usize {
