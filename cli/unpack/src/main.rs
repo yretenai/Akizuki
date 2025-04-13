@@ -45,6 +45,9 @@ struct Cli {
 	#[arg(long, help = "save meta assets as JSON")]
 	save_meta_assets: bool,
 
+	#[arg(long, help = "save raw database tables")]
+	save_tables: bool,
+
 	#[arg(long, help = "validate the data that's being processed")]
 	validate: bool,
 
@@ -83,8 +86,22 @@ fn main() {
 
 	let output_path = Path::new(&args.output_path);
 
+	if args.save_tables || args.save_meta_assets {
+		if let Err(err) = manager.load_asset_database(args.validate) {
+			error!(target: "akizuki::unpack", "load assets db: {:?}", err);
+			args.save_tables = false;
+			args.save_meta_assets = false;
+		}
+	}
+
+	if args.save_tables {
+		if let Err(err) = process_db_tables(&args, output_path, &manager) {
+			error!(target: "akizuki::unpack", "unable to save tables: {:?}", err);
+		}
+	}
+
 	if args.save_meta_assets {
-		if let Err(err) = process_db(&args, output_path, manager.load_asset_database(args.validate)) {
+		if let Err(err) = process_db_records(&args, output_path, &manager) {
 			error!(target: "akizuki::unpack", "unable to export data: {:?}", err);
 		}
 	}

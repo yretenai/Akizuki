@@ -4,8 +4,8 @@
 
 use crate::{Cli, NEWLINE};
 use akizuki::bigworld::BigWorldDatabase;
-use akizuki::error::AkizukiResult;
 use akizuki::identifiers::ResourceId;
+use akizuki::manager::ResourceManager;
 
 use log::{error, info};
 
@@ -14,13 +14,42 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
-pub fn process_db(args: &Cli, output_path: &Path, db: AkizukiResult<&BigWorldDatabase>) -> anyhow::Result<()> {
-	let db = db?;
+pub fn process_db_records(args: &Cli, output_path: &Path, manager: &ResourceManager) -> anyhow::Result<()> {
+	let db = manager.big_world_database.as_ref().expect("unreachable");
 
 	for record_id in db.prototype_lookup.keys() {
-		if let Err(err) = crate::process_db_asset(args, output_path, db, *record_id) {
+		if let Err(err) = process_db_asset(args, output_path, db, *record_id) {
 			error!(target: "akizuki::unpack", "unable to export data {:?}: {}", record_id, err);
 		}
+	}
+
+	Ok(())
+}
+
+pub fn process_db_tables(args: &Cli, output_path: &Path, manager: &ResourceManager) -> anyhow::Result<()> {
+	let db = manager.big_world_database.as_ref().expect("unreachable");
+	let asset_bin = manager.load_asset(ResourceId::new("content/assets.bin"), false)?;
+
+	for header in &db.table_headers {
+		let asset_name = format!(
+			"{}_{:08x}.bin",
+			header.id.text().unwrap_or_else(|| format!("{:08x}", header.id.value())),
+			header.version
+		);
+
+		let data = db.load_table_slice(&asset_bin, header);
+
+		info!(target: "akizuki::unpack", "Saving table {:?}", header.id);
+
+		if args.dry {
+			return Ok(());
+		}
+
+		let asset_path = output_path.join("tables").join(asset_name);
+		let asset_dir = asset_path.parent().unwrap_or(output_path);
+
+		fs::create_dir_all(asset_dir)?;
+		fs::write(&asset_path, data)?;
 	}
 
 	Ok(())

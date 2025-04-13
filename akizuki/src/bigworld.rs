@@ -26,15 +26,9 @@ enum TableError {
 	UnsupportedTableVersion(StringId, u32),
 }
 
-pub struct BigWorldDatabase {
-	pub prototype_lookup: HashMap<ResourceId, BigWorldPrototypeRef>,
-	pub tables: Vec<Table>,
-	table_state: Vec<TableState>,
-}
-
 macro_rules! table_branch {
 	($target:ident, $table_header:ident, $reader:ident, $tables:ident, $table_states:ident) => {
-		if $target::is_supported(&$table_header) {
+		if $target::is_supported($table_header) {
 			$table_states.push(None);
 			$tables.push(construct_table::<$target>($reader, $table_header)?);
 			continue;
@@ -52,6 +46,13 @@ macro_rules! table_branch {
 	};
 }
 
+pub struct BigWorldDatabase {
+	pub prototype_lookup: HashMap<ResourceId, BigWorldPrototypeRef>,
+	pub tables: Vec<Table>,
+	pub table_headers: Vec<BigWorldTableHeader>,
+	table_state: Vec<TableState>,
+}
+
 impl BigWorldDatabase {
 	pub fn new(asset_bin: Vec<u8>, validate: bool) -> AkizukiResult<BigWorldDatabase> {
 		info!("loading asset db");
@@ -66,12 +67,13 @@ impl BigWorldDatabase {
 		let names = read_names(&mut reader, &bwdb_header)?;
 		let prototype_lookup = read_prototype_lookup(&mut reader, &bwdb_header)?;
 		pfs::build_filenames(&names, &prototype_lookup);
-		let (tables, table_state) = read_tables(&mut reader, &bwdb_header)?;
+		let (tables, table_state, table_headers) = read_tables(&mut reader, &bwdb_header)?;
 
 		Ok(BigWorldDatabase {
 			prototype_lookup,
 			tables,
 			table_state,
+			table_headers,
 		})
 	}
 
@@ -103,12 +105,16 @@ impl BigWorldDatabase {
 			.get(info.record_index())
 			.ok_or(AkizukiError::InvalidRecord(id))
 	}
+
+	pub fn load_table_slice<'a>(&self, data: &'a [u8], header: &BigWorldTableHeader) -> &'a [u8] {
+		&data[(header.relative_position.pos + header.pointer.offset) as usize..][..header.pointer.count as usize]
+	}
 }
 
 fn read_tables(
 	reader: &mut Cursor<Vec<u8>>,
 	header: &BigWorldDatabaseHeader,
-) -> AkizukiResult<(Vec<Table>, Vec<TableState>)> {
+) -> AkizukiResult<(Vec<Table>, Vec<TableState>, Vec<BigWorldTableHeader>)> {
 	reader.seek(Start(header.relative_position.pos + header.tables.offset))?;
 	let values = Vec::<BigWorldTableHeader>::read_ne_args(
 		reader,
@@ -124,7 +130,7 @@ fn read_tables(
 	use crate::table::model::ModelPrototypeVersion;
 	use crate::table::visual::VisualPrototypeVersion;
 
-	for table_header in values {
+	for table_header in &values {
 		match &table_header.id {
 			akizuki_id!("VisualPrototype") => {
 				table_branch!(VisualPrototypeVersion, table_header, reader, tables, table_states);
@@ -144,10 +150,10 @@ fn read_tables(
 		tables.push(Table::new());
 	}
 
-	Ok((tables, table_states))
+	Ok((tables, table_states, values))
 }
 
-fn construct_table<T>(reader: &mut Cursor<Vec<u8>>, header: BigWorldTableHeader) -> AkizukiResult<Table>
+fn construct_table<T>(reader: &mut Cursor<Vec<u8>>, header: &BigWorldTableHeader) -> AkizukiResult<Table>
 where
 	T: TableRecord,
 	BigWorldTableRecord: From<T>,
@@ -159,7 +165,7 @@ where
 	let mut table = Table::new();
 
 	for _ in 0..pointer.count {
-		table.push(T::new(reader, &header)?.into());
+		table.push(T::new(reader, header)?.into());
 	}
 
 	Ok(table)
