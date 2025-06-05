@@ -33,6 +33,7 @@ static STRING_LOOKUP: Lazy<RwLock<HashMap<u32, String>>> = Lazy::new(|| {
 	result.insert(akizuki_id!("VelocityFieldPrototype").0, "VelocityFieldPrototype".to_string());
 	result.insert(akizuki_id!("EffectPresetPrototype").0, "EffectPresetPrototype".to_string());
 	result.insert(akizuki_id!("EffectMetadataPrototype").0, "EffectMetadataPrototype".to_string());
+	result.insert(akizuki_id!("RootPrototype").0, "RootPrototype".to_string());
 
 	RwLock::new(result)
 });

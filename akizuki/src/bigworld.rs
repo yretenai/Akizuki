@@ -11,7 +11,7 @@ use crate::table::{BigWorldTableRecord, TableRecord};
 use akizuki_macro::akizuki_id;
 
 use binrw::{BinRead, NullString, VecArgs};
-use log::{info, warn};
+use log::warn;
 
 use std::collections::HashMap;
 use std::io::SeekFrom::Start;
@@ -48,9 +48,7 @@ pub struct BigWorldDatabase {
 }
 
 impl BigWorldDatabase {
-	pub fn new(asset_bin: Vec<u8>, validate: bool) -> AkizukiResult<BigWorldDatabase> {
-		info!("loading asset db");
-
+	pub fn new(asset_bin: Vec<u8>, validate: bool, slim: bool) -> AkizukiResult<BigWorldDatabase> {
 		let mut reader = Cursor::new(asset_bin);
 		let bw_header = BigWorldFileHeader::read_ne(&mut reader)?;
 		bw_header.is_valid(BigWorldMagic::AssetDb, 1, validate, &mut reader)?;
@@ -61,7 +59,7 @@ impl BigWorldDatabase {
 		let names = read_names(&mut reader, &bwdb_header)?;
 		let prototype_lookup = read_prototype_lookup(&mut reader, &bwdb_header)?;
 		pfs::build_filenames(&names, &prototype_lookup);
-		let (tables, table_state, table_headers) = read_tables(&mut reader, &bwdb_header)?;
+		let (tables, table_state, table_headers) = read_tables(&mut reader, &bwdb_header, slim)?;
 
 		Ok(BigWorldDatabase {
 			prototype_lookup,
@@ -103,6 +101,7 @@ impl BigWorldDatabase {
 fn read_tables(
 	reader: &mut Cursor<Vec<u8>>,
 	header: &BigWorldDatabaseHeader,
+	slim: bool,
 ) -> AkizukiResult<(Vec<Table>, Vec<TableState>, Vec<BigWorldTableHeader>)> {
 	reader.seek(Start(header.relative_position.pos + header.tables.offset))?;
 	let values = Vec::<BigWorldTableHeader>::read_ne_args(
@@ -115,6 +114,10 @@ fn read_tables(
 
 	let mut tables = Vec::<Table>::new();
 	let mut table_states = Vec::<TableState>::new();
+
+	if slim {
+		return Ok((tables, table_states, values));
+	}
 
 	use crate::table::model::ModelPrototypeVersion;
 	use crate::table::visual::VisualPrototypeVersion;

@@ -1,0 +1,108 @@
+{
+  "AtlasContourProto": {
+    "1233247664": {
+      "version": "0.10.3",
+      "version_id": 1233247664
+    }
+  },
+  "MaterialPrototype": {
+    "2840859861": {
+      "version": "0.11.10",
+      "version_id": 2840859861
+    },
+    "1795341146": {
+      "version": "0.11.8",
+      "version_id": 1795341146
+    },
+    "1847695988": {
+      "version": "0.10.1",
+      "version_id": 1847695988
+    }
+  },
+  "EffectMetadataPrototype": {
+    "308150570": {
+      "version": "12.7.0",
+      "version_id": 308150570
+    }
+  },
+  "RootPrototype": {
+    "1855625450": {
+      "version": "0.10.1",
+      "version_id": 1855625450
+    }
+  },
+  "ModelPrototype": {
+    "3601929577": {
+      "version": "14.1.0",
+      "version_id": 3601929577
+    },
+    "1840295664": {
+      "version": "0.10.1",
+      "version_id": 1840295664
+    },
+    "2039426940": {
+      "version": "13.4.0",
+      "version_id": 2039426940
+    },
+    "4038924428": {
+      "version": "0.10.8",
+      "version_id": 4038924428
+    },
+    "3884477252": {
+      "version": "13.8.0",
+      "version_id": 3884477252
+    }
+  },
+  "PointLightPrototype": {
+    "3522229185": {
+      "version": "0.10.1",
+      "version_id": 3522229185
+    }
+  },
+  "VelocityFieldPrototype": {
+    "2833966886": {
+      "version": "0.10.1",
+      "version_id": 2833966886
+    }
+  },
+  "SkeletonPrototype": {
+    "1167677614": {
+      "version": "14.0.0",
+      "version_id": 1167677614
+    },
+    "66720353": {
+      "version": "0.10.1",
+      "version_id": 66720353
+    }
+  },
+  "EffectPrototype": {
+    "4163470845": {
+      "version": "12.0.0",
+      "version_id": 4163470845
+    },
+    "631314097": {
+      "version": "0.10.8",
+      "version_id": 631314097
+    },
+    "3493970085": {
+      "version": "0.10.1",
+      "version_id": 3493970085
+    }
+  },
+  "VisualPrototype": {
+    "2728293662": {
+      "version": "0.10.1",
+      "version_id": 2728293662
+    },
+    "828835403": {
+      "version": "14.1.0",
+      "version_id": 828835403
+    }
+  },
+  "EffectPresetPrototype": {
+    "1520767163": {
+      "version": "0.10.1",
+      "version_id": 1520767163
+    }
+  }
+}

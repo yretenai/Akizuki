@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use akizuki::bigworld::BigWorldDatabase;
-use akizuki::identifiers::ResourceId;
+use akizuki::identifiers::{ResourceId, StringId};
 use akizuki::pfs::PackageFileSystem;
 use akizuki_macro::akizuki_resource;
 
@@ -12,7 +12,7 @@ use pelite::PeFile;
 use semver::Version;
 use walkdir::WalkDir;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 use std::fs::File;
@@ -48,9 +48,7 @@ fn main() {
 const ASSETS_BIN: ResourceId = akizuki_resource!("content/assets.bin");
 
 fn parse_versions(paths: Vec<String>, versions: HashMap<u64, Version>) -> Result<(), Box<dyn Error>> {
-	let mut parsed_versions: HashSet<u64> = HashSet::new();
-
-	let mut earliest_versions: HashMap<u32, HashMap<u32, VersionInfo>> = HashMap::new();
+	let mut earliest_versions: HashMap<StringId, HashMap<u32, VersionInfo>> = HashMap::new();
 
 	for dir in paths {
 		for path in WalkDir::new(dir).into_iter().filter_map(|x| x.ok()).filter(|x| x.file_type().is_file()) {
@@ -58,7 +56,7 @@ fn parse_versions(paths: Vec<String>, versions: HashMap<u64, Version>) -> Result
 				continue;
 			}
 
-			parse_version(path.path(), &mut parsed_versions, &mut earliest_versions, &versions);
+			parse_version(path.path(), &mut earliest_versions, &versions);
 		}
 	}
 
@@ -73,15 +71,10 @@ fn parse_versions(paths: Vec<String>, versions: HashMap<u64, Version>) -> Result
 
 fn parse_version(
 	path: &Path,
-	parsed_versions: &mut HashSet<u64>,
-	earliest_versions: &mut HashMap<u32, HashMap<u32, VersionInfo>>,
+	earliest_versions: &mut HashMap<StringId, HashMap<u32, VersionInfo>>,
 	versions: &HashMap<u64, Version>,
 ) -> Option<()> {
 	let version = path.parent()?.parent()?.file_name()?.to_str()?.parse::<u64>().ok()?;
-
-	if !parsed_versions.insert(version) {
-		return None;
-	}
 
 	let version_str = versions.get(&version)?;
 
@@ -107,7 +100,7 @@ fn parse_version(
 		}
 	};
 
-	let bwdb = match BigWorldDatabase::new(asset, false) {
+	let bwdb = match BigWorldDatabase::new(asset, false, true) {
 		Ok(asset) => asset,
 		Err(err) => {
 			log::error!("failed parsing assets.bin for {}.{}, got {}", version_str, version, err);
@@ -116,7 +109,7 @@ fn parse_version(
 	};
 
 	for record in bwdb.table_headers {
-		let table_versions = earliest_versions.entry(record.id.0).or_insert_with(HashMap::new);
+		let table_versions = earliest_versions.entry(record.id).or_insert_with(HashMap::new);
 
 		let info = VersionInfo {
 			version: version_str.clone(),
@@ -124,7 +117,7 @@ fn parse_version(
 		};
 
 		if let Some(table_version) = table_versions.get(&record.version) {
-			if table_version.version < info.version {
+			if table_version.version > info.version {
 				table_versions.insert(record.version, info);
 			}
 		} else {
