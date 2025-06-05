@@ -14,7 +14,7 @@ use syn::{DeriveInput, LitInt, LitStr, Result, Token, parse_macro_input};
 #[proc_macro]
 /// construct a string id at compile time based on the given string.
 ///
-/// akizuki_id("string to hash") -> StringId
+/// akizuki_id!("string to hash") -> StringId
 pub fn akizuki_id(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as LitStr);
 	let str = input.value();
@@ -22,6 +22,20 @@ pub fn akizuki_id(input: TokenStream) -> TokenStream {
 
 	TokenStream::from(quote! {
 		StringId(#hash)
+	})
+}
+
+#[proc_macro]
+/// construct a resource id at compile time based on the given string.
+///
+/// akizuki_resource!("resource path to hash") -> ResourceId
+pub fn akizuki_resource(input: TokenStream) -> TokenStream {
+	let input = parse_macro_input!(input as LitStr);
+	let str = input.value();
+	let hash = cityhasher::hash::<u64>(str);
+
+	TokenStream::from(quote! {
+		ResourceId(#hash)
 	})
 }
 
