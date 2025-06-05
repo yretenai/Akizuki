@@ -79,7 +79,7 @@ fn parse_version(
 ) -> Option<()> {
 	let version = path.parent()?.parent()?.file_name()?.to_str()?.parse::<u64>().ok()?;
 
-	if parsed_versions.contains(&version) {
+	if !parsed_versions.insert(version) {
 		return None;
 	}
 
