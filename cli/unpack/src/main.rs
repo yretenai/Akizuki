@@ -12,14 +12,9 @@ use index::*;
 
 use akizuki::manager::ResourceManager;
 
-use anyhow::Result;
 use clap::Parser;
-use colog::format::CologStyle;
-use colored::Colorize;
-use env_logger::fmt::Formatter;
-use log::{LevelFilter, Record, error};
+use log::{LevelFilter, error};
 
-use std::io::Write;
 use std::path::Path;
 
 const NEWLINE: [u8; 1] = [0xA];
@@ -73,8 +68,7 @@ fn main() {
 		log_level = LevelFilter::Debug;
 	}
 
-	log::set_max_level(log_level);
-	init_logging(log_level);
+	akizuki_cli::init_logging(log_level);
 
 	args.filter.dedup();
 
@@ -115,25 +109,4 @@ fn main() {
 			}
 		}
 	}
-}
-
-pub struct PrefixModule;
-impl CologStyle for PrefixModule {
-	fn format(&self, buf: &mut Formatter, record: &Record<'_>) -> Result<(), std::io::Error> {
-		let sep = self.line_separator();
-		let prefix = self.prefix_token(&record.level());
-
-		write!(buf, "{}", prefix)?;
-		write!(buf, "{}{}{}", "[".blue().bold(), format!("{}", buf.timestamp()).bright_cyan(), "]".blue().bold())?;
-		write!(buf, "{}{}{}", "[".blue().bold(), record.target().bright_purple(), "] ".blue().bold())?;
-		writeln!(buf, "{}", record.args().to_string().replace('\n', &sep))?;
-
-		Ok(())
-	}
-}
-pub fn init_logging(filter: LevelFilter) {
-	let mut builder = colog::basic_builder();
-	builder.format(colog::formatter(PrefixModule));
-	builder.filter(None, filter);
-	builder.init();
 }

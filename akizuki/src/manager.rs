@@ -10,6 +10,8 @@ use crate::pfs::PackageFileSystem;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use colored::Colorize;
+use log::info;
 
 pub struct ResourceManager {
 	pub packages: HashMap<ResourceId, PackageFileSystem>,
@@ -92,7 +94,10 @@ fn load_idx(packages_path: &Path, idx_path: &PathBuf, should_validate: bool) -> 
 
 	Ok(entries
 		.into_iter()
-		.filter_map(|entry| PackageFileSystem::new(packages_path, &entry.path(), should_validate).ok())
+		.filter_map(|entry| {
+			info!("loading {}", entry.file_name().to_str().unwrap_or("package").green());
+			PackageFileSystem::new(packages_path, &entry.path(), should_validate).ok()
+		})
 		.map(|pkg| (ResourceId::new(&pkg.name), pkg))
 		.collect())
 }

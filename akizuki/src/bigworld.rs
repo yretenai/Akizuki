@@ -53,7 +53,7 @@ impl BigWorldDatabase {
 
 		let mut reader = Cursor::new(asset_bin);
 		let bw_header = BigWorldFileHeader::read_ne(&mut reader)?;
-		bw_header.is_valid(BigWorldMagic::AssetDb, 257, validate, &mut reader)?;
+		bw_header.is_valid(BigWorldMagic::AssetDb, 1, validate, &mut reader)?;
 
 		let bwdb_header = BigWorldDatabaseHeader::read_ne(&mut reader)?;
 

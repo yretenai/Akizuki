@@ -12,8 +12,6 @@ use thiserror::Error;
 pub enum AkizukiError {
 	#[error("install path is invalid")]
 	InvalidInstall,
-	#[error("file endianness does not match host endianness")]
-	InvalidEndianness,
 	#[error("version mismatch, expected {expected:08x} got {present:08x}")]
 	InvalidVersion { expected: u32, present: u32 },
 	#[error("identifier mismatch")]

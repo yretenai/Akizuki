@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use crate::bin_wrap::FlagBool;
 use crate::error::{AkizukiError, AkizukiResult};
 use akizuki_common::mmh3::mmh3_32;
 
@@ -23,23 +24,19 @@ pub enum BigWorldMagic {
 #[br()]
 pub struct BigWorldFileHeader {
 	pub magic: BigWorldMagic,
-	pub version_be: u32,
+	pub alignment: u16,
+	pub packed: FlagBool,
+	pub version: u8,
 	pub hash: u32,
 	pub pointer_size: u32,
 }
 
 impl BigWorldFileHeader {
 	pub(crate) fn is_valid<T: Read + Seek>(&self, magic: BigWorldMagic, version: u32, validate: bool, reader: &mut T) -> AkizukiResult<()> {
-		let swapped_version = u32::swap_bytes(self.version_be);
-
-		if swapped_version > self.version_be {
-			return Err(AkizukiError::InvalidEndianness);
-		}
-
-		if swapped_version != version {
+		if self.version as u32 != version {
 			return Err(AkizukiError::InvalidVersion {
 				expected: version,
-				present: swapped_version,
+				present: self.version as u32,
 			});
 		}
 

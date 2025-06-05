@@ -10,10 +10,9 @@ use crate::identifiers::ResourceId;
 
 use binrw::io::BufReader;
 use binrw::{BinRead, NullString, VecArgs};
-use colored::Colorize;
 use crc::Crc;
 use flate2::FlushDecompress;
-use log::{debug, error, info};
+use log::{debug, error};
 use memmap2::Mmap;
 
 use std::cmp::min;
@@ -32,7 +31,6 @@ pub struct PackageFileSystem {
 impl PackageFileSystem {
 	pub fn new(pkg_directory: &Path, idx_path: &PathBuf, validate: bool) -> AkizukiResult<PackageFileSystem> {
 		let name = Path::file_stem(idx_path).unwrap_or_default().to_os_string().into_string().unwrap_or_default();
-		info!("loading {}", name.green());
 
 		let mut reader = BufReader::new(File::open(idx_path)?);
 

@@ -7,7 +7,7 @@ use std::io::{Read, Seek};
 
 // wrappers for BinRead...
 
-#[derive(BinRead, Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(BinRead, Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
 #[br(repr = u8)]
 pub enum FlagBool {
 	False,
