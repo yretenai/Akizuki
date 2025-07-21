@@ -1,82 +1,32 @@
 {
-  "EffectMetadataPrototype": {
-    "308150570": {
-      "version": "13.9.0",
-      "version_id": 308150570
-    }
-  },
-  "AtlasContourProto": {
-    "1233247664": {
-      "version": "13.9.0",
-      "version_id": 1233247664
-    }
-  },
-  "EffectPrototype": {
-    "1895813200": {
-      "version": "13.10.0",
-      "version_id": 1895813200
-    },
-    "2443929127": {
-      "version": "25.1.0",
-      "version_id": 2443929127
-    },
-    "4174310162": {
-      "version": "13.9.0",
-      "version_id": 4174310162
-    },
-    "2824874960": {
-      "version": "25.3.0",
-      "version_id": 2824874960
-    },
-    "3024780039": {
-      "version": "25.4.0",
-      "version_id": 3024780039
-    }
-  },
-  "VisualPrototype": {
-    "2728293662": {
-      "version": "13.9.0",
-      "version_id": 2728293662
-    }
-  },
-  "TrailPrototype": {
-    "337526175": {
-      "version": "13.9.0",
-      "version_id": 337526175
-    }
-  },
-  "ModelPrototype": {
-    "3957546766": {
-      "version": "13.9.0",
-      "version_id": 3957546766
-    }
-  },
   "MaterialPrototype": {
     "4089527503": {
       "version": "13.11.0",
       "version_id": 4089527503
+    },
+    "1969051740": {
+      "version": "25.7.0",
+      "version_id": 1969051740
     },
     "2840859861": {
       "version": "13.9.0",
       "version_id": 2840859861
     }
   },
-  "PointLightPrototype": {
-    "3522229185": {
-      "version": "13.9.0",
-      "version_id": 3522229185
+  "3448243507": {
+    "2317561550": {
+      "version": "25.6.0",
+      "version_id": 2317561550
     }
   },
-  "VelocityFieldPrototype": {
-    "2833966886": {
+  "VisualPrototype": {
+    "2685557482": {
+      "version": "25.7.0",
+      "version_id": 2685557482
+    },
+    "2728293662": {
       "version": "13.9.0",
-      "version_id": 2833966886
-    }
-  },
-  "MiscSettingsPrototype": {
-    "47998550": {
-      "version": "13.9.0",
-      "version_id": 47998550
+      "version_id": 2728293662
     }
   },
   "SkeletonPrototype": {
@@ -85,10 +35,82 @@
       "version_id": 66720353
     }
   },
+  "ModelPrototype": {
+    "3957546766": {
+      "version": "13.9.0",
+      "version_id": 3957546766
+    }
+  },
+  "VelocityFieldPrototype": {
+    "2833966886": {
+      "version": "13.9.0",
+      "version_id": 2833966886
+    }
+  },
+  "EffectMetadataPrototype": {
+    "308150570": {
+      "version": "13.9.0",
+      "version_id": 308150570
+    }
+  },
+  "EffectPrototype": {
+    "2824874960": {
+      "version": "25.3.0",
+      "version_id": 2824874960
+    },
+    "1895813200": {
+      "version": "13.10.0",
+      "version_id": 1895813200
+    },
+    "4174310162": {
+      "version": "13.9.0",
+      "version_id": 4174310162
+    },
+    "2443929127": {
+      "version": "25.1.0",
+      "version_id": 2443929127
+    },
+    "1285980497": {
+      "version": "25.7.0",
+      "version_id": 1285980497
+    },
+    "3024780039": {
+      "version": "25.4.0",
+      "version_id": 3024780039
+    }
+  },
   "EffectPresetPrototype": {
     "1520767163": {
       "version": "13.9.0",
       "version_id": 1520767163
+    }
+  },
+  "AtlasContourProto": {
+    "1233247664": {
+      "version": "13.9.0",
+      "version_id": 1233247664
+    }
+  },
+  "MiscSettingsPrototype": {
+    "47998550": {
+      "version": "13.9.0",
+      "version_id": 47998550
+    }
+  },
+  "TrailPrototype": {
+    "337526175": {
+      "version": "13.9.0",
+      "version_id": 337526175
+    },
+    "3844852932": {
+      "version": "25.7.0",
+      "version_id": 3844852932
+    }
+  },
+  "PointLightPrototype": {
+    "3522229185": {
+      "version": "13.9.0",
+      "version_id": 3522229185
     }
   }
 }
