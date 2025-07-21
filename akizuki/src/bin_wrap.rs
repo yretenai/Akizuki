@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use binrw::{BinRead, BinReaderExt, BinResult, Endian};
 use std::io::{Read, Seek};
+
+use binrw::{BinRead, BinReaderExt, BinResult, Endian};
 
 // wrappers for BinRead...
 

@@ -2,20 +2,20 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use std::collections::HashMap;
+use std::io::SeekFrom::Start;
+use std::io::{Cursor, Seek};
+
+use akizuki_macro::akizuki_id;
+use binrw::{BinRead, NullString, VecArgs};
+use log::warn;
+
 use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
 use crate::format::bigworld_data::*;
 use crate::identifiers::{ResourceId, StringId};
 use crate::pfs;
 use crate::table::{BigWorldTableRecord, TableRecord};
-use akizuki_macro::akizuki_id;
-
-use binrw::{BinRead, NullString, VecArgs};
-use log::warn;
-
-use std::collections::HashMap;
-use std::io::SeekFrom::Start;
-use std::io::{Cursor, Seek};
 
 type Table = Vec<BigWorldTableRecord>;
 type TableState = Option<TableError>;

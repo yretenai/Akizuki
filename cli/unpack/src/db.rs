@@ -2,17 +2,17 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::{Cli, NEWLINE};
-use akizuki::bigworld::BigWorldDatabase;
-use akizuki::identifiers::ResourceId;
-use akizuki::manager::ResourceManager;
-
-use log::{error, info};
-
 use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
+
+use akizuki::bigworld::BigWorldDatabase;
+use akizuki::identifiers::ResourceId;
+use akizuki::manager::ResourceManager;
+use log::{error, info};
+
+use crate::{Cli, NEWLINE};
 
 pub fn process_db_records(args: &Cli, output_path: &Path, manager: &ResourceManager) -> anyhow::Result<()> {
 	let db = manager.big_world_database.as_ref().expect("unreachable");

@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::identifiers::ResourceId;
-
 use binrw::{BinRead, PosValue};
+
+use crate::identifiers::ResourceId;
 
 #[derive(BinRead, Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
 #[br(repr = u32)]

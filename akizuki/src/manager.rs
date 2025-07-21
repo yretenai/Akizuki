@@ -2,17 +2,17 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use colored::Colorize;
+use log::info;
+
 use crate::bigworld::BigWorldDatabase;
 use crate::error::{AkizukiError, AkizukiResult};
 use crate::identifiers::ResourceId;
 use crate::pfs::PackageFileSystem;
-
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
-use colored::Colorize;
-use log::info;
-
 pub struct ResourceManager {
 	pub packages: HashMap<ResourceId, PackageFileSystem>,
 	pub lookup: HashMap<ResourceId, ResourceId>,

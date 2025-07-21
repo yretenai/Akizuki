@@ -2,46 +2,45 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use std::collections::HashMap;
+use std::io::Cursor;
+
+use akizuki_macro::akizuki_id;
+
 use crate::bin_wrap::{BoundingBox, Mat4};
 use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld_data::BigWorldTableHeader;
 use crate::identifiers::{ResourceId, StringId};
-use crate::table::v14::visual::{LODPrototype14, RenderSetPrototype14, SkeletonPrototype14, VisualPrototype14};
+use crate::table::visual_proto::v14_1_0::*;
 use crate::table::{BigWorldTableRecord, TableRecord};
 use crate::{bigworld_table_check, bigworld_table_version};
-use akizuki_macro::akizuki_id;
-
-use std::collections::HashMap;
-use std::io::Cursor;
-
-// everything is an option because these are the sum of all versions.
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(tag = "version")]
 pub enum VisualPrototypeVersion {
-	V14(VisualPrototype14),
+	V14_1_0(VisualPrototype14_1_0),
 }
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(tag = "version")]
 pub enum SkeletonPrototypeVersion {
-	V14(SkeletonPrototype14),
+	V14_1_0(SkeletonPrototype14_1_0),
 }
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(tag = "version")]
 pub enum RenderSetPrototypeVersion {
-	V14(RenderSetPrototype14),
+	V14_1_0(RenderSetPrototype14_1_0),
 }
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(tag = "version")]
 pub enum LODPrototypeVersion {
-	V14(LODPrototype14),
+	V14_1_0(LODPrototype14_1_0),
 }
 
 impl TableRecord for VisualPrototypeVersion {
@@ -50,13 +49,13 @@ impl TableRecord for VisualPrototypeVersion {
 			return Err(AkizukiError::UnsupportedTable(header.id));
 		}
 
-		bigworld_table_check!(VisualPrototype14, VisualPrototypeVersion::V14, reader, header);
+		bigworld_table_check!(VisualPrototype14_1_0, VisualPrototypeVersion::V14_1_0, reader, header);
 
 		Err(AkizukiError::UnsupportedTableVersion(header.id, header.version))
 	}
 
 	fn is_supported(header: &BigWorldTableHeader) -> bool {
-		bigworld_table_version!(VisualPrototype14, header);
+		bigworld_table_version!(VisualPrototype14_1_0, header);
 		false
 	}
 }
@@ -76,37 +75,37 @@ impl From<SkeletonPrototypeVersion> for BigWorldTableRecord {
 impl VisualPrototypeVersion {
 	pub fn skeleton_prototype(&self) -> &SkeletonPrototypeVersion {
 		match self {
-			VisualPrototypeVersion::V14(v14) => &v14.skeleton_prototype,
+			VisualPrototypeVersion::V14_1_0(v14) => &v14.skeleton_prototype,
 		}
 	}
 	pub fn merged_geometry_path(&self) -> ResourceId {
 		match self {
-			VisualPrototypeVersion::V14(v14) => v14.merged_geometry_path,
+			VisualPrototypeVersion::V14_1_0(v14) => v14.merged_geometry_path,
 		}
 	}
 	pub fn is_underwater_model(&self) -> bool {
 		match self {
-			VisualPrototypeVersion::V14(v14) => v14.is_underwater_model,
+			VisualPrototypeVersion::V14_1_0(v14) => v14.is_underwater_model,
 		}
 	}
 	pub fn is_abovewater_model(&self) -> bool {
 		match self {
-			VisualPrototypeVersion::V14(v14) => v14.is_abovewater_model,
+			VisualPrototypeVersion::V14_1_0(v14) => v14.is_abovewater_model,
 		}
 	}
 	pub fn bounding_box(&self) -> &BoundingBox {
 		match self {
-			VisualPrototypeVersion::V14(v14) => &v14.bounding_box,
+			VisualPrototypeVersion::V14_1_0(v14) => &v14.bounding_box,
 		}
 	}
 	pub fn render_sets(&self) -> &HashMap<StringId, RenderSetPrototypeVersion> {
 		match self {
-			VisualPrototypeVersion::V14(v14) => &v14.render_sets,
+			VisualPrototypeVersion::V14_1_0(v14) => &v14.render_sets,
 		}
 	}
 	pub fn lods(&self) -> &Vec<LODPrototypeVersion> {
 		match self {
-			VisualPrototypeVersion::V14(v14) => &v14.lods,
+			VisualPrototypeVersion::V14_1_0(v14) => &v14.lods,
 		}
 	}
 }
@@ -114,19 +113,19 @@ impl VisualPrototypeVersion {
 impl SkeletonPrototypeVersion {
 	pub fn names(&self) -> &Vec<StringId> {
 		match self {
-			SkeletonPrototypeVersion::V14(v14) => &v14.names,
+			SkeletonPrototypeVersion::V14_1_0(v14) => &v14.names,
 		}
 	}
 
 	pub fn matrices(&self) -> &Vec<Mat4> {
 		match self {
-			SkeletonPrototypeVersion::V14(v14) => &v14.matrices,
+			SkeletonPrototypeVersion::V14_1_0(v14) => &v14.matrices,
 		}
 	}
 
 	pub fn parent_ids(&self) -> &Vec<u16> {
 		match self {
-			SkeletonPrototypeVersion::V14(v14) => &v14.parent_ids,
+			SkeletonPrototypeVersion::V14_1_0(v14) => &v14.parent_ids,
 		}
 	}
 }
@@ -134,43 +133,43 @@ impl SkeletonPrototypeVersion {
 impl RenderSetPrototypeVersion {
 	pub fn name(&self) -> StringId {
 		match self {
-			RenderSetPrototypeVersion::V14(v14) => v14.name,
+			RenderSetPrototypeVersion::V14_1_0(v14) => v14.name,
 		}
 	}
 
 	pub fn material_name(&self) -> StringId {
 		match self {
-			RenderSetPrototypeVersion::V14(v14) => v14.material_name,
+			RenderSetPrototypeVersion::V14_1_0(v14) => v14.material_name,
 		}
 	}
 
 	pub fn vertices_name(&self) -> StringId {
 		match self {
-			RenderSetPrototypeVersion::V14(v14) => v14.vertices_name,
+			RenderSetPrototypeVersion::V14_1_0(v14) => v14.vertices_name,
 		}
 	}
 
 	pub fn indices_name(&self) -> StringId {
 		match self {
-			RenderSetPrototypeVersion::V14(v14) => v14.indices_name,
+			RenderSetPrototypeVersion::V14_1_0(v14) => v14.indices_name,
 		}
 	}
 
 	pub fn material_resource(&self) -> ResourceId {
 		match self {
-			RenderSetPrototypeVersion::V14(v14) => v14.material_resource,
+			RenderSetPrototypeVersion::V14_1_0(v14) => v14.material_resource,
 		}
 	}
 
 	pub fn is_skinned(&self) -> bool {
 		match self {
-			RenderSetPrototypeVersion::V14(v14) => v14.is_skinned,
+			RenderSetPrototypeVersion::V14_1_0(v14) => v14.is_skinned,
 		}
 	}
 
 	pub fn nodes(&self) -> &Vec<StringId> {
 		match self {
-			RenderSetPrototypeVersion::V14(v14) => &v14.nodes,
+			RenderSetPrototypeVersion::V14_1_0(v14) => &v14.nodes,
 		}
 	}
 }
@@ -178,19 +177,19 @@ impl RenderSetPrototypeVersion {
 impl LODPrototypeVersion {
 	pub fn extent(&self) -> f32 {
 		match self {
-			LODPrototypeVersion::V14(v14) => v14.extent,
+			LODPrototypeVersion::V14_1_0(v14) => v14.extent,
 		}
 	}
 
 	pub fn cast_shadows(&self) -> bool {
 		match self {
-			LODPrototypeVersion::V14(v14) => v14.cast_shadows,
+			LODPrototypeVersion::V14_1_0(v14) => v14.cast_shadows,
 		}
 	}
 
 	pub fn render_sets(&self) -> &Vec<StringId> {
 		match self {
-			LODPrototypeVersion::V14(v14) => &v14.render_sets,
+			LODPrototypeVersion::V14_1_0(v14) => &v14.render_sets,
 		}
 	}
 }

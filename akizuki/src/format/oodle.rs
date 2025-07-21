@@ -5,12 +5,12 @@
 #![allow(non_snake_case)]
 #![allow(clippy::too_many_arguments)]
 
+use std::ffi::c_void;
+use std::ptr::{null, null_mut};
+
 use dlopen2::wrapper::{Container, WrapperApi};
 use once_cell::sync::Lazy;
 use thiserror::Error;
-
-use std::ffi::c_void;
-use std::ptr::{null, null_mut};
 
 #[repr(C)]
 pub struct BC7PrepHeader {

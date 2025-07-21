@@ -2,15 +2,16 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use std::collections::HashMap;
+use std::fmt;
+use std::sync::RwLock;
+
+use akizuki_macro::akizuki_id;
 use binrw::BinRead;
 use colored::Colorize;
 use once_cell::sync::Lazy;
 
 use crate::error::AkizukiError;
-use akizuki_macro::akizuki_id;
-use std::collections::HashMap;
-use std::fmt;
-use std::sync::RwLock;
 
 #[repr(C)]
 #[derive(BinRead, Clone, Copy, PartialEq, Eq, Hash)]
@@ -53,10 +54,10 @@ impl StringId {
 
 	#[inline]
 	pub fn value(&self) -> u32 {
-		if self.is_valid() { self.0 } else { 0xFFFFFFFF }
+		if self.is_valid() { self.0 } else { 0xffffffff }
 	}
 
-	//noinspection DuplicatedCode
+	// noinspection DuplicatedCode
 	#[inline]
 	pub fn text(&self) -> Option<String> {
 		if self.is_valid() { STRING_LOOKUP.read().ok()?.get(&self.0).cloned() } else { None }
@@ -64,7 +65,7 @@ impl StringId {
 
 	#[inline]
 	pub fn is_valid(&self) -> bool {
-		self.0 > 0 && self.0 < 0xFFFFFFFF
+		self.0 > 0 && self.0 < 0xffffffff
 	}
 
 	#[inline]
@@ -92,10 +93,10 @@ impl ResourceId {
 
 	#[inline]
 	pub fn value(&self) -> u64 {
-		if self.is_valid() { self.0 } else { 0xFFFFFFFFFFFFFFFF }
+		if self.is_valid() { self.0 } else { 0xffffffffffffffff }
 	}
 
-	//noinspection DuplicatedCode
+	// noinspection DuplicatedCode
 	#[inline]
 	pub fn text(&self) -> Option<String> {
 		if self.is_valid() { RESOURCE_LOOKUP.read().ok()?.get(&self.0).cloned() } else { None }
@@ -103,7 +104,7 @@ impl ResourceId {
 
 	#[inline]
 	pub fn is_valid(&self) -> bool {
-		self.0 > 0 && self.0 < 0xFFFFFFFFFFFFFFFF
+		self.0 > 0 && self.0 < 0xffffffffffffffff
 	}
 
 	#[inline]
@@ -202,9 +203,9 @@ impl serde::Serialize for ResourceId {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-
 	use colored::control::SHOULD_COLORIZE;
+
+	use super::*;
 
 	#[test]
 	fn test_string_id() {

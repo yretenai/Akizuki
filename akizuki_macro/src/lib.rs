@@ -5,7 +5,6 @@
 extern crate proc_macro;
 
 use akizuki_common::mmh3::mmh3_32;
-
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};

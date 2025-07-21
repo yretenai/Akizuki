@@ -2,16 +2,18 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-pub mod v14;
+pub mod material_proto;
+pub mod model_proto;
+pub mod visual_proto;
 
 pub mod material;
 pub mod model;
 pub mod visual;
 
+use std::io::Cursor;
+
 use crate::error::AkizukiResult;
 use crate::format::bigworld_data::BigWorldTableHeader;
-
-use std::io::Cursor;
 
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(tag = "table")]

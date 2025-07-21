@@ -6,18 +6,16 @@ mod asset;
 mod db;
 mod index;
 
-use asset::*;
-use db::*;
-use index::*;
-
-use akizuki::manager::ResourceManager;
-
-use clap::Parser;
-use log::{LevelFilter, error};
-
 use std::path::Path;
 
-const NEWLINE: [u8; 1] = [0xA];
+use akizuki::manager::ResourceManager;
+use asset::*;
+use clap::Parser;
+use db::*;
+use index::*;
+use log::{LevelFilter, error};
+
+const NEWLINE: [u8; 1] = [0xa];
 
 #[derive(Parser)]
 #[command(version, about)]

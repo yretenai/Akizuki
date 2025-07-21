@@ -2,16 +2,16 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::NEWLINE;
-use akizuki::identifiers::{ResourceId, StringId};
-
-use anyhow::Error;
-
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
+
+use akizuki::identifiers::{ResourceId, StringId};
+use anyhow::Error;
+
+use crate::NEWLINE;
 
 pub fn process_index(output_path: &Path) -> anyhow::Result<()> {
 	let asset_dir = &output_path.join("idx/");

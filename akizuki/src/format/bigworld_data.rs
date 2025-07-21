@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::identifiers::{ResourceId, StringId};
-
-use binrw::{BinRead, BinResult, Endian, PosValue};
-
 use std::fmt;
 use std::io::SeekFrom::Current;
 use std::io::{Read, Seek};
+
+use binrw::{BinRead, BinResult, Endian, PosValue};
+
+use crate::identifiers::{ResourceId, StringId};
 
 #[derive(BinRead, Debug, Clone)]
 #[br()]
@@ -94,7 +94,7 @@ impl BigWorldPrototypeRef {
 	}
 
 	pub fn table_index(&self) -> usize {
-		((self.0 >> 2) & 0x3F) as usize
+		((self.0 >> 2) & 0x3f) as usize
 	}
 
 	pub fn record_index(&self) -> usize {

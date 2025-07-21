@@ -2,16 +2,16 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::bin_wrap::FlagBool;
-use crate::error::{AkizukiError, AkizukiResult};
-use akizuki_common::mmh3::mmh3_32;
+use std::io::SeekFrom::{End, Start};
+use std::io::{Read, Seek};
 
+use akizuki_common::mmh3::mmh3_32;
 use binrw::BinRead;
 use four_char_code::four_char_code;
 use log::debug;
 
-use std::io::SeekFrom::{End, Start};
-use std::io::{Read, Seek};
+use crate::bin_wrap::FlagBool;
+use crate::error::{AkizukiError, AkizukiResult};
 
 #[derive(BinRead, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[br(repr = u32)]

@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::error::{AkizukiError, AkizukiResult};
-use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
-use crate::format::oodle;
-use crate::format::pfs::*;
-use crate::identifiers::ResourceId;
+use std::cmp::min;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::Cursor;
+use std::io::{Seek, SeekFrom::Start};
+use std::path::{Path, PathBuf};
 
 use binrw::io::BufReader;
 use binrw::{BinRead, NullString, VecArgs};
@@ -15,12 +16,11 @@ use flate2::FlushDecompress;
 use log::{debug, error};
 use memmap2::Mmap;
 
-use std::cmp::min;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::Cursor;
-use std::io::{Seek, SeekFrom::Start};
-use std::path::{Path, PathBuf};
+use crate::error::{AkizukiError, AkizukiResult};
+use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
+use crate::format::oodle;
+use crate::format::pfs::*;
+use crate::identifiers::ResourceId;
 
 pub struct PackageFileSystem {
 	pub name: String,

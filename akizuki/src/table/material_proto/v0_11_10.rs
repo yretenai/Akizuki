@@ -2,21 +2,21 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::bigworld_read_array;
-use crate::bin_wrap::{FlagBool, Mat4, Vec2, Vec3, Vec4};
-use crate::error::AkizukiResult;
-use crate::identifiers::{ResourceId, StringId};
-use akizuki_macro::BigWorldTable;
-
-use binrw::{BinRead, BinReaderExt, PosValue, VecArgs};
-
 use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
+use akizuki_macro::BigWorldTable;
+use binrw::{BinRead, BinReaderExt, PosValue, VecArgs};
+
+use crate::bigworld_read_array;
+use crate::bin_wrap::{FlagBool, Mat4, Vec2, Vec3, Vec4};
+use crate::error::AkizukiResult;
+use crate::identifiers::{ResourceId, StringId};
+
 #[derive(BinRead, Debug)]
 #[br()]
-pub struct MaterialPrototypeHeader14 {
+pub struct MaterialPrototypeHeader0_11_10 {
 	pub relative_position: PosValue<()>,
 
 	pub property_count: u16,
@@ -49,9 +49,9 @@ pub struct MaterialPrototypeHeader14 {
 }
 
 #[derive(BigWorldTable, Debug)]
-#[table("MaterialPrototype", 0xd6b11569)]
+#[table("MaterialPrototype", 0xa95414d5)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-pub struct MaterialPrototype14 {
+pub struct MaterialPrototype0_11_10 {
 	pub bools: HashMap<StringId, bool>,
 	pub ints: HashMap<StringId, i32>,
 	pub uints: HashMap<StringId, u32>,
@@ -66,7 +66,7 @@ pub struct MaterialPrototype14 {
 	pub sort_order: i32,
 }
 
-enum MaterialPropertyType14 {
+enum MaterialPropertyType0_11_10 {
 	Bool,
 	Int,
 	UInt,
@@ -80,20 +80,20 @@ enum MaterialPropertyType14 {
 
 #[derive(BinRead, Debug)]
 #[br(repr = u16)]
-struct MaterialPropertyId14(u16);
+struct MaterialPropertyId0_11_10(u16);
 
-impl MaterialPropertyId14 {
-	pub fn property_type(&self) -> MaterialPropertyType14 {
-		match self.0 & 0xF {
-			0 => MaterialPropertyType14::Bool,
-			1 => MaterialPropertyType14::Int,
-			2 => MaterialPropertyType14::UInt,
-			3 => MaterialPropertyType14::Float,
-			4 => MaterialPropertyType14::Texture,
-			5 => MaterialPropertyType14::Vector2,
-			6 => MaterialPropertyType14::Vector3,
-			7 => MaterialPropertyType14::Vector4,
-			8 => MaterialPropertyType14::Matrix,
+impl MaterialPropertyId0_11_10 {
+	pub fn property_type(&self) -> MaterialPropertyType0_11_10 {
+		match self.0 & 0xf {
+			0 => MaterialPropertyType0_11_10::Bool,
+			1 => MaterialPropertyType0_11_10::Int,
+			2 => MaterialPropertyType0_11_10::UInt,
+			3 => MaterialPropertyType0_11_10::Float,
+			4 => MaterialPropertyType0_11_10::Texture,
+			5 => MaterialPropertyType0_11_10::Vector2,
+			6 => MaterialPropertyType0_11_10::Vector3,
+			7 => MaterialPropertyType0_11_10::Vector4,
+			8 => MaterialPropertyType0_11_10::Matrix,
 			_ => panic!("invalid type"),
 		}
 	}
@@ -103,18 +103,18 @@ impl MaterialPropertyId14 {
 	}
 }
 
-impl From<u16> for MaterialPropertyId14 {
+impl From<u16> for MaterialPropertyId0_11_10 {
 	fn from(value: u16) -> Self {
 		Self(value)
 	}
 }
 
-impl MaterialPrototype14 {
+impl MaterialPrototype0_11_10 {
 	pub fn new(reader: &mut Cursor<Vec<u8>>) -> AkizukiResult<Self> {
-		let header = reader.read_ne::<MaterialPrototypeHeader14>()?;
+		let header = reader.read_ne::<MaterialPrototypeHeader0_11_10>()?;
 
 		bigworld_read_array!(reader, header, property_names, property_count, property_name_ids_offset, StringId);
-		bigworld_read_array!(reader, header, property_ids, property_count, property_ids_offset, MaterialPropertyId14);
+		bigworld_read_array!(reader, header, property_ids, property_count, property_ids_offset, MaterialPropertyId0_11_10);
 		bigworld_read_array!(reader, header, bool_values, bool_values_count, bool_values_offset, FlagBool);
 		bigworld_read_array!(reader, header, i32_values, int_values_count, int_values_offset, i32);
 		bigworld_read_array!(reader, header, u32_values, uint_values_count, uint_values_offset, u32);
@@ -137,31 +137,31 @@ impl MaterialPrototype14 {
 
 		for (name, id) in property_names.iter().zip(property_ids) {
 			match id.property_type() {
-				MaterialPropertyType14::Bool => {
+				MaterialPropertyType0_11_10::Bool => {
 					bools.insert(*name, bool_values[id.index()].into());
 				}
-				MaterialPropertyType14::Int => {
+				MaterialPropertyType0_11_10::Int => {
 					ints.insert(*name, i32_values[id.index()]);
 				}
-				MaterialPropertyType14::UInt => {
+				MaterialPropertyType0_11_10::UInt => {
 					uints.insert(*name, u32_values[id.index()]);
 				}
-				MaterialPropertyType14::Float => {
+				MaterialPropertyType0_11_10::Float => {
 					floats.insert(*name, f32_values[id.index()]);
 				}
-				MaterialPropertyType14::Texture => {
+				MaterialPropertyType0_11_10::Texture => {
 					textures.insert(*name, texture_values[id.index()]);
 				}
-				MaterialPropertyType14::Vector2 => {
+				MaterialPropertyType0_11_10::Vector2 => {
 					vector2s.insert(*name, vec2_values[id.index()].into());
 				}
-				MaterialPropertyType14::Vector3 => {
+				MaterialPropertyType0_11_10::Vector3 => {
 					vector3s.insert(*name, vec3_values[id.index()].into());
 				}
-				MaterialPropertyType14::Vector4 => {
+				MaterialPropertyType0_11_10::Vector4 => {
 					vector4s.insert(*name, vec4_values[id.index()].into());
 				}
-				MaterialPropertyType14::Matrix => {
+				MaterialPropertyType0_11_10::Matrix => {
 					matrices.insert(*name, matrix_values[id.index()].into());
 				}
 			}
@@ -169,7 +169,7 @@ impl MaterialPrototype14 {
 
 		reader.seek(Start(header.end_position.pos))?;
 
-		Ok(MaterialPrototype14 {
+		Ok(MaterialPrototype0_11_10 {
 			bools,
 			ints,
 			uints,

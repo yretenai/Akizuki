@@ -2,12 +2,14 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::Cli;
+use std::fs;
+use std::path::Path;
+
 use akizuki::identifiers::ResourceId;
 use akizuki::pfs::PackageFileSystem;
 use log::info;
-use std::fs;
-use std::path::Path;
+
+use crate::Cli;
 
 pub fn process_asset(args: &Cli, output_path: &Path, package: &PackageFileSystem, asset_id: ResourceId) -> anyhow::Result<()> {
 	let asset_name = asset_id.text().unwrap_or_else(|| format!("unknown/{:016x}", asset_id.value()));

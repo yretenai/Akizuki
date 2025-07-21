@@ -106,7 +106,7 @@ mod tests {
 	fn test_vec_2() {
 		let test_vec: [u8; 2] = [0x21, 0x43];
 
-		assert_eq!(mmh3_32(&test_vec), 0xa0F7b07a);
+		assert_eq!(mmh3_32(&test_vec), 0xa0f7b07a);
 	}
 
 	#[test]

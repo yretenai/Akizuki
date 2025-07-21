@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use thiserror::Error;
+
 use crate::format::oodle::OodleError;
 use crate::identifiers::{ResourceId, StringId};
-
-use thiserror::Error;
 
 #[non_exhaustive]
 #[derive(Error, Debug)]

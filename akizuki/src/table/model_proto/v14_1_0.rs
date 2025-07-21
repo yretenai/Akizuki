@@ -2,23 +2,23 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use crate::error::AkizukiResult;
-use crate::format::bigworld_table::ModelMiscType;
-use crate::identifiers::{ResourceId, StringId};
-use crate::table::model::DyePrototypeVersion;
-use akizuki_macro::BigWorldTable;
-
-use binrw::{BinRead, PosValue};
-use binrw::{BinReaderExt, VecArgs};
-
-use crate::bigworld_read_array;
 use std::collections::HashMap;
 use std::io::SeekFrom::Start;
 use std::io::{Cursor, Seek};
 
+use akizuki_macro::BigWorldTable;
+use binrw::{BinRead, PosValue};
+use binrw::{BinReaderExt, VecArgs};
+
+use crate::bigworld_read_array;
+use crate::error::AkizukiResult;
+use crate::format::bigworld_table::ModelMiscType;
+use crate::identifiers::{ResourceId, StringId};
+use crate::table::model::DyePrototypeVersion;
+
 #[derive(BinRead, Debug)]
 #[br()]
-pub struct ModelPrototypeHeader14 {
+pub struct ModelPrototypeHeader14_1_0 {
 	pub relative_position: PosValue<()>,
 
 	pub visual_resource: ResourceId,
@@ -34,7 +34,7 @@ pub struct ModelPrototypeHeader14 {
 
 #[derive(BinRead, Debug)]
 #[br()]
-pub struct DyePrototypeHeader14 {
+pub struct DyePrototypeHeader14_1_0 {
 	pub relative_position: PosValue<()>,
 
 	pub matter_id: StringId,
@@ -48,7 +48,7 @@ pub struct DyePrototypeHeader14 {
 #[derive(BigWorldTable, Debug)]
 #[table("ModelPrototype", 0xd6b11569)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-pub struct ModelPrototype14 {
+pub struct ModelPrototype14_1_0 {
 	pub visual_resource: ResourceId,
 	pub misc_type: ModelMiscType,
 	pub animations: Vec<ResourceId>,
@@ -57,27 +57,27 @@ pub struct ModelPrototype14 {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-pub struct DyePrototype14 {
+pub struct DyePrototype14_1_0 {
 	pub matter: StringId,
 	pub replaces: StringId,
 	pub tints: HashMap<StringId, ResourceId>,
 }
 
-impl ModelPrototype14 {
+impl ModelPrototype14_1_0 {
 	pub fn new(reader: &mut Cursor<Vec<u8>>) -> AkizukiResult<Self> {
-		let header = reader.read_ne::<ModelPrototypeHeader14>()?;
+		let header = reader.read_ne::<ModelPrototypeHeader14_1_0>()?;
 
 		bigworld_read_array!(reader, header, animations, animation_count, animation_offset, ResourceId);
-		bigworld_read_array!(reader, header, dye_headers, dye_count, dye_offset, DyePrototypeHeader14);
+		bigworld_read_array!(reader, header, dye_headers, dye_count, dye_offset, DyePrototypeHeader14_1_0);
 
 		let mut dyes = Vec::<DyePrototypeVersion>::with_capacity(header.dye_count as usize);
 		for dye_header in dye_headers {
-			dyes.push(DyePrototypeVersion::V14(DyePrototype14::new(reader, dye_header)?));
+			dyes.push(DyePrototypeVersion::V14_1_0(DyePrototype14_1_0::new(reader, dye_header)?));
 		}
 
 		reader.seek(Start(header.end_position.pos))?;
 
-		Ok(ModelPrototype14 {
+		Ok(ModelPrototype14_1_0 {
 			visual_resource: header.visual_resource,
 			misc_type: header.misc_type,
 			animations,
@@ -86,8 +86,8 @@ impl ModelPrototype14 {
 	}
 }
 
-impl DyePrototype14 {
-	fn new(reader: &mut Cursor<Vec<u8>>, header: DyePrototypeHeader14) -> AkizukiResult<Self> {
+impl DyePrototype14_1_0 {
+	fn new(reader: &mut Cursor<Vec<u8>>, header: DyePrototypeHeader14_1_0) -> AkizukiResult<Self> {
 		bigworld_read_array!(reader, header, tints, tint_count, tint_name_ids_offset, StringId);
 		bigworld_read_array!(reader, header, materials, tint_count, tint_material_ids_offset, ResourceId);
 
@@ -96,7 +96,7 @@ impl DyePrototype14 {
 			map.insert(tints[i], materials[i]);
 		}
 
-		Ok(DyePrototype14 {
+		Ok(DyePrototype14_1_0 {
 			matter: header.matter_id,
 			replaces: header.replaces_id,
 			tints: map,

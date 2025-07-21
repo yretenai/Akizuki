@@ -2,15 +2,16 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use std::io::Write;
+
 use colog::format::CologStyle;
 use colored::Colorize;
 use env_logger::fmt::Formatter;
 use log::{LevelFilter, Record};
-use std::io::Write;
 
 pub struct PrefixModule;
 
-//noinspection DuplicatedCode
+// noinspection DuplicatedCode
 impl CologStyle for PrefixModule {
 	fn format(&self, buf: &mut Formatter, record: &Record<'_>) -> Result<(), std::io::Error> {
 		let sep = self.line_separator();
@@ -25,7 +26,7 @@ impl CologStyle for PrefixModule {
 	}
 }
 
-//noinspection DuplicatedCode
+// noinspection DuplicatedCode
 pub fn init_logging(filter: LevelFilter) {
 	log::set_max_level(filter);
 

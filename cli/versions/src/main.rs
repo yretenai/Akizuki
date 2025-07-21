@@ -2,16 +2,6 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use akizuki::bigworld::BigWorldDatabase;
-use akizuki::identifiers::{ResourceId, StringId};
-use akizuki::pfs::PackageFileSystem;
-use akizuki_macro::akizuki_resource;
-
-use log::LevelFilter;
-use pelite::PeFile;
-use semver::Version;
-use walkdir::WalkDir;
-
 use std::collections::HashMap;
 use std::env;
 use std::error::Error;
@@ -19,7 +9,16 @@ use std::fs::File;
 use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 
-const NEWLINE: [u8; 1] = [0xA];
+use akizuki::bigworld::BigWorldDatabase;
+use akizuki::identifiers::{ResourceId, StringId};
+use akizuki::pfs::PackageFileSystem;
+use akizuki_macro::akizuki_resource;
+use log::LevelFilter;
+use pelite::PeFile;
+use semver::Version;
+use walkdir::WalkDir;
+
+const NEWLINE: [u8; 1] = [0xa];
 
 #[derive(Debug, serde::Serialize)]
 struct VersionInfo {
