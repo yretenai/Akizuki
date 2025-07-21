@@ -31,7 +31,7 @@ fn main() {
 
 	let paths: Vec<String> = env::args().skip(1).collect();
 
-	match parse_game_pe(&paths) {
+	match parse_game_pes(&paths) {
 		Ok(versions) => {
 			if let Err(err) = parse_versions(paths, versions) {
 				log::error!("{}", err);
@@ -127,7 +127,7 @@ fn parse_version(
 	Some(())
 }
 
-fn parse_game_pe(paths: &Vec<String>) -> Result<HashMap<u64, Version>, Box<dyn Error>> {
+fn parse_game_pes(paths: &Vec<String>) -> Result<HashMap<u64, Version>, Box<dyn Error>> {
 	let mut versions: HashMap<u64, Version> = HashMap::new();
 
 	for dir in paths {
@@ -136,29 +136,36 @@ fn parse_game_pe(paths: &Vec<String>) -> Result<HashMap<u64, Version>, Box<dyn E
 				continue;
 			}
 
-			let mut pe_file = File::open(path.path())?;
-			let mut pe_bytes = Vec::<u8>::new();
-			pe_file.read_to_end(&mut pe_bytes)?;
-			let pe = PeFile::from_bytes(&pe_bytes)?;
-			let version_info = pe.resources()?.version_info()?;
-			for (_, strings) in version_info.file_info().strings {
-				if let Some(product_version) = strings.get("ProductVersion") {
-					let parts = product_version.split(',').filter_map(|x| x.trim().parse().ok()).collect::<Vec<u64>>();
-					if parts.len() != 4 {
-						continue;
-					}
-
-					if parts[3] == 0 {
-						continue;
-					}
-
-					if let Some(version) = versions.insert(parts[3], Version::new(parts[0], parts[1], parts[2])) {
-						log::info!("{} = {}", parts[3], version);
-					}
-				}
+			if let Err(err) = parse_game_pe(path.path(), &mut versions) {
+				log::error!("{}", err);
 			}
 		}
 	}
 
 	Ok(versions)
+}
+
+fn parse_game_pe(path: &Path, versions: &mut HashMap<u64, Version>) -> Result<(), Box<dyn Error>> {
+	let mut pe_file = File::open(path)?;
+	let mut pe_bytes = Vec::<u8>::new();
+	pe_file.read_to_end(&mut pe_bytes)?;
+	let pe = PeFile::from_bytes(&pe_bytes)?;
+	let version_info = pe.resources()?.version_info()?;
+	for (_, strings) in version_info.file_info().strings {
+		if let Some(product_version) = strings.get("ProductVersion") {
+			let parts = product_version.split(',').filter_map(|x| x.trim().parse().ok()).collect::<Vec<u64>>();
+			if parts.len() != 4 {
+				continue;
+			}
+
+			if parts[3] == 0 {
+				continue;
+			}
+
+			if let Some(version) = versions.insert(parts[3], Version::new(parts[0], parts[1], parts[2])) {
+				log::info!("{} = {}", parts[3], version);
+			}
+		}
+	}
+	Ok(())
 }
