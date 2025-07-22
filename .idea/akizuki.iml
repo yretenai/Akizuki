@@ -10,12 +10,13 @@ SPDX-License-Identifier: EUPL-1.2
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/akizuki/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/cli/ship/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/cli/unpack/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/akizuki_common/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/akizuki_macro/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/cli/versions/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/akizuki_cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/cli/ship/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/cli/unpack/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/cli/versions/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/cli/viewer/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

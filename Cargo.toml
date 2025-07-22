@@ -4,7 +4,7 @@
 
 [workspace]
 resolver = "2"
-members = ["akizuki", "akizuki_macro", "cli/unpack", "cli/ship", "cli/versions", "akizuki_common", "akizuki_cli"]
+members = ["akizuki", "akizuki_macro", "cli/unpack", "cli/ship", "cli/versions", "akizuki_common", "akizuki_cli", "cli/viewer"]
 
 [workspace.package]
 authors = ["Legiayayana"]
