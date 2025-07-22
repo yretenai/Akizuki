@@ -119,16 +119,24 @@ fn read_tables(
 		return Ok((tables, table_states, values));
 	}
 
+	use crate::table::material::MaterialPrototypeVersion;
 	use crate::table::model::ModelPrototypeVersion;
+	use crate::table::skeleton::SkeletonPrototypeVersion;
 	use crate::table::visual::VisualPrototypeVersion;
 
 	for table_header in &values {
 		match &table_header.id {
-			akizuki_id!("VisualPrototype") => {
-				table_branch!(VisualPrototypeVersion, table_header, reader, tables, table_states);
+			akizuki_id!("MaterialPrototype") => {
+				table_branch!(MaterialPrototypeVersion, table_header, reader, tables, table_states);
 			}
 			akizuki_id!("ModelPrototype") => {
 				table_branch!(ModelPrototypeVersion, table_header, reader, tables, table_states);
+			}
+			akizuki_id!("SkeletonPrototype") => {
+				table_branch!(SkeletonPrototypeVersion, table_header, reader, tables, table_states);
+			}
+			akizuki_id!("VisualPrototype") => {
+				table_branch!(VisualPrototypeVersion, table_header, reader, tables, table_states);
 			}
 			&_ => {
 				warn!("table {:?} (version {:08x}) is not implememented", table_header.id, table_header.version);

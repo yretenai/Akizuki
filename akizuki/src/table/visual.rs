@@ -7,10 +7,11 @@ use std::io::Cursor;
 
 use akizuki_macro::akizuki_id;
 
-use crate::bin_wrap::{BoundingBox, Mat4};
+use crate::bin_wrap::BoundingBox;
 use crate::error::{AkizukiError, AkizukiResult};
 use crate::format::bigworld_data::BigWorldTableHeader;
 use crate::identifiers::{ResourceId, StringId};
+use crate::table::skeleton::SkeletonPrototypeVersion;
 use crate::table::visual_proto::v14_1_0::*;
 use crate::table::{BigWorldTableRecord, TableRecord};
 use crate::{bigworld_table_check, bigworld_table_version};
@@ -20,13 +21,6 @@ use crate::{bigworld_table_check, bigworld_table_version};
 #[serde(tag = "version")]
 pub enum VisualPrototypeVersion {
 	V14_1_0(VisualPrototype14_1_0),
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[serde(tag = "version")]
-pub enum SkeletonPrototypeVersion {
-	V14_1_0(SkeletonPrototype14_1_0),
 }
 
 #[derive(Debug)]
@@ -66,12 +60,6 @@ impl From<VisualPrototypeVersion> for BigWorldTableRecord {
 	}
 }
 
-impl From<SkeletonPrototypeVersion> for BigWorldTableRecord {
-	fn from(value: SkeletonPrototypeVersion) -> Self {
-		BigWorldTableRecord::SkeletonPrototype(value.into())
-	}
-}
-
 impl VisualPrototypeVersion {
 	pub fn skeleton_prototype(&self) -> &SkeletonPrototypeVersion {
 		match self {
@@ -106,26 +94,6 @@ impl VisualPrototypeVersion {
 	pub fn lods(&self) -> &Vec<LODPrototypeVersion> {
 		match self {
 			VisualPrototypeVersion::V14_1_0(v14) => &v14.lods,
-		}
-	}
-}
-
-impl SkeletonPrototypeVersion {
-	pub fn names(&self) -> &Vec<StringId> {
-		match self {
-			SkeletonPrototypeVersion::V14_1_0(v14) => &v14.names,
-		}
-	}
-
-	pub fn matrices(&self) -> &Vec<Mat4> {
-		match self {
-			SkeletonPrototypeVersion::V14_1_0(v14) => &v14.matrices,
-		}
-	}
-
-	pub fn parent_ids(&self) -> &Vec<u16> {
-		match self {
-			SkeletonPrototypeVersion::V14_1_0(v14) => &v14.parent_ids,
 		}
 	}
 }

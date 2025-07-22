@@ -4,10 +4,12 @@
 
 pub mod material_proto;
 pub mod model_proto;
+pub mod skeleton_proto;
 pub mod visual_proto;
 
 pub mod material;
 pub mod model;
+pub mod skeleton;
 pub mod visual;
 
 use std::io::Cursor;
@@ -19,7 +21,7 @@ use crate::format::bigworld_data::BigWorldTableHeader;
 #[serde(tag = "table")]
 pub enum BigWorldTableRecord {
 	VisualPrototype(Box<visual::VisualPrototypeVersion>),
-	SkeletonPrototype(Box<visual::SkeletonPrototypeVersion>),
+	SkeletonPrototype(Box<skeleton::SkeletonPrototypeVersion>),
 	ModelPrototype(Box<model::ModelPrototypeVersion>),
 	MaterialPrototype(Box<material::MaterialPrototypeVersion>),
 }

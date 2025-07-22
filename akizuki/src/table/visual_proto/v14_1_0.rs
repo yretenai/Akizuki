@@ -10,9 +10,11 @@ use akizuki_macro::BigWorldTable;
 use binrw::{BinRead, BinReaderExt, PosValue, VecArgs};
 
 use crate::bigworld_read_array;
-use crate::bin_wrap::{BoundingBox, FlagBool, Mat4};
+use crate::bin_wrap::{BoundingBox, FlagBool};
 use crate::error::AkizukiResult;
 use crate::identifiers::{ResourceId, StringId};
+use crate::table::skeleton::SkeletonPrototypeVersion;
+use crate::table::skeleton_proto::v14_0_0::{SkeletonPrototype14_0_0, SkeletonPrototypeHeader14_0_0};
 use crate::table::visual::*;
 
 #[derive(BinRead, Debug)]
@@ -20,7 +22,7 @@ use crate::table::visual::*;
 pub struct VisualPrototypeHeader14_1_0 {
 	pub relative_position: PosValue<()>,
 
-	pub skeleton_prototype: SkeletonPrototypeHeader14_1_0,
+	pub skeleton_prototype: SkeletonPrototypeHeader14_0_0,
 	pub merged_geometry_path: ResourceId,
 	pub is_underwater_model: FlagBool,
 	pub is_abovewater_model: FlagBool,
@@ -30,22 +32,6 @@ pub struct VisualPrototypeHeader14_1_0 {
 	pub bounding_box: BoundingBox,
 	pub sets_offset: u64,
 	pub lods_offset: u64,
-
-	pub end_position: PosValue<()>,
-}
-
-#[derive(BinRead, Debug)]
-#[br()]
-pub struct SkeletonPrototypeHeader14_1_0 {
-	pub relative_position: PosValue<()>,
-
-	pub node_count: u32,
-	#[br(pad_before = 4)]
-	pub name_map_id_offset: u64,
-	pub name_map_node_offset: u64,
-	pub name_ids_offset: u64,
-	pub matrices_offset: u64,
-	pub parent_ids_offset: u64,
 
 	pub end_position: PosValue<()>,
 }
@@ -94,14 +80,6 @@ pub struct VisualPrototype14_1_0 {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-pub struct SkeletonPrototype14_1_0 {
-	pub names: Vec<StringId>,
-	pub matrices: Vec<Mat4>,
-	pub parent_ids: Vec<u16>,
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct RenderSetPrototype14_1_0 {
 	pub name: StringId,
 	pub material_name: StringId,
@@ -123,8 +101,8 @@ pub struct LODPrototype14_1_0 {
 impl VisualPrototype14_1_0 {
 	pub fn new(reader: &mut Cursor<Vec<u8>>) -> AkizukiResult<Self> {
 		let header = reader.read_ne::<VisualPrototypeHeader14_1_0>()?;
-
-		let skeleton_prototype = SkeletonPrototype14_1_0::new(reader, header.skeleton_prototype)?;
+		reader.set_position(header.relative_position.pos);
+		let skeleton_prototype = SkeletonPrototype14_0_0::new(reader)?;
 
 		bigworld_read_array!(reader, header, lod_headers, lod_count, lods_offset, LODPrototypeHeader14_1_0);
 		bigworld_read_array!(reader, header, render_set_headers, sets_count, sets_offset, RenderSetPrototypeHeader14_1_0);
@@ -142,27 +120,13 @@ impl VisualPrototype14_1_0 {
 		reader.seek(Start(header.end_position.pos))?;
 
 		Ok(VisualPrototype14_1_0 {
-			skeleton_prototype: SkeletonPrototypeVersion::V14_1_0(skeleton_prototype),
+			skeleton_prototype: SkeletonPrototypeVersion::V14_0_0(skeleton_prototype),
 			merged_geometry_path: header.merged_geometry_path,
 			is_underwater_model: header.is_underwater_model.into(),
 			is_abovewater_model: header.is_abovewater_model.into(),
 			bounding_box: header.bounding_box,
 			render_sets: render_sets.into_iter().map(|render_set| (render_set.name(), render_set)).collect(),
 			lods,
-		})
-	}
-}
-
-impl SkeletonPrototype14_1_0 {
-	fn new(reader: &mut Cursor<Vec<u8>>, header: SkeletonPrototypeHeader14_1_0) -> AkizukiResult<Self> {
-		bigworld_read_array!(reader, header, names, node_count, name_ids_offset, StringId);
-		bigworld_read_array!(reader, header, matrices, node_count, matrices_offset, Mat4);
-		bigworld_read_array!(reader, header, parent_ids, node_count, parent_ids_offset, u16);
-
-		Ok(SkeletonPrototype14_1_0 {
-			names,
-			matrices,
-			parent_ids,
 		})
 	}
 }
