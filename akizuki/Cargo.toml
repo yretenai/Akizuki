@@ -11,36 +11,36 @@ edition = "2024"
 akizuki_common = { path = "../akizuki_common" }
 akizuki_macro = { path = "../akizuki_macro" }
 
-binrw = "0.15.0"
-cityhasher = "0.1.0"
-colored = "2.2.0"
-crc = "3.3.0"
-dlopen2 = "0.8.0"
-flate2 = "1.1"
-four-char-code = "2.3.0"
-log = "0.4.27"
-memmap2 = "0.9.5"
-once_cell = "1.21.3"
-thiserror = "2.0.12"
+binrw = "0"
+cityhasher = "0"
+colored = "3"
+crc = "3"
+dlopen2 = "0"
+flate2 = "1"
+four-char-code = "2"
+log = "0"
+memmap2 = "0"
+once_cell = "1"
+thiserror = "2"
 
 # locale
-gettext = { version = "0.4.0", optional = true }
+gettext = { version = "0", optional = true }
 
 # data
-glam = { version = "0.30.3", optional = true }
-serde = { version = "1.0.219", optional = true, features = ["derive"] }
-serde-pickle = { version = "1.2.0", optional = true }
-serde-xml-rs = { version = "0.8.1", optional = true }
-serde_with = { version = "3.12.0", optional = true }
+glam = { version = "0", optional = true }
+serde = { version = "1", optional = true, features = ["derive"] }
+serde-pickle = { version = "1", optional = true }
+serde-xml-rs = { version = "0", optional = true }
+serde_with = { version = "3", optional = true }
 
 # geometry
-gltf = { version = "1.4.1", features = ["extensions", "extras", "names", "KHR_texture_transform"], optional = true }
-half = { version = "2.6.0", optional = true }
-meshopt = { version = "0.4.1", optional = true }
+gltf = { version = "1", features = ["extensions", "extras", "names", "KHR_texture_transform"], optional = true }
+half = { version = "2", optional = true }
+meshopt = { version = "0", optional = true }
 
 # texture
-bcdec_rs = { version = "0.2.0", optional = true }
-image = { version = "0.25.6", optional = true }
+bcdec_rs = { version = "0", optional = true }
+image = { version = "0", optional = true }
 
 [features]
 geometry = ["glam", "gltf", "half", "meshopt"]
