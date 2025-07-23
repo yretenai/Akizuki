@@ -4,7 +4,7 @@
 
 [workspace]
 resolver = "2"
-members = ["akizuki", "akizuki_macro", "cli/unpack", "cli/ship", "cli/versions", "akizuki_common", "akizuki_cli", "cli/viewer"]
+members = ["akizuki", "akizuki_macro", "akizuki_common", "akizuki_cli", "cli/unpack", "cli/ship", "cli/versions", "cli/viewer"]
 
 [workspace.package]
 authors = ["Legiayayana"]
@@ -25,3 +25,6 @@ debug = 1
 [profile.release-with-debug]
 inherits = "release"
 debug = true
+
+[patch.crates-io]
+bcdec_rs = { git = 'https://github.com/yretenai/image_dds.git' }
