@@ -21,7 +21,7 @@ type Table = Vec<BigWorldTableRecord>;
 type TableState = Option<TableError>;
 
 #[derive(Debug)]
-enum TableError {
+pub enum TableError {
 	UnsupportedTable(StringId),
 	UnsupportedTableVersion(StringId, u32),
 }

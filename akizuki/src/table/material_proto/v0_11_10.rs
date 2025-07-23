@@ -66,7 +66,7 @@ pub struct MaterialPrototype0_11_10 {
 	pub sort_order: i32,
 }
 
-enum MaterialPropertyType0_11_10 {
+pub enum MaterialPropertyType0_11_10 {
 	Bool,
 	Int,
 	UInt,
@@ -80,7 +80,7 @@ enum MaterialPropertyType0_11_10 {
 
 #[derive(BinRead, Debug)]
 #[br(repr = u16)]
-struct MaterialPropertyId0_11_10(u16);
+pub struct MaterialPropertyId0_11_10(u16);
 
 impl MaterialPropertyId0_11_10 {
 	pub fn property_type(&self) -> MaterialPropertyType0_11_10 {
