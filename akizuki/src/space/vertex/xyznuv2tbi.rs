@@ -10,7 +10,7 @@ use crate::space::vertex::vertex_helper::{unpack_normal, unpack_tangent, unpack_
 use crate::space::vertex::{Vertex, VertexDecode, VertexStream};
 
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
-#[repr(C, packed)]
+#[repr(C, packed(4))]
 pub struct VertexXYZNUV2TBI {
 	pub xyz: [f32; 3],
 	pub n: [i8; 4],
