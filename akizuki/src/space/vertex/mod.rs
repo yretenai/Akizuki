@@ -20,17 +20,20 @@ pub mod xyznuvtboi;
 
 use glam::{IVec3, Vec2, Vec3, Vec4};
 
-use crate::space::vertex::xyznuv::VertexXYZNUV;
-use crate::space::vertex::xyznuv2iiiwwtb::VertexXYZNUV2IIIWWTB;
-use crate::space::vertex::xyznuv2tb::VertexXYZNUV2TB;
-use crate::space::vertex::xyznuv2tbi::VertexXYZNUV2TBI;
-use crate::space::vertex::xyznuviiiww::VertexXYZNUVIIIWW;
-use crate::space::vertex::xyznuviiiwwr::VertexXYZNUVIIIWWR;
-use crate::space::vertex::xyznuviiiwwtb::VertexXYZNUVIIIWWTB;
-use crate::space::vertex::xyznuvr::VertexXYZNUVR;
-use crate::space::vertex::xyznuvtb::VertexXYZNUVTB;
-use crate::space::vertex::xyznuvtbi::VertexXYZNUVTBI;
-use crate::space::vertex::xyznuvtboi::VertexXYZNUVTBOI;
+#[rustfmt::skip]
+use crate::space::vertex::{
+	xyznuv::VertexXYZNUV,
+	xyznuv2iiiwwtb::VertexXYZNUV2IIIWWTB,
+	xyznuv2tb::VertexXYZNUV2TB,
+	xyznuv2tbi::VertexXYZNUV2TBI,
+	xyznuviiiww::VertexXYZNUVIIIWW,
+	xyznuviiiwwr::VertexXYZNUVIIIWWR,
+	xyznuviiiwwtb::VertexXYZNUVIIIWWTB,
+	xyznuvr::VertexXYZNUVR,
+	xyznuvtb::VertexXYZNUVTB,
+	xyznuvtbi::VertexXYZNUVTBI,
+	xyznuvtboi::VertexXYZNUVTBOI,
+};
 
 pub trait VertexDecode {
 	fn decode(&self) -> VertexStream;
