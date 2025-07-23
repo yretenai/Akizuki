@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+// todo: this can be easily macro'd
+// bigworld_vertex!(XYZ, N, UV2, TB, I) maybe?
+
 pub mod vertex_helper;
 pub mod xyznuv;
 pub mod xyznuv2iiiwwtb;

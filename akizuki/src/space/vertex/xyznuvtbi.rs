@@ -45,6 +45,7 @@ impl VertexDecode for Vec<VertexXYZNUVTBI> {
 		stream.tangent = Some(tangent);
 		stream.binormal = Some(binormal);
 		stream.id = Some(id);
+
 		stream
 	}
 }

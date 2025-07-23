@@ -49,6 +49,7 @@ impl VertexDecode for Vec<VertexXYZNUVTBOI> {
 		stream.binormal = Some(binormal);
 		stream.color = Some(color);
 		stream.id = Some(id);
+
 		stream
 	}
 }
