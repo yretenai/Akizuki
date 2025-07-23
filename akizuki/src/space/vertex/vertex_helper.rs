@@ -11,7 +11,7 @@ pub fn i8norm(value: i8) -> f32 {
 }
 
 pub fn u8norm(value: u8) -> f32 {
-	(value as f32) / 255.0
+	((value ^ 0xff) as f32) / 255.0
 }
 
 pub fn unpack_uv(uv: [f16; 2]) -> Vec2 {
