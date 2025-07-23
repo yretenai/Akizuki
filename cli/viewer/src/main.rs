@@ -249,7 +249,14 @@ impl AppWindow {
 		}))
 		.unwrap();
 
-		let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor::default())).unwrap();
+		let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+			label: None,
+			required_features: wgpu::Features::TEXTURE_COMPRESSION_BC,
+			required_limits: wgpu::Limits::default(),
+			memory_hints: wgpu::MemoryHints::Performance,
+			trace: wgpu::Trace::Off,
+		}))
+		.unwrap();
 
 		// Set up swap chain
 		let surface_desc = create_surface_desc(&size);
@@ -276,7 +283,7 @@ fn create_surface_desc(size: &PhysicalSize<u32>) -> wgpu::SurfaceConfiguration {
 		format: wgpu::TextureFormat::Bgra8UnormSrgb,
 		width: size.width,
 		height: size.height,
-		present_mode: wgpu::PresentMode::Mailbox,
+		present_mode: wgpu::PresentMode::Immediate,
 		desired_maximum_frame_latency: 1,
 		alpha_mode: wgpu::CompositeAlphaMode::Opaque,
 		view_formats: vec![wgpu::TextureFormat::Bgra8Unorm],
