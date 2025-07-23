@@ -27,4 +27,6 @@ inherits = "release"
 debug = true
 
 [patch.crates-io]
+image_dds = { git = 'https://github.com/yretenai/image_dds.git' }
 bcdec_rs = { git = 'https://github.com/yretenai/image_dds.git' }
+#bcndecode-sys = { git = 'https://github.com/yretenai/image_dds.git' }

@@ -37,14 +37,15 @@ serde_with = { version = "3", optional = true }
 gltf = { version = "1", features = ["extensions", "extras", "names", "KHR_texture_transform"], optional = true }
 half = { version = "2", optional = true }
 meshopt = { version = "0", optional = true }
+bytemuck = { version = "1", optional = true }
 
 # texture
-bcdec_rs = { version = "0", optional = true }
+image_dds = { version = "0", optional = true }
 image = { version = "0", optional = true }
 
 [features]
-geometry = ["glam", "gltf", "half", "meshopt"]
-texture = ["bcdec_rs", "image"]
+geometry = ["glam", "gltf", "half", "meshopt", "bytemuck"]
+texture = ["image_dds", "image"]
 locale = ["gettext"]
 data = ["glam", "serde", "serde-pickle", "serde-xml-rs"]
 serialize = ["serde", "serde_with", "glam/serde"]
