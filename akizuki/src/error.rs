@@ -4,6 +4,7 @@
 
 use thiserror::Error;
 
+use crate::format::bigworld::BigWorldFileVersion;
 use crate::format::oodle::OodleError;
 use crate::identifiers::{ResourceId, StringId};
 
@@ -12,8 +13,8 @@ use crate::identifiers::{ResourceId, StringId};
 pub enum AkizukiError {
 	#[error("install path is invalid")]
 	InvalidInstall,
-	#[error("version mismatch, expected {expected:08x} got {present:08x}")]
-	InvalidVersion { expected: u32, present: u32 },
+	#[error("version mismatch, expected {expected} got {present}")]
+	InvalidVersion { expected: BigWorldFileVersion, present: BigWorldFileVersion },
 	#[error("identifier mismatch")]
 	InvalidIdentifier,
 	#[error("pointer size is not 64-bit")]

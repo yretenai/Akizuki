@@ -11,7 +11,7 @@ use binrw::{BinRead, NullString, VecArgs};
 use log::warn;
 
 use crate::error::{AkizukiError, AkizukiResult};
-use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
+use crate::format::bigworld::{BigWorldFileHeader, BigWorldFileVersion, BigWorldMagic};
 use crate::format::bigworld_data::*;
 use crate::identifiers::{ResourceId, StringId};
 use crate::pfs;
@@ -51,7 +51,7 @@ impl BigWorldDatabase {
 	pub fn new(asset_bin: Vec<u8>, validate: bool, slim: bool) -> AkizukiResult<BigWorldDatabase> {
 		let mut reader = Cursor::new(asset_bin);
 		let bw_header = BigWorldFileHeader::read_ne(&mut reader)?;
-		bw_header.is_valid(BigWorldMagic::AssetDb, 1, validate, &mut reader)?;
+		bw_header.is_valid(BigWorldMagic::AssetDb, BigWorldFileVersion::new(1, 1, 0, 0), validate, &mut reader)?;
 
 		let bwdb_header = BigWorldDatabaseHeader::read_ne(&mut reader)?;
 

@@ -17,7 +17,7 @@ use log::{debug, error};
 use memmap2::Mmap;
 
 use crate::error::{AkizukiError, AkizukiResult};
-use crate::format::bigworld::{BigWorldFileHeader, BigWorldMagic};
+use crate::format::bigworld::{BigWorldFileHeader, BigWorldFileVersion, BigWorldMagic};
 use crate::format::oodle;
 use crate::format::pfs::*;
 use crate::identifiers::ResourceId;
@@ -35,7 +35,7 @@ impl PackageFileSystem {
 		let mut reader = BufReader::new(File::open(idx_path)?);
 
 		let bw_header = BigWorldFileHeader::read_ne(&mut reader)?;
-		bw_header.is_valid(BigWorldMagic::PFSIndex, 2, validate, &mut reader)?;
+		bw_header.is_valid(BigWorldMagic::PFSIndex, BigWorldFileVersion::new(2, 0, 0, 0), validate, &mut reader)?;
 
 		let header = PackageFileHeader::read_ne(&mut reader)?;
 

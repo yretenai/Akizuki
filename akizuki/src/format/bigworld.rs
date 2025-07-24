@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+use std::fmt::{Debug, Display, Formatter};
 use std::io::SeekFrom::{End, Start};
 use std::io::{Read, Seek};
 
@@ -10,7 +11,6 @@ use binrw::BinRead;
 use four_char_code::four_char_code;
 use log::debug;
 
-use crate::bin_wrap::FlagBool;
 use crate::error::{AkizukiError, AkizukiResult};
 
 #[derive(BinRead, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -22,21 +22,46 @@ pub enum BigWorldMagic {
 
 #[derive(BinRead, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[br()]
+pub struct BigWorldFileVersion {
+	pub revision: u8,
+	pub patch: u8,
+	pub minor: u8,
+	pub major: u8,
+}
+
+#[derive(BinRead, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[br()]
 pub struct BigWorldFileHeader {
 	pub magic: BigWorldMagic,
-	pub alignment: u16,
-	pub packed: FlagBool,
-	pub version: u8,
+	pub version: BigWorldFileVersion,
 	pub hash: u32,
 	pub pointer_size: u32,
 }
 
+
+impl BigWorldFileVersion {
+	pub fn new(major: i32, minor: i32, patch: i32, revision: i32) -> Self {
+		Self {
+			major: major as u8,
+			minor: minor as u8,
+			patch: patch as u8,
+			revision: revision as u8,
+		}
+	}
+}
+
+impl Display for BigWorldFileVersion {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{:}.{:}.{:}.{:}", self.major, self.minor, self.patch, self.revision)
+	}
+}
+
 impl BigWorldFileHeader {
-	pub(crate) fn is_valid<T: Read + Seek>(&self, magic: BigWorldMagic, version: u32, validate: bool, reader: &mut T) -> AkizukiResult<()> {
-		if self.version as u32 != version {
+	pub(crate) fn is_valid<T: Read + Seek>(&self, magic: BigWorldMagic, version: BigWorldFileVersion, validate: bool, reader: &mut T) -> AkizukiResult<()> {
+		if self.version != version {
 			return Err(AkizukiError::InvalidVersion {
 				expected: version,
-				present: self.version as u32,
+				present: self.version,
 			});
 		}
 
