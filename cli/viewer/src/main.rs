@@ -2,52 +2,26 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+mod scene;
+mod shaders;
+
 use std::sync::Arc;
 use std::time::Instant;
 
-use bytemuck::{Pod, Zeroable};
+use glam::Mat4;
 use log::LevelFilter;
 use pollster::block_on;
-use wgpu::util::DeviceExt;
-use wgpu::{CommandEncoder, include_wgsl};
+use wgpu::CommandEncoder;
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalSize, PhysicalSize};
 use winit::event_loop::{ActiveEventLoop, ControlFlow};
 use winit::keyboard::{Key, NamedKey};
 use winit::{event::WindowEvent, event_loop::EventLoop, window::Window};
 
-#[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable)]
-struct GpuVertex {
-	position: [f32; 4],
-	color: [f32; 4],
-}
-
-fn vertex(pos: [f32; 3], color: [f32; 4]) -> GpuVertex {
-	GpuVertex {
-		position: [pos[0], pos[1], pos[2], 1.0],
-		color,
-	}
-}
-
-fn create_tri() -> (Vec<GpuVertex>, Vec<u16>) {
-	let vertex = vec![
-		vertex([-1.0, -1.0, 0.0], [1.0, 0.0, 0.0, 1.0]),
-		vertex([0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 1.0]),
-		vertex([1.0, -1.0, 0.0], [0.0, 0.0, 1.0, 1.0]),
-	];
-
-	let index = vec![2, 1, 0];
-
-	(vertex, index)
-}
+use crate::scene::{Node, Scene};
 
 struct AkizukiViewer {
-	vertex_buf: wgpu::Buffer,
-	index_buf: wgpu::Buffer,
-	index_count: usize,
-	bind_group_layout: wgpu::BindGroupLayout,
-	pipeline: wgpu::RenderPipeline,
+	scene: Scene,
 	time: f32,
 	last_render: Instant,
 }
@@ -58,7 +32,6 @@ struct AppWindow {
 	window: Arc<Window>,
 	surface_desc: wgpu::SurfaceConfiguration,
 	surface: wgpu::Surface<'static>,
-	_hidpi_factor: f64,
 	context: AkizukiViewer,
 }
 
@@ -68,105 +41,9 @@ struct App {
 }
 
 impl AkizukiViewer {
-	fn new(caps: &wgpu::SurfaceCapabilities, device: &wgpu::Device) -> Self {
-		let vertex_size = size_of::<GpuVertex>();
-		let (vertex_data, index_data) = create_tri();
-
-		let vertex_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-			label: Some("Vertex Buffer"),
-			contents: bytemuck::cast_slice(&vertex_data),
-			usage: wgpu::BufferUsages::VERTEX,
-		});
-
-		let index_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-			label: Some("Index Buffer"),
-			contents: bytemuck::cast_slice(&index_data),
-			usage: wgpu::BufferUsages::INDEX,
-		});
-
-		let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-			label: None,
-			entries: &[
-				wgpu::BindGroupLayoutEntry {
-					binding: 0,
-					visibility: wgpu::ShaderStages::VERTEX,
-					ty: wgpu::BindingType::Buffer {
-						ty: wgpu::BufferBindingType::Uniform,
-						has_dynamic_offset: false,
-						min_binding_size: wgpu::BufferSize::new(4),
-					},
-					count: None,
-				},
-				wgpu::BindGroupLayoutEntry {
-					binding: 1,
-					visibility: wgpu::ShaderStages::FRAGMENT,
-					ty: wgpu::BindingType::Buffer {
-						ty: wgpu::BufferBindingType::Uniform,
-						has_dynamic_offset: false,
-						min_binding_size: wgpu::BufferSize::new(4),
-					},
-					count: None,
-				},
-			],
-		});
-
-		let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-			label: None,
-			bind_group_layouts: &[&bind_group_layout],
-			push_constant_ranges: &[],
-		});
-
-		let vertex_buffers = [wgpu::VertexBufferLayout {
-			array_stride: vertex_size as wgpu::BufferAddress,
-			step_mode: wgpu::VertexStepMode::Vertex,
-			attributes: &[
-				wgpu::VertexAttribute {
-					format: wgpu::VertexFormat::Float32x4,
-					offset: 0,
-					shader_location: 0,
-				},
-				wgpu::VertexAttribute {
-					format: wgpu::VertexFormat::Float32x4,
-					offset: 4 * 4,
-					shader_location: 1,
-				},
-			],
-		}];
-
-		let shader = device.create_shader_module(include_wgsl!("shader.wgsl"));
-		let swapchain_format = caps.formats[0];
-
-		let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-			label: None,
-			layout: Some(&pipeline_layout),
-			vertex: wgpu::VertexState {
-				module: &shader,
-				entry_point: Some("vs_main"),
-				compilation_options: Default::default(),
-				buffers: &vertex_buffers,
-			},
-			fragment: Some(wgpu::FragmentState {
-				module: &shader,
-				entry_point: Some("fs_main"),
-				compilation_options: Default::default(),
-				targets: &[Some(swapchain_format.into())],
-			}),
-			primitive: wgpu::PrimitiveState {
-				cull_mode: Some(wgpu::Face::Back),
-				..Default::default()
-			},
-			depth_stencil: None,
-			multisample: wgpu::MultisampleState::default(),
-			multiview: None,
-			cache: None,
-		});
-
+	fn new() -> Self {
 		AkizukiViewer {
-			vertex_buf,
-			index_buf,
-			index_count: index_data.len(),
-			bind_group_layout,
-			pipeline,
+			scene: Scene::default(),
 			time: 0.0,
 			last_render: Instant::now(),
 		}
@@ -176,49 +53,55 @@ impl AkizukiViewer {
 		self.time += delta_time;
 	}
 
-	fn render(&mut self, view: &wgpu::TextureView, device: &wgpu::Device, encoder: &mut CommandEncoder) {
-		let uniform_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-			label: Some("Time Buffer"),
-			contents: bytemuck::bytes_of(&self.time),
-			usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-		});
+	fn render_nodes(&self, nodes: &Vec<Node>, matrix: Mat4, view: &wgpu::TextureView, device: &wgpu::Device, encoder: &mut CommandEncoder) {
+		for node in nodes {
+			let node_matrix = matrix * node.local_matrix;
+			if let Some(mesh_key) = &node.mesh {
+				{
+					let mesh = &self.scene.meshes[mesh_key];
+					let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+						label: None,
+						color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+							view,
+							resolve_target: None,
+							ops: wgpu::Operations {
+								load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+								store: wgpu::StoreOp::Store,
+							},
+						})],
+						depth_stencil_attachment: None,
+						timestamp_writes: None,
+						occlusion_query_set: None,
+					});
+					rpass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+					rpass.set_vertex_buffer(0, mesh.index_buffer.slice(..));
 
-		let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-			layout: &self.bind_group_layout,
-			entries: &[
-				wgpu::BindGroupEntry {
-					binding: 0,
-					resource: uniform_buf.as_entire_binding(),
-				},
-				wgpu::BindGroupEntry {
-					binding: 1,
-					resource: uniform_buf.as_entire_binding(),
-				},
-			],
-			label: None,
-		});
+					for submesh in &mesh.submeshes {
+						let material = &submesh.material;
+						let pipeline = &material.pipeline;
 
-		{
-			let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-				label: None,
-				color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-					view,
-					resolve_target: None,
-					ops: wgpu::Operations {
-						load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-						store: wgpu::StoreOp::Store,
-					},
-				})],
-				depth_stencil_attachment: None,
-				timestamp_writes: None,
-				occlusion_query_set: None,
-			});
-			rpass.set_pipeline(&self.pipeline);
-			rpass.set_bind_group(0, &bind_group, &[]);
-			rpass.set_index_buffer(self.index_buf.slice(..), wgpu::IndexFormat::Uint16);
-			rpass.set_vertex_buffer(0, self.vertex_buf.slice(..));
-			rpass.draw_indexed(0..self.index_count as u32, 0, 0..1);
+						let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+							layout: &material.bind_group_layout,
+							entries: &[
+								// todo: vert binding 0,
+								// todo: frag bindnig 1,
+							],
+							label: None,
+						});
+
+						rpass.set_pipeline(&pipeline);
+						rpass.set_bind_group(0, &bind_group, &[]);
+						rpass.draw_indexed(submesh.first_index..submesh.last_index, submesh.first_vertex, 0..1);
+					}
+				}
+			}
+
+			self.render_nodes(&node.children, node_matrix, view, device, encoder);
 		}
+	}
+
+	fn render(&mut self, view: &wgpu::TextureView, device: &wgpu::Device, encoder: &mut CommandEncoder) {
+		self.render_nodes(&self.scene.nodes, Mat4::default(), view, device, encoder);
 	}
 }
 
@@ -239,7 +122,6 @@ impl AppWindow {
 		};
 
 		let size = window.inner_size();
-		let hidpi_factor = window.scale_factor();
 		let surface = instance.create_surface(window.clone()).unwrap();
 
 		let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -258,12 +140,11 @@ impl AppWindow {
 		}))
 		.unwrap();
 
-		// Set up swap chain
 		let surface_desc = create_surface_desc(&size);
 
 		surface.configure(&device, &surface_desc);
 
-		let context = AkizukiViewer::new(&surface.get_capabilities(&adapter), &device);
+		let context = AkizukiViewer::new();
 
 		Self {
 			device,
@@ -271,7 +152,6 @@ impl AppWindow {
 			window,
 			surface_desc,
 			surface,
-			_hidpi_factor: hidpi_factor,
 			context,
 		}
 	}
