@@ -38,7 +38,6 @@ pub struct BigWorldFileHeader {
 	pub pointer_size: u32,
 }
 
-
 impl BigWorldFileVersion {
 	pub fn new(major: i32, minor: i32, patch: i32, revision: i32) -> Self {
 		Self {
@@ -57,7 +56,13 @@ impl Display for BigWorldFileVersion {
 }
 
 impl BigWorldFileHeader {
-	pub(crate) fn is_valid<T: Read + Seek>(&self, magic: BigWorldMagic, version: BigWorldFileVersion, validate: bool, reader: &mut T) -> AkizukiResult<()> {
+	pub(crate) fn is_valid<T: Read + Seek>(
+		&self,
+		magic: BigWorldMagic,
+		version: BigWorldFileVersion,
+		validate: bool,
+		reader: &mut T,
+	) -> AkizukiResult<()> {
 		if self.version != version {
 			return Err(AkizukiError::InvalidVersion {
 				expected: version,
