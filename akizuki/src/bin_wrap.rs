@@ -37,11 +37,17 @@ impl From<FlagBool> for bool {
 macro_rules! passthrough_impl {
 	($name:ident) => {
 		#[derive(Debug, Clone, Copy, PartialEq)]
-		pub struct $name(glam::$name);
+		pub struct $name(pub glam::$name);
 
 		impl From<$name> for glam::$name {
 			fn from(value: $name) -> glam::$name {
 				value.0
+			}
+		}
+
+		impl From<glam::$name> for $name {
+			fn from(value: glam::$name) -> $name {
+				$name(value)
 			}
 		}
 
@@ -82,11 +88,17 @@ macro_rules! passthrough_ref_read {
 }
 
 passthrough_impl!(Vec2);
+passthrough_impl!(IVec2);
 passthrough_impl!(Vec3);
+passthrough_impl!(IVec3);
 passthrough_impl!(Vec4);
+passthrough_impl!(IVec4);
 passthrough_impl!(Mat4);
 
 passthrough_read!(Vec2, f32, 2);
+passthrough_read!(IVec2, i32, 2);
 passthrough_read!(Vec3, f32, 3);
+passthrough_read!(IVec3, i32, 3);
 passthrough_read!(Vec4, f32, 4);
+passthrough_read!(IVec4, i32, 4);
 passthrough_ref_read!(Mat4, from_cols_array, f32, 16);
