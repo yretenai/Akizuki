@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 // todo: this can be easily macro'd
-// bigworld_vertex!(XYZ, N, UV2, TB, I) maybe?
+// bigworld_vertex!(XYZ, N, UV, UV2, TB, I) maybe?
 
 pub mod vertex_helper;
+pub mod xyz;
+pub mod xyzn;
 pub mod xyznuv;
 pub mod xyznuv2iiiwwtb;
 pub mod xyznuv2tb;
@@ -22,6 +24,8 @@ use glam::{IVec3, Vec2, Vec3, Vec4};
 
 #[rustfmt::skip]
 use crate::space::vertex::{
+	xyz::VertexXYZ,
+	xyzn::VertexXYZN,
 	xyznuv::VertexXYZNUV,
 	xyznuv2iiiwwtb::VertexXYZNUV2IIIWWTB,
 	xyznuv2tb::VertexXYZNUV2TB,
@@ -39,8 +43,10 @@ pub trait VertexDecode {
 	fn decode(&self) -> VertexStream;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum VertexFormat {
+	XYZ(Vec<VertexXYZ>),
+	XYZN(Vec<VertexXYZN>),
 	XYZNUV(Vec<VertexXYZNUV>),
 	XYZNUV2IIIWWTB(Vec<VertexXYZNUV2IIIWWTB>),
 	XYZNUV2TB(Vec<VertexXYZNUV2TB>),
@@ -55,15 +61,10 @@ pub enum VertexFormat {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Vertex {
-	pub position: Vec3, // xyz
-	pub normal: Vec3,   // n
-	pub texcoord: Vec2, // uv
-}
-
-#[derive(Debug, Default, Clone)]
 pub struct VertexStream {
-	pub common: Vec<Vertex>,            // xyznuv
+	pub position: Vec<Vec3>,            // xyz
+	pub normal: Option<Vec<Vec3>>,      // n
+	pub texcoord: Option<Vec<Vec2>>,    // uv
 	pub texcoord2: Option<Vec<Vec2>>,   // uv2
 	pub bone_index: Option<Vec<IVec3>>, // iii
 	pub bone_weight: Option<Vec<Vec3>>, // ww
@@ -78,6 +79,8 @@ impl VertexFormat {
 	pub fn decode(&self) -> VertexStream {
 		use VertexFormat::*;
 		match self {
+			XYZ(vert) => vert.decode(),
+			XYZN(vert) => vert.decode(),
 			XYZNUV(vert) => vert.decode(),
 			XYZNUV2IIIWWTB(vert) => vert.decode(),
 			XYZNUV2TB(vert) => vert.decode(),

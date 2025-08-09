@@ -3,36 +3,26 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 use bytemuck::{Pod, Zeroable};
-use glam::{Vec2, Vec3};
-use half::f16;
+use glam::Vec3;
 
-use crate::space::vertex::vertex_helper::{unpack_normal, unpack_uv};
+use crate::space::vertex::vertex_helper::unpack_normal;
 use crate::space::vertex::{VertexDecode, VertexStream};
 
 #[derive(Debug, Copy, Clone, Pod, Zeroable)]
 #[repr(C, packed(4))]
-pub struct VertexXYZNUV {
+pub struct VertexXYZ {
 	pub xyz: [f32; 3],
-	pub n: [i8; 4],
-	pub uv: [f16; 2],
 }
 
-impl VertexDecode for Vec<VertexXYZNUV> {
+impl VertexDecode for Vec<VertexXYZ> {
 	fn decode(&self) -> VertexStream {
 		let mut stream: VertexStream = Default::default();
 
 		stream.position.reserve(self.len());
-		let mut normal: Vec<Vec3> = Vec::with_capacity(self.len());
-		let mut texcoord: Vec<Vec2> = Vec::with_capacity(self.len());
 
 		for v in self.iter() {
 			stream.position.push(Vec3::from_array(v.xyz));
-			normal.push(unpack_normal(v.n));
-			texcoord.push(unpack_uv(v.uv));
 		}
-
-		stream.normal = Some(normal);
-		stream.texcoord = Some(texcoord);
 
 		stream
 	}
