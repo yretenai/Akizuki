@@ -17,6 +17,7 @@ use std::io::Cursor;
 use crate::error::AkizukiResult;
 use crate::format::bigworld_data::BigWorldTableHeader;
 
+#[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(tag = "table")]
 pub enum BigWorldTableRecord {

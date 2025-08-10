@@ -22,6 +22,7 @@ use crate::format::oodle;
 use crate::format::pfs::*;
 use crate::identifiers::ResourceId;
 
+#[derive(Debug)]
 pub struct PackageFileSystem {
 	pub name: String,
 	pub files: HashMap<ResourceId, PackageFile>,

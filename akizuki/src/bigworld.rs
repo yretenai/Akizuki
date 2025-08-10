@@ -40,6 +40,7 @@ macro_rules! table_branch {
 	};
 }
 
+#[derive(Debug)]
 pub struct BigWorldDatabase {
 	pub prototype_lookup: HashMap<ResourceId, BigWorldPrototypeRef>,
 	pub tables: Vec<Table>,

@@ -13,6 +13,8 @@ use crate::bigworld::BigWorldDatabase;
 use crate::error::{AkizukiError, AkizukiResult};
 use crate::identifiers::ResourceId;
 use crate::pfs::PackageFileSystem;
+
+#[derive(Debug)]
 pub struct ResourceManager {
 	pub packages: HashMap<ResourceId, PackageFileSystem>,
 	pub lookup: HashMap<ResourceId, ResourceId>,
