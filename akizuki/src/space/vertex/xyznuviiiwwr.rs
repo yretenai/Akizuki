@@ -2,23 +2,11 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use bytemuck::{Pod, Zeroable};
 use glam::{IVec3, Vec2, Vec3};
-use half::f16;
 
+use crate::space::VertexStream;
 use crate::space::vertex::vertex_helper::{unpack_bone_index, unpack_bone_weight, unpack_normal, unpack_uv};
-use crate::space::vertex::{VertexDecode, VertexStream};
-
-#[derive(Debug, Copy, Clone, Pod, Zeroable)]
-#[repr(C, packed(4))]
-pub struct VertexXYZNUVIIIWWR {
-	pub xyz: [f32; 3],
-	pub n: [i8; 4],
-	pub uv: [f16; 2],
-	pub iii: [u8; 4],
-	pub ww: [u8; 4],
-	pub r: f32,
-}
+use crate::space::vertex::{VertexDecode, VertexXYZNUVIIIWWR};
 
 impl VertexDecode for Vec<VertexXYZNUVIIIWWR> {
 	fn decode(&self) -> VertexStream {

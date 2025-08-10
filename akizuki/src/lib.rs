@@ -12,6 +12,7 @@ pub mod identifiers;
 pub mod macros;
 pub mod manager;
 pub mod pfs;
+#[cfg(feature = "geometry")]
 pub mod space;
 #[cfg(feature = "data")]
 pub mod table;

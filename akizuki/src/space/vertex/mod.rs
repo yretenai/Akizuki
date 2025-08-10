@@ -2,9 +2,6 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-// todo: this can be easily macro'd
-// bigworld_vertex!(XYZ, N, UV, UV2, TB, I) maybe?
-
 pub mod vertex_helper;
 pub mod xyz;
 pub mod xyzn;
@@ -20,59 +17,150 @@ pub mod xyznuvtb;
 pub mod xyznuvtbi;
 pub mod xyznuvtboi;
 
-use glam::{IVec3, Vec2, Vec3, Vec4};
+use binrw::BinRead;
+use bytemuck::{Pod, Zeroable};
+use half::f16;
 
-#[rustfmt::skip]
-use crate::space::vertex::{
-	xyz::VertexXYZ,
-	xyzn::VertexXYZN,
-	xyznuv::VertexXYZNUV,
-	xyznuv2iiiwwtb::VertexXYZNUV2IIIWWTB,
-	xyznuv2tb::VertexXYZNUV2TB,
-	xyznuv2tbi::VertexXYZNUV2TBI,
-	xyznuviiiww::VertexXYZNUVIIIWW,
-	xyznuviiiwwr::VertexXYZNUVIIIWWR,
-	xyznuviiiwwtb::VertexXYZNUVIIIWWTB,
-	xyznuvr::VertexXYZNUVR,
-	xyznuvtb::VertexXYZNUVTB,
-	xyznuvtbi::VertexXYZNUVTBI,
-	xyznuvtboi::VertexXYZNUVTBOI,
-};
+use crate::space::{VertexFormat, VertexStream};
+
+// todo: this can be easily macro'd
+// bigworld_vertex!(XYZ, N, UV, UV2, TB, I) maybe?
+#[derive(BinRead, Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+#[br()]
+pub struct VertexXYZ {
+	pub xyz: [f32; 3],
+}
+
+#[derive(BinRead, Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+#[br()]
+pub struct VertexXYZN {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUV {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUV2IIIWWTB {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub uv2: [f16; 2],
+	pub iii: [u8; 4],
+	pub ww: [u8; 4],
+	pub t: [i8; 4],
+	pub b: [i8; 4],
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUV2TB {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub uv2: [f16; 2],
+	pub t: [i8; 4],
+	pub b: [i8; 4],
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUV2TBI {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub uv2: [f16; 2],
+	pub t: [i8; 4],
+	pub b: [i8; 4],
+	pub i: u32,
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUVIIIWW {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub iii: [u8; 4],
+	pub ww: [u8; 4],
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUVIIIWWR {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub iii: [u8; 4],
+	pub ww: [u8; 4],
+	pub r: f32,
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUVIIIWWTB {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub iii: [u8; 4],
+	pub ww: [u8; 4],
+	pub t: [i8; 4],
+	pub b: [i8; 4],
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUVR {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub r: f32,
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUVTB {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub t: [i8; 4],
+	pub b: [i8; 4],
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUVTBI {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub t: [i8; 4],
+	pub b: [i8; 4],
+	pub i: u32,
+}
+
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
+#[repr(C, packed(4))]
+pub struct VertexXYZNUVTBOI {
+	pub xyz: [f32; 3],
+	pub n: [i8; 4],
+	pub uv: [f16; 2],
+	pub t: [i8; 4],
+	pub b: [i8; 4],
+	pub o: [u8; 4],
+	pub i: u32,
+}
 
 pub trait VertexDecode {
 	fn decode(&self) -> VertexStream;
-}
-
-#[derive(Debug, Clone)]
-pub enum VertexFormat {
-	XYZ(Vec<VertexXYZ>),
-	XYZN(Vec<VertexXYZN>),
-	XYZNUV(Vec<VertexXYZNUV>),
-	XYZNUV2IIIWWTB(Vec<VertexXYZNUV2IIIWWTB>),
-	XYZNUV2TB(Vec<VertexXYZNUV2TB>),
-	XYZNUV2TBI(Vec<VertexXYZNUV2TBI>),
-	XYZNUVIIIWW(Vec<VertexXYZNUVIIIWW>),
-	XYZNUVIIIWWR(Vec<VertexXYZNUVIIIWWR>),
-	XYZNUVIIIWWTB(Vec<VertexXYZNUVIIIWWTB>),
-	XYZNUVR(Vec<VertexXYZNUVR>),
-	XYZNUVTB(Vec<VertexXYZNUVTB>),
-	XYZNUVTBI(Vec<VertexXYZNUVTBI>),
-	XYZNUVTBOI(Vec<VertexXYZNUVTBOI>),
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct VertexStream {
-	pub position: Vec<Vec3>,            // xyz
-	pub normal: Option<Vec<Vec3>>,      // n
-	pub texcoord: Option<Vec<Vec2>>,    // uv
-	pub texcoord2: Option<Vec<Vec2>>,   // uv2
-	pub bone_index: Option<Vec<IVec3>>, // iii
-	pub bone_weight: Option<Vec<Vec3>>, // ww
-	pub tangent: Option<Vec<Vec4>>,     // t
-	pub binormal: Option<Vec<Vec3>>,    // b
-	pub radius: Option<Vec<f32>>,       // r
-	pub color: Option<Vec<Vec4>>,       // o?
-	pub id: Option<Vec<u32>>,           // i?
 }
 
 impl VertexFormat {

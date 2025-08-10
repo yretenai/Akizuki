@@ -8,5 +8,7 @@ pub mod bigworld;
 pub mod bigworld_data;
 #[cfg(feature = "data")]
 pub mod bigworld_table;
+#[cfg(feature = "geometry")]
+pub mod geometry;
 pub mod oodle;
 pub mod pfs;

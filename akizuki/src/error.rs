@@ -33,6 +33,10 @@ pub enum AkizukiError {
 	UnsupportedTable(StringId),
 	#[error("table {0:?} is has an unsupported version {1:08x}")]
 	UnsupportedTableVersion(StringId, u32),
+	#[error("resource {0:?} has an unrecognized vertex format {1}")]
+	UnrecognizedVertexFormat(ResourceId, String),
+	#[error("resource {0:?} has an unrecognized vertex index size {1}")]
+	UnrecognizedIndexFormat(ResourceId, u16),
 
 	#[error("io error: {0}")]
 	Std(#[from] std::io::Error),
@@ -42,6 +46,10 @@ pub enum AkizukiError {
 	Flate(#[from] flate2::DecompressError),
 	#[error("oodle error: {0}")]
 	Oodle(#[from] OodleError),
+	#[error("meshopt error: {0}")]
+	MeshOpt(#[from] meshopt::Error),
+	#[error("cast error: {0}")]
+	PodCast(bytemuck::PodCastError),
 }
 
 pub type AkizukiResult<T> = Result<T, AkizukiError>;
