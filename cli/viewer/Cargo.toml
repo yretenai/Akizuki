@@ -13,13 +13,12 @@ license = "EUPL-1.2"
 akizuki = { path = "../../akizuki" }
 akizuki_cli = { path = "../../akizuki_cli" }
 
-bytemuck = "1"
+bevy = "0.16"
+bevy_asset = "0.16"
+bevy_panorbit_camera = "0.27"
+clap = { version = "4", features = ["derive"] }
+colog = "1"
+colored = "3"
+env_logger = "0"
 log = "0"
-pollster = "0"
-wgpu = "25"
-naga = "25"
-winit = "0"
-imgui = "0"
-imgui-wgpu = "0"
-imgui-winit-support = "0"
-glam = "0"
+once_cell = "1.21.3"

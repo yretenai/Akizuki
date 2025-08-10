@@ -64,7 +64,7 @@ impl ResourceManager {
 
 	pub fn load_asset_database(&mut self, validate: bool) -> AkizukiResult<&BigWorldDatabase> {
 		if self.big_world_database.is_none() {
-			let asset_bin = self.load_asset(ResourceId::new("content/assets.bin"), false)?;
+			let asset_bin = self.load_asset(ResourceId::new("content/assets.bin"), validate)?;
 			info!("loading asset db");
 			self.big_world_database = Some(BigWorldDatabase::new(asset_bin, validate, false)?);
 		}
