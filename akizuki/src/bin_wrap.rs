@@ -7,6 +7,8 @@ use std::io::{Read, Seek};
 use binrw::{BinRead, BinReaderExt, BinResult, Endian};
 
 // wrappers for BinRead...
+// this is only needed because of 11+ year bikeshedding: https://github.com/rust-lang/rfcs/issues/493
+// and glam is unwilling to implement more serializers: https://github.com/bitshifter/glam-rs/pull/322#issuecomment-1217212112
 
 #[derive(BinRead, Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
 #[br(repr = u8)]
