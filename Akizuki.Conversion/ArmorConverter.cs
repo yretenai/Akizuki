@@ -31,15 +31,15 @@ public static class ArmorConverter {
 	}
 
 	[MethodImpl(MethodConstants.Optimize)]
-	public static void CreateArmor(GL.Root gltf, GL.Node node, Stream stream, GeometryArmor armor, Dictionary<string, int> thicknessMaterial) {
+	public static void CreateArmor(GL.Root gltf, GL.Node node, Stream stream, GeometryArmor armor,
+		Dictionary<string, int> thicknessMaterial) {
 		var (meshNode, _) = node.CreateNode(gltf, armor.Name);
 		(var mesh, meshNode.Mesh) = gltf.CreateMesh(armor.Name);
 
 		foreach (var plate in armor.Plates) {
-			using var indexBuffer = new MemoryBuffer<ushort>(plate.Vertices.Length);
-			var view = gltf.CreateBufferView(MemoryMarshal.AsBytes(plate.Vertices.Span), stream, Unsafe.SizeOf<GeometryArmorVertex>(), GL.BufferViewTarget.ArrayBuffer).Id;
-			var accessorId = gltf.CreateAccessor(view, plate.Vertices.Length, 0, GL.AccessorType.VEC3, GL.AccessorComponentType.Float).Id;
-			var accessorColorId = gltf.CreateAccessor(view, plate.Vertices.Length, Unsafe.SizeOf<Vector3D<float>>(), GL.AccessorType.VEC3, GL.AccessorComponentType.UnsignedByte).Id;
+			if (plate.Vertices.Length % 3 != 0) {
+				throw new InvalidOperationException();
+			}
 
 			var materialName = $"Type{plate.Type} {ColorTheory.ThicknessToName(plate.Thickness)}";
 			if (!thicknessMaterial.TryGetValue(materialName, out var materialId)) {
@@ -56,19 +56,7 @@ public static class ArmorConverter {
 				};
 			}
 
-			var primitive = new GL.Primitive {
-				Mode = GL.PrimitiveMode.Triangles,
-				Material = materialId,
-				Attributes = {
-					["POSITION"] = accessorId,
-					["COLOR_0"] = accessorColorId,
-				},
-			};
-
-			if (plate.Vertices.Length % 3 != 0) {
-				throw new InvalidOperationException();
-			}
-
+			using var indexBuffer = new MemoryBuffer<ushort>(plate.Vertices.Length);
 			for (var index = 0; index < plate.Vertices.Length / 3; index += 1) {
 				var vert1 = index * 3;
 				indexBuffer[vert1] = (ushort) vert1;
@@ -76,9 +64,42 @@ public static class ArmorConverter {
 				indexBuffer[vert1 + 2] = (ushort) (vert1 + 1);
 			}
 
-			primitive.Indices = gltf.CreateAccessor(indexBuffer.Span, stream, GL.BufferViewTarget.ElementArrayBuffer, GL.AccessorType.SCALAR, GL.AccessorComponentType.UnsignedShort).Id;
+			var primitive = new GL.Primitive {
+				Mode = GL.PrimitiveMode.Triangles,
+				Material = materialId,
+				Attributes = BuildVertexBuffer(gltf, stream, plate.Vertices),
+				Indices = gltf.CreateAccessor(indexBuffer.Span, stream, GL.BufferViewTarget.ElementArrayBuffer,
+					GL.AccessorType.SCALAR, GL.AccessorComponentType.UnsignedShort).Id,
+			};
 
 			mesh.Primitives.Add(primitive);
 		}
+	}
+
+
+	[MethodImpl(MethodConstants.Optimize)]
+	public static Dictionary<string, int> BuildVertexBuffer(GL.Root gltf, Stream stream,
+		IMemoryBuffer<GeometryArmorVertex> vertexBuffer) {
+		var buffer = vertexBuffer.Span;
+
+		using var positions = new MemoryBuffer<Vector3D<float>>(buffer.Length);
+		using var normals = new MemoryBuffer<Vector3D<float>>(buffer.Length);
+
+		var positionsSpan = positions.Span;
+		var normalsSpan = normals.Span;
+
+		for (var index = 0; index < buffer.Length; index += 1) {
+
+			positionsSpan[index] = buffer[index].Position;
+			normals[index] = buffer[index].Normal;
+		}
+
+		var result = new Dictionary<string, int> {
+			["POSITION"] = gltf.CreateBufferView(MemoryMarshal.AsBytes(positionsSpan), stream,
+				Unsafe.SizeOf<Vector3D<float>>(), GL.BufferViewTarget.ArrayBuffer).Id,
+			["NORMAL"] = gltf.CreateBufferView(MemoryMarshal.AsBytes(normalsSpan), stream,
+				Unsafe.SizeOf<Vector3D<float>>(), GL.BufferViewTarget.ArrayBuffer).Id,
+		};
+		return result;
 	}
 }
