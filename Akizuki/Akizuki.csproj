@@ -6,23 +6,25 @@ SPDX-License-Identifier: EUPL-1.2
 
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <OutputType>Library</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	</PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Library\DragonLib\DragonLib\DragonLib.csproj" />
-      <ProjectReference Include="..\Library\Ferment\Ferment\Ferment.csproj" />
-      <ProjectReference Include="..\Library\glTFScaffold\glTFScaffold.csproj" />
-      <ProjectReference Include="..\Library\Triton\Triton\Triton.csproj" />
-      <ProjectReference Include="..\Library\Waterfall\Waterfall\Waterfall.csproj" />
-    </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Library\DragonLib\DragonLib.SourceGen\DragonLib.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+		<ProjectReference Include="..\Library\DragonLib\DragonLib\DragonLib.csproj"/>
+		<ProjectReference Include="..\Library\Ferment\Ferment\Ferment.csproj"/>
+		<ProjectReference Include="..\Library\glTFScaffold\glTFScaffold.csproj"/>
+		<ProjectReference Include="..\Library\Triton\Triton\Triton.csproj"/>
+		<ProjectReference Include="..\Library\Waterfall\Waterfall\Waterfall.csproj"/>
+	</ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Serilog" Version="4.3.1" />
-    </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Serilog" Version="4.3.1"/>
+	</ItemGroup>
 
 </Project>
