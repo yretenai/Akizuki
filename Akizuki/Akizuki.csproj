@@ -15,8 +15,10 @@ SPDX-License-Identifier: EUPL-1.2
 
     <ItemGroup>
       <ProjectReference Include="..\Library\DragonLib\DragonLib\DragonLib.csproj" />
+      <ProjectReference Include="..\Library\Ferment\Ferment\Ferment.csproj" />
       <ProjectReference Include="..\Library\glTFScaffold\glTFScaffold.csproj" />
       <ProjectReference Include="..\Library\Triton\Triton\Triton.csproj" />
+      <ProjectReference Include="..\Library\Waterfall\Waterfall\Waterfall.csproj" />
     </ItemGroup>
 
     <ItemGroup>
