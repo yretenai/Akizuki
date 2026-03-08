@@ -1,0 +1,15 @@
+<!--
+SPDX-FileCopyrightText: 2026 Neptuwunium
+
+SPDX-License-Identifier: EUPL-1.2
+-->
+
+<Solution>
+  <Folder Name="/Library/">
+    <Project Path="Library/Ferment/Ferment/Ferment.csproj" />
+    <Project Path="Library/DragonLib/DragonLib/DragonLib.csproj" />
+    <Project Path="Library/glTFScaffold/glTFScaffold.csproj" />
+    <Project Path="Library/Triton/Triton/Triton.csproj" />
+  </Folder>
+  <Project Path="Akizuki/Akizuki.csproj" />
+</Solution>

@@ -1,0 +1,26 @@
+<!--
+SPDX-FileCopyrightText: 2026 Neptuwunium
+
+SPDX-License-Identifier: EUPL-1.2
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Library\DragonLib\DragonLib\DragonLib.csproj" />
+      <ProjectReference Include="..\Library\glTFScaffold\glTFScaffold.csproj" />
+      <ProjectReference Include="..\Library\Triton\Triton\Triton.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Serilog" Version="4.3.1" />
+    </ItemGroup>
+
+</Project>
