@@ -3,11 +3,14 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Waterfall.Hash.Algorithms;
 
 namespace Akizuki.Moo;
 
-public record struct StringId(uint Hash) {
+[StructLayout(LayoutKind.Explicit, Size = 4), DebuggerDisplay("{" + nameof(ToDebugString) + "()}")]
+public readonly record struct StringId([field: FieldOffset(0)] uint Hash) {
 	static StringId() {
 		Lookup["MaterialPrototype"] = "MaterialPrototype";
 		Lookup["VisualPrototype"] = "VisualPrototype";
@@ -28,9 +31,11 @@ public record struct StringId(uint Hash) {
 	public StringId(string path) : this(MurmurHash3Algorithm.Hash32_32(path)) { }
 	public static ConcurrentDictionary<StringId, string> Lookup { get; } = new();
 	public bool IsValid => Hash is > 0 and < 0xffffffff;
-	public override string ToString() => $"0x{Hash} ({Lookup.GetValueOrDefault(this, "unknown")})";
+	public override string ToString() => Lookup.GetValueOrDefault(this) ?? $"0x{Hash:x}";
+	public string ToDebugString() => $"\"{Lookup.GetValueOrDefault(this, "<unknown>")}\" (0x{Hash:x})";
 	public static implicit operator StringId(uint hash) => new(hash);
 	public static implicit operator StringId(string path) => new(path);
 	public static implicit operator uint(StringId id) => id.Hash;
-	public static implicit operator string(StringId id) => Lookup.GetValueOrDefault(id) ?? $"0x{id.Hash}";
+	public static implicit operator string(StringId id) => id.ToString();
+	public override int GetHashCode() => Hash.GetHashCode();
 }

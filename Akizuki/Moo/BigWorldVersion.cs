@@ -6,32 +6,31 @@ using System.Runtime.InteropServices;
 
 namespace Akizuki.Moo;
 
-[StructLayout(LayoutKind.Sequential, Pack = 4)]
-public record struct BigWorldVersion {
-	public byte Revision { get; set; }
-	public byte Patch { get; set; }
-	public byte Minor { get; set; }
-	public byte Major { get; set; }
-
-	public static bool operator >(BigWorldVersion left, BigWorldVersion right) {
-		if (left.Major > right.Major) {
-			return true;
-		}
-
-		if (left.Minor > right.Minor) {
-			return true;
-		}
-
-		if (left.Patch > right.Patch) {
-			return true;
-		}
-
-		return left.Revision > right.Revision;
-	}
-
+[StructLayout(LayoutKind.Explicit, Size = 4)]
+public readonly record struct BigWorldVersion([field: FieldOffset(3)] byte Major = 0,  [field: FieldOffset(2)] byte Minor = 0, [field: FieldOffset(1)] byte Patch = 0, [field: FieldOffset(0)] byte Revision = 0) : IComparable<BigWorldVersion> {
+	public static bool operator >(BigWorldVersion left, BigWorldVersion right) => left.CompareTo(right) > 0;
 	public static bool operator <(BigWorldVersion left, BigWorldVersion right) => !(left > right);
 	public static bool operator >=(BigWorldVersion left, BigWorldVersion right) => left > right || left == right;
 	public static bool operator <=(BigWorldVersion left, BigWorldVersion right) => left < right || left == right;
 
 	public override string ToString() => $"{Major}.{Minor}.{Patch}({Revision})";
+
+	public int CompareTo(BigWorldVersion other) {
+		var majorComparison = Major.CompareTo(other.Major);
+		if (majorComparison != 0) {
+			return majorComparison;
+		}
+
+		var minorComparison = Minor.CompareTo(other.Minor);
+		if (minorComparison != 0) {
+			return minorComparison;
+		}
+
+		var patchComparison = Patch.CompareTo(other.Patch);
+		if (patchComparison != 0) {
+			return patchComparison;
+		}
+
+		return Revision.CompareTo(other.Revision);
+	}
 }

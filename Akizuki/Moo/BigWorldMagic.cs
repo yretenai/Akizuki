@@ -7,10 +7,10 @@ using DragonLib.SourceGen.MagicGenerator;
 namespace Akizuki.Moo;
 
 [GenerateMagic]
-public sealed partial class BigWorldMagic {
+public static partial class BigWorldMagic {
 	[Magic("PFSI")]
-	public partial uint PackageIndex { get; }
+	public static partial uint PackageIndex { get; }
 
 	[Magic("BWDB")]
-	public partial uint AssetDatabase { get; }
+	public static partial uint AssetDatabase { get; }
 }

@@ -14,7 +14,7 @@ SPDX-License-Identifier: EUPL-1.2
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Library\Waterfall\Waterfall\Waterfall.csproj" />
+      <ProjectReference Include="..\Akizuki\Akizuki.csproj" />
     </ItemGroup>
 
 </Project>
