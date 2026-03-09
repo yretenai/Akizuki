@@ -3,9 +3,12 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using Akizuki.Moo;
+using DragonLib.IO.Binary;
 
 namespace Akizuki.PackageFileSystem;
 
-public class Package : BigWorldFile {
-	public Package(Stream stream, bool validateChecksum = false) : base(stream, validateChecksum) { }
+public abstract class Package : BigWorldFile {
+	protected Package(Stream stream, bool validateChecksum = false) : base(stream, validateChecksum) { }
+
+	public abstract IRentedArray<byte>? OpenResource(ResourceId resource);
 }

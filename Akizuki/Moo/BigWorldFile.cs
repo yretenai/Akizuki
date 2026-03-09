@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Buffers;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Akizuki.PackageFileSystem.V2;
 using Waterfall.Hash.Algorithms;
 
 namespace Akizuki.Moo;
@@ -55,4 +57,22 @@ public abstract class BigWorldFile : IDisposable, IAsyncDisposable {
 	}
 
 	protected virtual async ValueTask DisposeAsyncCore() => await BaseStream.DisposeAsync();
+
+	public static BigWorldFile? OpenByVersion(string basePath, Stream stream, bool validate = false) {
+		BigWorldHeader header = new();
+		stream.ReadExactly(MemoryMarshal.AsBytes(new Span<BigWorldHeader>(ref header)));
+		stream.Position -= Unsafe.SizeOf<BigWorldHeader>();
+
+		if (header.Magic == BigWorldMagic.PackageIndex) {
+			switch (header.PointerSize) {
+				case 64 when header.Version.Major == 2:
+					return new PackageV2<long>(basePath, stream, validate);
+				case 32 when header.Version.Major == 2:
+					return new PackageV2<int>(basePath, stream, validate);
+			}
+		}
+
+		AkizukiLog.Error("Cannot handle BigWorld Moo File: {Header}", header);
+		return null;
+	}
 }
