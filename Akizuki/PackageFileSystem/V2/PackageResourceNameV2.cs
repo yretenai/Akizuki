@@ -9,7 +9,7 @@ using Akizuki.Moo;
 namespace Akizuki.PackageFileSystem.V2;
 
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
-public record struct PackageResourceNameV2<TPointer> where TPointer : INumber<TPointer>  {
+public record struct PackageResourceNameV2<TPointer> where TPointer : INumber<TPointer> {
 	public TPointer Length { get; set; }
 	public TPointer Offset { get; set; }
 	public ResourceId Id { get; set; }

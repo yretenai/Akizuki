@@ -9,8 +9,10 @@ using Waterfall.Hash.Algorithms;
 
 namespace Akizuki.Moo;
 
-[StructLayout(LayoutKind.Explicit, Size = 4), DebuggerDisplay("{" + nameof(ToDebugString) + "()}")]
-public readonly record struct StringId([field: FieldOffset(0)] uint Hash) {
+[StructLayout(LayoutKind.Explicit, Size = 4)] [DebuggerDisplay("{" + nameof(ToDebugString) + "()}")]
+public readonly record struct StringId(
+	[field: FieldOffset(0)]
+	uint Hash) : IComparable, IComparable<StringId> {
 	static StringId() {
 		Lookup["MaterialPrototype"] = "MaterialPrototype";
 		Lookup["VisualPrototype"] = "VisualPrototype";
@@ -37,5 +39,7 @@ public readonly record struct StringId([field: FieldOffset(0)] uint Hash) {
 	public static implicit operator StringId(string path) => new(path);
 	public static implicit operator uint(StringId id) => id.Hash;
 	public static implicit operator string(StringId id) => id.ToString();
+	public int CompareTo(object? obj) => obj is StringId other ? CompareTo(other) : 0;
+	public int CompareTo(StringId other) => Hash.CompareTo(other.Hash);
 	public override int GetHashCode() => Hash.GetHashCode();
 }

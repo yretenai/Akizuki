@@ -7,7 +7,15 @@ using System.Runtime.InteropServices;
 namespace Akizuki.Moo;
 
 [StructLayout(LayoutKind.Explicit, Size = 4)]
-public readonly record struct BigWorldVersion([field: FieldOffset(3)] byte Major = 0,  [field: FieldOffset(2)] byte Minor = 0, [field: FieldOffset(1)] byte Patch = 0, [field: FieldOffset(0)] byte Revision = 0) : IComparable<BigWorldVersion> {
+public readonly record struct BigWorldVersion(
+	[field: FieldOffset(3)]
+	byte Major = 0,
+	[field: FieldOffset(2)]
+	byte Minor = 0,
+	[field: FieldOffset(1)]
+	byte Patch = 0,
+	[field: FieldOffset(0)]
+	byte Revision = 0) : IComparable<BigWorldVersion> {
 	public static bool operator >(BigWorldVersion left, BigWorldVersion right) => left.CompareTo(right) > 0;
 	public static bool operator <(BigWorldVersion left, BigWorldVersion right) => !(left > right);
 	public static bool operator >=(BigWorldVersion left, BigWorldVersion right) => left > right || left == right;

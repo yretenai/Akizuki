@@ -25,8 +25,8 @@ public abstract class BigWorldFile : IDisposable, IAsyncDisposable {
 		var size = (int) (stream.Length - 0x10);
 		var buffer = ArrayPool<byte>.Shared.Rent(size);
 		try {
-			stream.ReadExactly(buffer);
-			var hash = MurmurHash3Algorithm.Hash32_32(buffer);
+			stream.ReadExactly(buffer.AsSpan(0, size));
+			var hash = MurmurHash3Algorithm.Hash32_32(buffer.AsSpan(0, size));
 			if (hash != header.FileChecksum) {
 				throw new InvalidDataException("invalid file checksum");
 			}

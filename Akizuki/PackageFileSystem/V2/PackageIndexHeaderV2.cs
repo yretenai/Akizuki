@@ -10,9 +10,9 @@ namespace Akizuki.PackageFileSystem.V2;
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
 public record struct PackageIndexHeaderV2<TPointer> where TPointer : INumber<TPointer> {
 	public int NameCount { get; set; }
-	public int FileCount { get; set; }
-	public int PackageCount { get; set; }
-	public TPointer NameOffset { get; set; }
-	public TPointer FileOffset { get; set; }
-	public TPointer PackageOffset { get; set; }
+	public int ResourceCount { get; set; }
+	public int StreamCount { get; set; }
+	public TPointer NameTableOffset { get; set; }
+	public TPointer ResourceTableOffset { get; set; }
+	public TPointer StreamTableOffset { get; set; }
 }
