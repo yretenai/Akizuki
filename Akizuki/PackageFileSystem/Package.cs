@@ -9,6 +9,7 @@ namespace Akizuki.PackageFileSystem;
 
 public abstract class Package : BigWorldFile {
 	protected Package(Stream stream, bool validateChecksum = false) : base(stream, validateChecksum) { }
+	public abstract IEnumerable<ResourceId> PresentResources { get; }
 
 	public abstract RentedArray<byte>? OpenResource(ResourceId resource);
 }

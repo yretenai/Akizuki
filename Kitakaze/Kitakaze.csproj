@@ -17,4 +17,8 @@ SPDX-License-Identifier: EUPL-1.2
       <ProjectReference Include="..\Akizuki\Akizuki.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    </ItemGroup>
+
 </Project>

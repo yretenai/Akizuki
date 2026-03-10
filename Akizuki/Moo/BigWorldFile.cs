@@ -10,10 +10,8 @@ using Waterfall.Hash.Algorithms;
 
 namespace Akizuki.Moo;
 
-public abstract class BigWorldFile : IDisposable, IAsyncDisposable {
+public abstract class BigWorldFile : IDisposable {
 	protected BigWorldFile(Stream stream, bool validateChecksum = false) {
-		BaseStream = stream;
-
 		BigWorldHeader header = new();
 		stream.ReadExactly(MemoryMarshal.AsBytes(new Span<BigWorldHeader>(ref header)));
 		MooHeader = header;
@@ -37,26 +35,14 @@ public abstract class BigWorldFile : IDisposable, IAsyncDisposable {
 		}
 	}
 
-	public Stream BaseStream { get; }
 	public BigWorldHeader MooHeader { get; }
-
-	public async ValueTask DisposeAsync() {
-		await DisposeAsyncCore();
-		GC.SuppressFinalize(this);
-	}
 
 	public void Dispose() {
 		Dispose(true);
 		GC.SuppressFinalize(this);
 	}
 
-	protected virtual void Dispose(bool disposing) {
-		if (disposing) {
-			BaseStream.Dispose();
-		}
-	}
-
-	protected virtual async ValueTask DisposeAsyncCore() => await BaseStream.DisposeAsync();
+	protected virtual void Dispose(bool disposing) { }
 
 	public static BigWorldFile? OpenByVersion(string basePath, Stream stream, bool validate = false) {
 		BigWorldHeader header = new();

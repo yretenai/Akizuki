@@ -2,17 +2,18 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using Akizuki.PackageFileSystem.V2;
+using System.Diagnostics;
+using Akizuki;
 using DragonLib;
+using Serilog;
+using Serilog.Events;
 
 namespace Kitakaze;
 
 public static class Program {
 	public static void Main(string[] args) {
 		Helpers.ResetCulture();
-		foreach (var idx in Directory.EnumerateFiles($"{args[0]}/bin/11965230/idx/", "*.idx", SearchOption.TopDirectoryOnly)) {
-			using var stream = new FileStream(idx, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-			using var pkg = new PackageV2<long>(args[0], stream, true);
-		}
+		Log.Logger = new LoggerConfiguration().MinimumLevel.Is(Debugger.IsAttached ? LogEventLevel.Debug : LogEventLevel.Information).WriteTo.Console().CreateLogger();
+		using var manager = new ResourceManager(args[0]);
 	}
 }

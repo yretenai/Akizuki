@@ -20,6 +20,8 @@ public readonly record struct ResourceId(
 	};
 
 	public bool IsValid => Hash is > 0 and < 0xffffffffffffffff;
+	public static ResourceId Invalid { get; } = new(0xffffffffffffffff);
+
 	public override string ToString() => Lookup.GetValueOrDefault(this) ?? $"0x{Hash:x}";
 
 	public string ToDebugString() => $"\"{Lookup.GetValueOrDefault(this, "<unknown>")}\" (0x{Hash:x})";

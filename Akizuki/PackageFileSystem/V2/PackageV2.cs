@@ -73,6 +73,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 
 	public Dictionary<ResourceId, PackageResourceV2<TPointer>> Resources { get; } = [];
 	public Dictionary<ResourceId, MemoryMappedFile> PackageStreams { get; } = [];
+	public override IEnumerable<ResourceId> PresentResources => Resources.Keys;
 	public bool ValidateAssetChecksums { get; set; } = false;
 
 	private static void ResolvePath(PackagePathNameV2<TPointer> fileName, Dictionary<ResourceId, (string Name, PackagePathNameV2<TPointer> FileName)> nameParts) {
@@ -108,7 +109,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 		using var accessor = packageStream.CreateViewStream(long.CreateTruncating(resourceHeader.Offset), resourceHeader.CompressedSize);
 
 		try {
-			if (resourceHeader.CompressionDecoder == PackageCompressionType.None || resourceHeader.CompressionEncoder == PackageCompressionType.None) {
+			if (resourceHeader.CompressionType == PackageCompressionType.None || resourceHeader.CompressionLevel == 0) {
 				Debug.Assert(TPointer.CreateChecked(resourceHeader.CompressedSize) == resourceHeader.Size);
 				accessor.ReadExactly(dataSpan);
 			} else {
@@ -118,7 +119,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 				var compressedSpan = compressed.Span;
 				accessor.ReadExactly(compressedSpan);
 
-				switch (resourceHeader.CompressionDecoder) {
+				switch (resourceHeader.CompressionType) {
 					case PackageCompressionType.None: throw new UnreachableException();
 					case PackageCompressionType.DeflateBlocks: throw new NotImplementedException("DeflateBlocks compression hasn't been seen yet.");
 					case PackageCompressionType.Deflate: {
@@ -145,7 +146,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 
 						break;
 					}
-					default: throw new NotSupportedException($"compression type {resourceHeader.CompressionDecoder} is not supported");
+					default: throw new NotSupportedException($"compression type {resourceHeader.CompressionType} is not supported");
 				}
 			}
 
@@ -169,13 +170,5 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 		foreach (var stream in PackageStreams.Values) {
 			stream.Dispose();
 		}
-	}
-
-	protected override ValueTask DisposeAsyncCore() {
-		foreach (var stream in PackageStreams.Values) {
-			stream.Dispose();
-		}
-
-		return ValueTask.CompletedTask;
 	}
 }
