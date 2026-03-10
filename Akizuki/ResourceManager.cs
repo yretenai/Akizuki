@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Globalization;
+using Akizuki.AssetDb;
 using Akizuki.Camouflage;
 using Akizuki.Moo;
 using Akizuki.PackageFileSystem;
@@ -14,8 +15,7 @@ namespace Akizuki;
 public sealed class ResourceManager : IDisposable {
 	public ResourceManager(string installDir, int version = 0, bool validate = false) {
 		if (Instance != null) {
-			throw new InvalidOperationException(
-				"Only one instance of ResourceManager is allowed, call dispose on the previous instance");
+			throw new InvalidOperationException("Only one instance of ResourceManager is allowed, call dispose on the previous instance");
 		}
 
 		Instance = this;
@@ -42,7 +42,7 @@ public sealed class ResourceManager : IDisposable {
 			var idxId = new ResourceId(idxName);
 			ResourceId.Lookup[idxId] = idxName;
 
-			using var stream = new FileStream(idxFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+			using var stream = new StreamBinaryReader(idxFile);
 			var pkg = BigWorldFile.OpenByVersion(installDir, stream, validate);
 			if (pkg is not Package package) {
 				pkg?.Dispose();
@@ -53,22 +53,18 @@ public sealed class ResourceManager : IDisposable {
 			Packages.Add(idxId, package);
 
 			foreach (var path in package.PresentResources) {
-				if (!PathLookup.TryAdd(path, path)) {
+				if (ResourceLookup.TryAdd(path, idxId)) {
 					continue;
 				}
 
-				ReversePathLookup[path] = path;
-				ResourceLookup[path] = idxId;
+				AkizukiLog.Warning("duplicate path {Path}", path);
 			}
 		}
 
 		var locDir = Path.Combine(binDir, "res/texts");
 		if (Directory.Exists(locDir)) {
-			foreach (var locFile in new FileEnumerator(locDir,
-						 new EnumerationOptions
-							 { MatchType = MatchType.Simple, RecurseSubdirectories = true }, "*.mo")) {
-				var lang = Path.GetFileName(Path.GetDirectoryName(Path.GetFullPath(Path.Combine(locFile, "../../")))) ??
-					"xx";
+			foreach (var locFile in new FileEnumerator(locDir, new EnumerationOptions { MatchType = MatchType.Simple, RecurseSubdirectories = true }, "*.mo")) {
+				var lang = Path.GetFileName(Path.GetDirectoryName(Path.GetFullPath(Path.Combine(locFile, "../../")))) ?? "xx";
 				AkizukiLog.Information("Loading Translation {Lang}", lang);
 				using var stream = new FileStream(locFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 				Texts[lang] = new MessageObject(stream);
@@ -84,33 +80,34 @@ public sealed class ResourceManager : IDisposable {
 			AkizukiLog.Warning("Could not load Camouflage Data");
 		}
 
-		// if (OpenFile("res/content/assets.bin") is not { } assetsBin) {
-		// 	AkizukiLog.Warning("No assets database, ship building will be unavailable");
-		// 	return;
-		// }
-
-		// AkizukiLog.Information("Loading Asset Database");
-		// Database = new BigWorldDatabase(assetsBin, validate);
-
-		if (OpenResource("res/content/GameParams.data") is not { } gameParamsData) {
-			AkizukiLog.Warning("No GameParams.data, automatic ship building will be unavailable");
-			return;
+		if (OpenResource("res/content/assets.bin") is { } assetsBin) {
+			AkizukiLog.Information("Loading Asset Database");
+			using var stream = new ArrayPoolBinaryReader(assetsBin);
+			var pkg = BigWorldFile.OpenByVersion(installDir, stream, validate);
+			if (pkg is AssetDatabase db) {
+				Database = db;
+			} else {
+				pkg?.Dispose();
+				AkizukiLog.Error("Could not recognize asset database");
+			}
+		} else {
+			AkizukiLog.Warning("Could not load assets database");
 		}
 
-		AkizukiLog.Information("Loading Game Params data");
-		GameParams = PickledData.Create(gameParamsData);
+		if (OpenResource("res/content/GameParams.data") is { } gameParamsData) {
+			AkizukiLog.Information("Loading Game Params data");
+			GameParams = PickledData.Create(gameParamsData);
+		} else {
+			AkizukiLog.Warning("Could not load game params");
+		}
 	}
 
 	public static ResourceManager? Instance { get; private set; }
 
 	public Dictionary<ResourceId, Package> Packages { get; set; } = [];
-	public Dictionary<string, ResourceId> PathLookup { get; set; } = [];
-	public Dictionary<ResourceId, string> ReversePathLookup { get; set; } = [];
 	public Dictionary<ResourceId, ResourceId> ResourceLookup { get; set; } = [];
-
 	public IEnumerable<ResourceId> Resources => ResourceLookup.Keys;
-
-	// public BigWorldDatabase? Database { get; set; }
+	public AssetDatabase? Database { get; set; }
 	public PickleObject GameParams { get; set; } = [];
 	public CamouflageData? Camouflages { get; set; }
 	public Dictionary<string, MessageObject> Texts { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -126,10 +123,15 @@ public sealed class ResourceManager : IDisposable {
 		Instance = null;
 	}
 
-	// public IPrototype? OpenPrototype(ResourceId id) => Database?.Resolve(id);
-	// public IPrototype? OpenPrototype(string path) => Database?.Resolve(path);
-	//
-	// public IPrototype? OpenPrototype(ulong id) => Database?.Resolve(id);
+	public IPrototype? OpenPrototype(ResourceId id) {
+		if (Database?.OpenPrototype(id) is { } prototype) {
+			return prototype;
+		}
+
+		AkizukiLog.Debug("Could not find {Id:x16}", id);
+		return null;
+	}
+
 	public RentedArray<byte>? OpenResource(ResourceId id) {
 		if (!id.IsValid) {
 			return null;
@@ -142,31 +144,4 @@ public sealed class ResourceManager : IDisposable {
 		AkizukiLog.Debug("Could not find {Id:x16}", id);
 		return null;
 	}
-
-	public RentedArray<byte>? OpenResource(string path) {
-		path = path.TrimStart('/');
-
-		if (!path.StartsWith("res/")) {
-			path = "res/" + path;
-		}
-
-		if (PathLookup.TryGetValue(path, out var id)) {
-			return OpenResource(id);
-		}
-
-		AkizukiLog.Debug("Could not find {Path}", path);
-		return null;
-	}
-
-	public ResourceId FindResource(string path) {
-		path = path.TrimStart('/');
-
-		if (!path.StartsWith("res/")) {
-			path = "res/" + path;
-		}
-
-		return PathLookup.GetValueOrDefault(path, ResourceId.Invalid);
-	}
-
-	public bool HasResource(string path) => FindResource(path).IsValid;
 }

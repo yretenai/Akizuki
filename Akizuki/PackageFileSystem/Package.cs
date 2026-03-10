@@ -8,7 +8,7 @@ using DragonLib.IO.Binary;
 namespace Akizuki.PackageFileSystem;
 
 public abstract class Package : BigWorldFile {
-	protected Package(Stream stream, bool validateChecksum = false) : base(stream, validateChecksum) { }
+	protected Package(BufferBinaryReader reader, bool validateChecksum = false) : base(reader, validateChecksum) { }
 	public abstract IEnumerable<ResourceId> PresentResources { get; }
 
 	public abstract RentedArray<byte>? OpenResource(ResourceId resource);

@@ -2,37 +2,29 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using System.Buffers;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using Akizuki.AssetDb;
 using Akizuki.PackageFileSystem.V2;
+using DragonLib.IO.Binary;
 using Waterfall.Hash.Algorithms;
 
 namespace Akizuki.Moo;
 
 public abstract class BigWorldFile : IDisposable {
-	protected BigWorldFile(Stream stream, bool validateChecksum = false) {
-		BigWorldHeader header = new();
-		stream.ReadExactly(MemoryMarshal.AsBytes(new Span<BigWorldHeader>(ref header)));
-		MooHeader = header;
+	protected BigWorldFile(BufferBinaryReader reader, bool validateChecksum = false) {
+		var header = MooHeader = reader.Read<BigWorldHeader>();
 
 		if (!validateChecksum) {
 			return;
 		}
 
-		var size = (int) (stream.Length - 0x10);
-		var buffer = ArrayPool<byte>.Shared.Rent(size);
-		try {
-			stream.ReadExactly(buffer.AsSpan(0, size));
-			var hash = MurmurHash3Algorithm.Hash32_32(buffer.AsSpan(0, size));
-			if (hash != header.FileChecksum) {
-				throw new InvalidDataException("invalid file checksum");
-			}
-
-			stream.Seek(0x10, SeekOrigin.Begin);
-		} finally {
-			ArrayPool<byte>.Shared.Return(buffer);
+		var size = reader.Length - 0x10;
+		using var buffer = reader.ReadSharedBytes(size);
+		var hash = MurmurHash3Algorithm.Hash32_32(buffer.Span);
+		if (hash != header.FileChecksum) {
+			throw new InvalidDataException("invalid file checksum");
 		}
+
+		reader.Position = 0x10;
 	}
 
 	public BigWorldHeader MooHeader { get; }
@@ -44,17 +36,20 @@ public abstract class BigWorldFile : IDisposable {
 
 	protected virtual void Dispose(bool disposing) { }
 
-	public static BigWorldFile? OpenByVersion(string basePath, Stream stream, bool validate = false) {
-		BigWorldHeader header = new();
-		stream.ReadExactly(MemoryMarshal.AsBytes(new Span<BigWorldHeader>(ref header)));
-		stream.Position -= Unsafe.SizeOf<BigWorldHeader>();
+	public static BigWorldFile? OpenByVersion(string basePath, BufferBinaryReader reader, bool validate = false) {
+		var header = reader.Peek<BigWorldHeader>();
 
 		if (header.Magic == BigWorldMagic.PackageIndex) {
 			switch (header.PointerSize) {
 				case 64 when header.Version.Major == 2:
-					return new PackageV2<long>(basePath, stream, validate);
+					return new PackageV2<long>(basePath, reader, validate);
 				case 32 when header.Version.Major == 2:
-					return new PackageV2<int>(basePath, stream, validate);
+					return new PackageV2<int>(basePath, reader, validate);
+			}
+		} else if (header.Magic == BigWorldMagic.AssetDatabase) {
+			switch  (header.PointerSize) {
+				case 64 when header.Version.Major == 1:
+					return new AssetDatabase(reader, validate);
 			}
 		}
 

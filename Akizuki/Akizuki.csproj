@@ -35,4 +35,8 @@ SPDX-License-Identifier: EUPL-1.2
 		</AssemblyAttribute>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="AssetDb\Tables\" />
+	</ItemGroup>
+
 </Project>

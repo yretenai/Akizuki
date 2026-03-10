@@ -17,17 +17,15 @@ using Waterfall.Hash.Basis;
 namespace Akizuki.PackageFileSystem.V2;
 
 public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, IEqualityOperators<TPointer, TPointer, bool> {
-	public PackageV2(string basePath, Stream stream, bool validateChecksum = false) : base(stream, validateChecksum) {
-		using var reader = new StreamBinaryReader(stream);
-
-		var nameTableOffset = stream.Position;
-		var resourceTableOffset = stream.Position;
-		var packageTableOffset = stream.Position;
+	public PackageV2(string basePath, BufferBinaryReader reader, bool validateChecksum = false) : base(reader, validateChecksum) {
+		var nameTableOffset = reader.Position;
+		var resourceTableOffset = reader.Position;
+		var packageTableOffset = reader.Position;
 
 		var indexHeader = reader.Read<PackageIndexHeaderV2<TPointer>>();
-		nameTableOffset += long.CreateTruncating(indexHeader.NameTableOffset);
-		resourceTableOffset += long.CreateTruncating(indexHeader.ResourceTableOffset);
-		packageTableOffset += long.CreateTruncating(indexHeader.StreamTableOffset);
+		nameTableOffset += int.CreateTruncating(indexHeader.NameTableOffset);
+		resourceTableOffset += int.CreateTruncating(indexHeader.ResourceTableOffset);
+		packageTableOffset += int.CreateTruncating(indexHeader.StreamTableOffset);
 
 		var oneNameEntry = Unsafe.SizeOf<PackagePathNameV2<TPointer>>();
 		var nameParts = ObjectPool<Dictionary<ResourceId, (string, PackagePathNameV2<TPointer>)>>.Rent();
@@ -36,7 +34,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 		try {
 			using var fileNames = reader.Read<PackagePathNameV2<TPointer>>(indexHeader.NameCount);
 			foreach (var fileName in fileNames) {
-				stream.Position = nameTableOffset + int.CreateTruncating(fileName.Name.Offset);
+				reader.Position = nameTableOffset + int.CreateTruncating(fileName.Name.Offset);
 				nameParts[fileName.Name.Id] = (reader.ReadCString<byte>(null, int.CreateTruncating(fileName.Name.Length) - 1, true), fileName);
 				nameTableOffset += oneNameEntry;
 			}
@@ -48,17 +46,17 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 			ObjectPool<Dictionary<ResourceId, (string, PackagePathNameV2<TPointer>)>>.Return(nameParts);
 		}
 
-		stream.Position = resourceTableOffset;
+		reader.Position = resourceTableOffset;
 		using var resources = reader.Read<PackageResourceV2<TPointer>>(int.CreateTruncating(indexHeader.ResourceCount));
 		foreach (var resource in resources) {
 			Resources[resource.Id] = resource;
 		}
 
-		stream.Position = packageTableOffset;
+		reader.Position = packageTableOffset;
 		oneNameEntry = Unsafe.SizeOf<PackageResourceNameV2<TPointer>>();
 		using var streams = reader.Read<PackageResourceNameV2<TPointer>>(indexHeader.StreamCount);
 		foreach (var streamPointer in streams) {
-			stream.Position = packageTableOffset + int.CreateTruncating(streamPointer.Offset);
+			reader.Position = packageTableOffset + int.CreateTruncating(streamPointer.Offset);
 			var name = reader.ReadCString<byte>(null, int.CreateTruncating(streamPointer.Length) - 1, true);
 			var pkgPath = Path.Combine(basePath, "res_packages", name);
 			if (File.Exists(pkgPath)) {
