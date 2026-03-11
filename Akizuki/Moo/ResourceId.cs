@@ -16,7 +16,7 @@ public readonly record struct ResourceId(
 	public ResourceId(string path) : this(CityHashAlgorithm.Hash64(path)) { }
 
 	public static ConcurrentDictionary<ResourceId, string> Lookup { get; } = new() {
-		[0xDBB1A1D1B108B927ul] = "res",
+		[0xDBB1A1D1B108B927ul] = "",
 	};
 
 	public bool IsValid => Hash is > 0 and < 0xffffffffffffffff;

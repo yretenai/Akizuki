@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
+using System.Diagnostics;
 using System.Globalization;
+using System.IO.MemoryMappedFiles;
 using Akizuki.AssetDb;
 using Akizuki.Camouflage;
 using Akizuki.Moo;
@@ -42,7 +44,9 @@ public sealed class ResourceManager : IDisposable {
 			var idxId = new ResourceId(idxName);
 			ResourceId.Lookup[idxId] = idxName;
 
-			using var stream = new StreamBinaryReader(idxFile);
+			using var mmap = MemoryMappedFile.CreateFromFile(idxFile, FileMode.Open, null, 0,  MemoryMappedFileAccess.Read);
+			using var mmapStream = mmap.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
+			using var stream = new StreamBinaryReader(mmapStream);
 			var pkg = BigWorldFile.OpenByVersion(installDir, stream, validate);
 			if (pkg is not Package package) {
 				pkg?.Dispose();
@@ -53,6 +57,9 @@ public sealed class ResourceManager : IDisposable {
 			Packages.Add(idxId, package);
 
 			foreach (var path in package.PresentResources) {
+				if (path.ToString().Contains("camouflages.xml", StringComparison.OrdinalIgnoreCase)) {
+					Debugger.Break();
+				}
 				if (ResourceLookup.TryAdd(path, idxId)) {
 					continue;
 				}
@@ -66,21 +73,23 @@ public sealed class ResourceManager : IDisposable {
 			foreach (var locFile in new FileEnumerator(locDir, new EnumerationOptions { MatchType = MatchType.Simple, RecurseSubdirectories = true }, "*.mo")) {
 				var lang = Path.GetFileName(Path.GetDirectoryName(Path.GetFullPath(Path.Combine(locFile, "../../")))) ?? "xx";
 				AkizukiLog.Information("Loading Translation {Lang}", lang);
-				using var stream = new FileStream(locFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+				using var mmap = MemoryMappedFile.CreateFromFile(locFile, FileMode.Open, null, 0,  MemoryMappedFileAccess.Read);
+				using var mmapStream = mmap.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
+				using var stream = new StreamBinaryReader(mmapStream);
 				Texts[lang] = new MessageObject(stream);
 			}
 		} else {
 			AkizukiLog.Warning("Could not load languages");
 		}
 
-		if (OpenResource("res/camouflages.xml") is { } camouflagesXml) {
+		if (OpenResource("camouflages.xml") is { } camouflagesXml) {
 			AkizukiLog.Information("Loading Camouflage Data");
 			Camouflages = new CamouflageData(camouflagesXml);
 		} else {
 			AkizukiLog.Warning("Could not load Camouflage Data");
 		}
 
-		if (OpenResource("res/content/assets.bin") is { } assetsBin) {
+		if (OpenResource("content/assets.bin") is { } assetsBin) {
 			AkizukiLog.Information("Loading Asset Database");
 			using var stream = new ArrayPoolBinaryReader(assetsBin);
 			var pkg = BigWorldFile.OpenByVersion(installDir, stream, validate);
@@ -94,7 +103,7 @@ public sealed class ResourceManager : IDisposable {
 			AkizukiLog.Warning("Could not load assets database");
 		}
 
-		if (OpenResource("res/content/GameParams.data") is { } gameParamsData) {
+		if (OpenResource("content/GameParams.data") is { } gameParamsData) {
 			AkizukiLog.Information("Loading Game Params data");
 			GameParams = PickledData.Create(gameParamsData);
 		} else {

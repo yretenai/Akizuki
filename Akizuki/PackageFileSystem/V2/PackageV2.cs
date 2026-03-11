@@ -7,6 +7,7 @@ using System.IO.MemoryMappedFiles;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using Akizuki.Moo;
 using DragonLib;
 using DragonLib.IO.Binary;
@@ -35,7 +36,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 			using var fileNames = reader.Read<PackagePathNameV2<TPointer>>(indexHeader.NameCount);
 			foreach (var fileName in fileNames) {
 				reader.Position = nameTableOffset + int.CreateTruncating(fileName.Name.Offset);
-				nameParts[fileName.Name.Id] = (reader.ReadCString<byte>(null, int.CreateTruncating(fileName.Name.Length) - 1, true), fileName);
+				nameParts[fileName.Name.Id] = (reader.ReadCString<byte>(Encoding.ASCII, int.CreateTruncating(fileName.Name.Length) - 1, true), fileName);
 				nameTableOffset += oneNameEntry;
 			}
 
@@ -57,7 +58,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 		using var streams = reader.Read<PackageResourceNameV2<TPointer>>(indexHeader.StreamCount);
 		foreach (var streamPointer in streams) {
 			reader.Position = packageTableOffset + int.CreateTruncating(streamPointer.Offset);
-			var name = reader.ReadCString<byte>(null, int.CreateTruncating(streamPointer.Length) - 1, true);
+			var name = reader.ReadCString<byte>(Encoding.ASCII, int.CreateTruncating(streamPointer.Length) - 1, true);
 			var pkgPath = Path.Combine(basePath, "res_packages", name);
 			if (File.Exists(pkgPath)) {
 				PackageStreams[streamPointer.Id] = MemoryMappedFile.CreateFromFile(new FileStream(pkgPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), null, 0, MemoryMappedFileAccess.Read, HandleInheritability.Inheritable, false);
@@ -83,6 +84,10 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 	}
 
 	private static string ResolvePath(string name, ResourceId id, ResourceId parentId, Dictionary<ResourceId, (string Name, PackagePathNameV2<TPointer> FileName)> names) {
+		if (parentId == 0xDBB1A1D1B108B927ul) {
+			return name;
+		}
+
 		if (ResourceId.Lookup.TryGetValue(parentId, out var parentPath)) {
 			return ResourceId.Lookup[id] = parentPath + "/" + name;
 		}
@@ -104,7 +109,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 
 		var data = new RentedArray<byte>(int.CreateChecked(resourceHeader.Size));
 		var dataSpan = data.Span;
-		using var accessor = packageStream.CreateViewStream(long.CreateTruncating(resourceHeader.Offset), resourceHeader.CompressedSize);
+		using var accessor = packageStream.CreateViewStream(long.CreateTruncating(resourceHeader.Offset), resourceHeader.CompressedSize, MemoryMappedFileAccess.Read);
 
 		try {
 			if (resourceHeader.CompressionType == PackageCompressionType.None || resourceHeader.CompressionLevel == 0) {
