@@ -39,6 +39,11 @@ public abstract class BigWorldFile : IDisposable {
 	public static BigWorldFile? OpenByVersion(string basePath, BufferBinaryReader reader, bool validate = false) {
 		var header = reader.Peek<BigWorldHeader>();
 
+		if (header.Endianness != BigWorldEndianness.Little) {
+			AkizukiLog.Error("Cannot handle BigEndian BigWorld Moo File: {Header}", header);
+			return null;
+		}
+
 		if (header.Magic == BigWorldMagic.PackageIndex) {
 			switch (header.PointerSize) {
 				case 64 when header.Version.Major == 2:

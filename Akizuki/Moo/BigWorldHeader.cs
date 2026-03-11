@@ -11,5 +11,6 @@ public record struct BigWorldHeader {
 	public uint Magic { get; set; }
 	public BigWorldVersion Version { get; set; }
 	public uint FileChecksum { get; set; }
-	public int PointerSize { get; set; }
+	public ushort PointerSize { get; set; }
+	public BigWorldEndianness Endianness { get; set; }
 }
