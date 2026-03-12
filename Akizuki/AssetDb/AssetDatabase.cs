@@ -15,14 +15,9 @@ public class AssetDatabase : BigWorldFile {
 		var headerBaseOffset = reader.Position;
 		var header = reader.Read<AssetDatabaseHeader>();
 
-		using (var test = new FileStream("assets.bin", FileMode.Create, FileAccess.ReadWrite)) {
-			test.Write(((ArrayPoolBinaryReader) reader).Array.AsSpan(0, reader.Length));
-		}
-
 		var stringListBase = headerBaseOffset + AssetDatabaseMap.Size;
 		var prototypeTableBase = stringListBase + AssetDatabaseArray.Size;
 		var pathListBase = prototypeTableBase + AssetDatabaseMap.Size;
-		var prototypeListBase = pathListBase + AssetDatabaseArray.Size;
 
 		var stringTableEntries = header.StringTable.Read<StringId, AssetDatabaseMapBucket, int>(headerBaseOffset, reader);
 		try {
