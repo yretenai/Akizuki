@@ -18,6 +18,7 @@ public readonly record struct StringId(
 		Lookup["VisualPrototype"] = "VisualPrototype";
 		Lookup["ModelPrototype"] = "ModelPrototype";
 		Lookup["SkeletonPrototype"] = "SkeletonPrototype";
+		Lookup["SkeletonExtenderPrototype"] = "SkeletonExtenderPrototype";
 		Lookup["PointLightPrototype"] = "PointLightPrototype";
 		Lookup["AtlasContourProto"] = "AtlasContourProto";
 		Lookup["EffectPrototype"] = "EffectPrototype";
