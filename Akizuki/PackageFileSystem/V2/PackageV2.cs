@@ -30,6 +30,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 
 		var oneNameEntry = Unsafe.SizeOf<PackagePathNameV2<TPointer>>();
 		var nameParts = ObjectPool<Dictionary<ResourceId, (string, PackagePathNameV2<TPointer>)>>.Rent();
+		nameParts.Clear();
 		nameParts.EnsureCapacity(indexHeader.NameCount);
 
 		try {
@@ -84,7 +85,7 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 	}
 
 	private static string ResolvePath(string name, ResourceId id, ResourceId parentId, Dictionary<ResourceId, (string Name, PackagePathNameV2<TPointer> FileName)> names) {
-		if (parentId == 0xDBB1A1D1B108B927ul) {
+		if (parentId.Hash is 0xDBB1A1D1B108B927ul or 0ul) {
 			return name;
 		}
 
