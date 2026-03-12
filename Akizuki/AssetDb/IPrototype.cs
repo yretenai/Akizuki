@@ -12,6 +12,7 @@ namespace Akizuki.AssetDb;
 // [JsonDerivedType(typeof(VisualPrototype))]
 // [JsonDerivedType(typeof(ModelPrototype))]
 // [JsonDerivedType(typeof(SkeletonPrototype))]
+// [JsonDerivedType(typeof(SkeletonExtenderPrototype))]
 // [JsonDerivedType(typeof(PointLightPrototype))]
 // [JsonDerivedType(typeof(VelocityFieldPrototype))]
 // [JsonDerivedType(typeof(AtlasContourPrototype))]
@@ -23,5 +24,6 @@ public interface IPrototype {
 	static virtual uint Id => 0;
 	static virtual int Size => 0;
 	static virtual string PrototypeName => string.Empty;
-	static virtual IPrototype Create(BufferBinaryReader reader) => throw new NotSupportedException();
+	static virtual bool IsSupported(uint version) => false;
+	static virtual IEnumerable<IPrototype> Create(uint version, BufferBinaryReader reader) => throw new NotSupportedException();
 }

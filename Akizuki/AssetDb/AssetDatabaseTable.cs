@@ -36,7 +36,7 @@ public class AssetDatabaseTable {
 			return;
 		}
 
-		if (table.Version != T.Version) {
+		if (T.IsSupported(table.Version)) {
 			AkizukiLog.Warning("Tried loading {Name} with an unsupported version!", T.PrototypeName);
 			return;
 		}
@@ -44,15 +44,7 @@ public class AssetDatabaseTable {
 		AkizukiLog.Debug("{Name} Version Matches", T.PrototypeName);
 		AkizukiLog.Debug("Creating Records for {Name}", T.PrototypeName);
 
-		table.CreateRecords<T>(data, count, offset);
-	}
-
-	private void CreateRecords<T>(BufferBinaryReader data, int count, int offset) where T : IPrototype {
-		for (var index = 0; index < count; ++index) {
-			data.Position = offset;
-			Records.Add(T.Create(data));
-			offset += T.Size;
-		}
+		table.Records.AddRange(T.Create(table.Version, data));
 	}
 
 	private delegate void LoadPrototypeDelegate(AssetDatabaseTable table, BufferBinaryReader data, int count, int offset);
