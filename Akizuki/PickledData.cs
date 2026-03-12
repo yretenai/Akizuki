@@ -32,7 +32,10 @@ public static class PickledData {
 			using var decompressor = new ZLibStream(stream, CompressionMode.Decompress);
 			using var pickler = new Unpickler(decompressor);
 
-			var data = pickler.Read()!;
+			if(pickler.Read() is not {} data) {
+				throw new InvalidOperationException("failed to correctly unpickle");
+			}
+
 			if (data is GameDataObject gameParams) {
 				data = gameParams.TryGetValue(region, out var regionParams) ? regionParams : gameParams[""];
 			}
