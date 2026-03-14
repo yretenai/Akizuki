@@ -108,66 +108,8 @@ public class PackageV2<TPointer> : Package where TPointer : INumber<TPointer>, I
 			return default;
 		}
 
-		var data = new RentedArray<byte>(int.CreateChecked(resourceHeader.Size));
-		var dataSpan = data.Span;
 		using var accessor = packageStream.CreateViewStream(long.CreateTruncating(resourceHeader.Offset), resourceHeader.CompressedSize, MemoryMappedFileAccess.Read);
-
-		try {
-			if (resourceHeader.CompressionType == PackageCompressionType.None || resourceHeader.CompressionLevel == 0) {
-				Debug.Assert(TPointer.CreateChecked(resourceHeader.CompressedSize) == resourceHeader.Size);
-				accessor.ReadExactly(dataSpan);
-			} else {
-				using var compressed = new RentedArray<byte>(resourceHeader.CompressedSize);
-				var dataMemory = data.Memory;
-				var compressedMemory = compressed.Memory;
-				var compressedSpan = compressed.Span;
-				accessor.ReadExactly(compressedSpan);
-
-				switch (resourceHeader.CompressionType) {
-					case PackageCompressionType.None: throw new UnreachableException();
-					case PackageCompressionType.DeflateBlocks: throw new NotImplementedException("DeflateBlocks compression hasn't been seen yet.");
-					case PackageCompressionType.Deflate: {
-						var n = CompressionHelper.Decompress(CompressionType.Deflate, compressedMemory, dataMemory);
-						Debug.Assert(n == data.Length);
-						break;
-					}
-					case <= PackageCompressionType.OodleHydra: {
-						var streamHeader = MemoryMarshal.Read<PackageDataStreamHeaderV2<TPointer>>(compressedMemory.Span);
-						var remainingSize = long.CreateChecked(streamHeader.Size);
-						var totalSize = remainingSize;
-						var offset = int.CreateChecked(streamHeader.DataOffset) + 8;
-						var blocks = MemoryMarshal.Cast<byte, int>(compressedMemory.Span[Unsafe.SizeOf<PackageDataStreamHeaderV2<TPointer>>()..])[..streamHeader.BlockCount];
-						Debug.Assert(streamHeader.Size == resourceHeader.Size);
-						foreach (var block in blocks) {
-							var start = int.CreateChecked(totalSize - remainingSize);
-							var size = Math.Min(remainingSize, streamHeader.BlockSize);
-							var end = int.CreateChecked(start + Math.Min(remainingSize, streamHeader.BlockSize));
-							var n = CompressionHelper.Decompress(CompressionType.Oodle, compressedMemory[offset..(offset + block)], dataMemory[start..end]);
-							Debug.Assert(n == size);
-							offset += block;
-							remainingSize -= size;
-						}
-
-						break;
-					}
-					default: throw new NotSupportedException($"compression type {resourceHeader.CompressionType} is not supported");
-				}
-			}
-
-			if (ValidateAssetChecksums) {
-				var hash = CRC.HashData(CRC32Variants.ISO, dataSpan);
-				if (hash != resourceHeader.Checksum) {
-					throw new InvalidDataException("Checksum mismatch");
-				}
-
-				AkizukiLog.Debug("{File} Passed Checksum Validation", resource.ToDebugString());
-			}
-		} catch {
-			data.Dispose();
-			throw;
-		}
-
-		return data;
+		return OpenStreamedResource<TPointer, PackageResourceV2<TPointer>, PackageTileStreamV2<TPointer>>(resource, resourceHeader, accessor, ValidateAssetChecksums);
 	}
 
 	protected override void Dispose(bool disposing) {

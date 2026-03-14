@@ -9,11 +9,11 @@ using Akizuki.Moo;
 namespace Akizuki.PackageFileSystem.V2;
 
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
-public record struct PackageResourceV2<TPointer> where TPointer : INumber<TPointer> {
+public record struct PackageResourceV2<TPointer> : IPackageStreamedResource<TPointer> where TPointer : INumber<TPointer> {
 	public ResourceId Id { get; set; }
 	public ResourceId StreamId { get; set; }
 	public TPointer Offset { get; set; }
-	public int CompressionLevel { get; set; }
+	public PackageCompressionSystem CompressionSystem { get; set; }
 	public PackageCompressionType CompressionType { get; set; }
 	public int CompressedSize { get; set; }
 	public uint Checksum { get; set; }

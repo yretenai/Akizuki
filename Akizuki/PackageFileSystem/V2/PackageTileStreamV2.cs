@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace Akizuki.PackageFileSystem.V2;
 
 [StructLayout(LayoutKind.Sequential, Pack = 8)]
-public record struct PackageDataStreamHeaderV2<TPointer> where TPointer : INumber<TPointer> {
+public record struct PackageTileStreamV2<TPointer> : IPackageTileStream<TPointer> where TPointer : INumber<TPointer> {
 	public TPointer DataOffset { get; set; }
 	public int CompressionLevel { get; set; }
 	public uint CompressionType { get; set; } // todo: fill this enum out
