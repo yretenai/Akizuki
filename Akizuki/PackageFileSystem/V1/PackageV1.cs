@@ -60,7 +60,7 @@ public class PackageV1<TPointer> : Package where TPointer : INumber<TPointer>, I
 			var name = reader.ReadCString<byte>(Encoding.ASCII, int.CreateTruncating(streamPointer.Length) - 1, true).TrimStart('\\', '/', '.');
 			var pkgPath = Path.Combine(basePath, "res_packages", name);
 			if (File.Exists(pkgPath)) {
-				PackageStreams[streamPointer.Id] = MemoryMappedFile.CreateFromFile(new FileStream(pkgPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), null, 0, MemoryMappedFileAccess.Read, HandleInheritability.Inheritable, false);
+				PackageStreams[streamPointer.Id] = MemoryMappedFile.CreateFromFile(new FileStream(pkgPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), default, 0, MemoryMappedFileAccess.Read, HandleInheritability.Inheritable, false);
 			} else {
 				AkizukiLog.Warning("Cannot find package data stream {Name}", name);
 			}

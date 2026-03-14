@@ -42,7 +42,7 @@ public abstract class BigWorldFile : IDisposable {
 
 		if (header.Endianness != BigWorldEndianness.Little) {
 			AkizukiLog.Error("Cannot handle BigEndian BigWorld Moo File: {Header}", header);
-			return null;
+			return default;
 		}
 
 		if (header.Magic == BigWorldMagic.PackageIndex) {
@@ -64,6 +64,6 @@ public abstract class BigWorldFile : IDisposable {
 		}
 
 		AkizukiLog.Error("Cannot handle BigWorld Moo File: {Header}", header);
-		return null;
+		return default;
 	}
 }

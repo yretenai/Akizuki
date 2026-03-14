@@ -25,7 +25,7 @@ public record CamouflageHelpers {
 	}
 
 	public static Vector4D<float> ConvertVec4(string? value) {
-		if (value == null) {
+		if (value == default) {
 			return new Vector4D<float>(0, 0, 0, 1);
 		}
 

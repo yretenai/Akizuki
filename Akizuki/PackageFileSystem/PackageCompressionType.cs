@@ -26,7 +26,7 @@ public static class PackageCompressionExtensions {
 			PackageCompressionType.OodleKraken or PackageCompressionType.OodleLeviathan or
 				PackageCompressionType.OodleMermaid or PackageCompressionType.OodleSelkie or
 				PackageCompressionType.OodleHydra => CompressionType.Oodle,
-			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+			_ => throw new ArgumentOutOfRangeException(nameof(type), type, default)
 		};
 	}
 }

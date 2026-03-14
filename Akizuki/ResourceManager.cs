@@ -16,7 +16,7 @@ namespace Akizuki;
 
 public sealed class ResourceManager : IDisposable {
 	public ResourceManager(string installDir, int version = 0, bool validate = false) {
-		if (Instance != null) {
+		if (Instance != default) {
 			throw new InvalidOperationException("Only one instance of ResourceManager is allowed, call dispose on the previous instance");
 		}
 
@@ -47,7 +47,7 @@ public sealed class ResourceManager : IDisposable {
 			var idxId = new ResourceId(idxName);
 			ResourceId.Lookup[idxId] = idxName;
 
-			using var mmap = MemoryMappedFile.CreateFromFile(idxFile, FileMode.Open, null, 0,  MemoryMappedFileAccess.Read);
+			using var mmap = MemoryMappedFile.CreateFromFile(idxFile, FileMode.Open, default, 0,  MemoryMappedFileAccess.Read);
 			using var mmapStream = mmap.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
 			using var stream = new StreamBinaryReader(mmapStream);
 			var pkg = BigWorldFile.OpenByVersion(installDir, stream, validate);
@@ -76,7 +76,7 @@ public sealed class ResourceManager : IDisposable {
 			foreach (var locFile in new FileEnumerator(locDir, new EnumerationOptions { MatchType = MatchType.Simple, RecurseSubdirectories = true }, "*.mo")) {
 				var lang = Path.GetFileName(Path.GetDirectoryName(Path.GetFullPath(Path.Combine(locFile, "../../")))) ?? "xx";
 				AkizukiLog.Information("Loading Translation {Lang}", lang);
-				using var mmap = MemoryMappedFile.CreateFromFile(locFile, FileMode.Open, null, 0,  MemoryMappedFileAccess.Read);
+				using var mmap = MemoryMappedFile.CreateFromFile(locFile, FileMode.Open, default, 0,  MemoryMappedFileAccess.Read);
 				using var mmapStream = mmap.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
 				using var stream = new StreamBinaryReader(mmapStream);
 				Texts[lang] = new MessageObject(stream);
@@ -132,7 +132,7 @@ public sealed class ResourceManager : IDisposable {
 		}
 
 		Packages.Clear();
-		Instance = null;
+		Instance = default;
 	}
 
 	public IPrototype? OpenPrototype(ResourceId id) {
@@ -141,12 +141,12 @@ public sealed class ResourceManager : IDisposable {
 		}
 
 		AkizukiLog.Debug("Could not find {Id:x16}", id);
-		return null;
+		return default;
 	}
 
 	public RentedArray<byte>? OpenResource(ResourceId id) {
 		if (!id.IsValid) {
-			return null;
+			return default;
 		}
 
 		if (ResourceLookup.TryGetValue(id, out var packageId) && Packages[packageId].OpenResource(id) is { } buffer) {
@@ -154,6 +154,6 @@ public sealed class ResourceManager : IDisposable {
 		}
 
 		AkizukiLog.Debug("Could not find {Id:x16}", id);
-		return null;
+		return default;
 	}
 }

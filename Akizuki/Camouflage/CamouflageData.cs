@@ -24,7 +24,7 @@ public class CamouflageData {
 			using var stream = new UnmanagedMemoryStream((byte*) pin.Pointer, buffer.Memory.Length);
 			var element = XDocument.Load(stream);
 
-			if (element.Root == null) {
+			if (element.Root == default) {
 				return;
 			}
 
