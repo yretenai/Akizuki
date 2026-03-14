@@ -79,16 +79,18 @@ public abstract class Package : BigWorldFile {
 		var offset = 8 + blockBytes;
 		const int BLOCK_SIZE = 0x10000;
 		foreach (var blockInfo in blockInfos) {
+			Debug.Assert(blockInfo.IsCompressed is 0 or 1);
 			offset += blockInfo.Size;
 			var start = int.CreateChecked(totalSize - remainingSize);
-			var size = Math.Min(remainingSize, BLOCK_SIZE);
+			var size = blockInfo.IsCompressed == 1 ? Math.Min(remainingSize, BLOCK_SIZE) : blockInfo.Size;
 			var end = int.CreateChecked(start + Math.Min(remainingSize, BLOCK_SIZE));
-			Debug.Assert(blockInfo.IsCompressed is 0 or 1);
 			var n = CompressionHelper.Decompress(blockInfo.IsCompressed == 0 ? CompressionType.None : compressionType, compressedMemory[offset..(offset + blockInfo.Size)], dataMemory[start..end]);
 			Debug.Assert(n == size);
 			offset += blockInfo.Size;
-			remainingSize -= size;
+			remainingSize -= n;
 		}
+
+		Debug.Assert(remainingSize == 0);
 	}
 
 	private static void DecompressTileStream<TPointer, TResource, TTileStream>(CompressionType compressionType, TResource resourceHeader, Memory<byte> compressedMemory, Memory<byte> dataMemory) where TPointer : INumber<TPointer> where TResource : IPackageStreamedResource<TPointer> where TTileStream : struct, IPackageTileStream<TPointer> {
@@ -101,11 +103,14 @@ public abstract class Package : BigWorldFile {
 		foreach (var block in blocks) {
 			var start = int.CreateChecked(totalSize - remainingSize);
 			var size = Math.Min(remainingSize, streamHeader.BlockSize);
+			Debug.Assert(block < size); // sanity check to see if uncompressed blocks are possible.
 			var end = int.CreateChecked(start + Math.Min(remainingSize, streamHeader.BlockSize));
 			var n = CompressionHelper.Decompress(compressionType, compressedMemory[offset..(offset + block)], dataMemory[start..end]);
 			Debug.Assert(n == size);
 			offset += block;
-			remainingSize -= size;
+			remainingSize -= n;
 		}
+
+		Debug.Assert(remainingSize == 0);
 	}
 }
