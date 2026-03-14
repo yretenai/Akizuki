@@ -7,6 +7,7 @@ namespace Akizuki.PackageFileSystem;
 public enum PackageCompressionType : uint {
 	None = 0,
 	Deflate = 1,
+	Block = 2,
 	OodleKraken = 3,
 	OodleLeviathan = 4,
 	OodleMermaid = 5,
