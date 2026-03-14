@@ -12,5 +12,6 @@ public interface IPackageStreamedResource<TPointer> where TPointer : INumber<TPo
 	int CompressedSize { get; set; }
 	PackageCompressionSystem CompressionSystem { get; set; }
 	PackageCompressionType CompressionType { get; set; }
+	ushort CompressionVersion { get; set; }
 	uint Checksum { get; set; }
 }

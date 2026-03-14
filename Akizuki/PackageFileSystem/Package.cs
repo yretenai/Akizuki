@@ -36,9 +36,9 @@ public abstract class Package : BigWorldFile {
 
 				switch (resourceHeader.CompressionType) {
 					case PackageCompressionType.None: throw new UnreachableException();
-					case PackageCompressionType.Deflate when resourceHeader.CompressionSystem is PackageCompressionSystem.Block: {
+					case PackageCompressionType.Deflate when resourceHeader.CompressionSystem is PackageCompressionSystem.Block && resourceHeader.CompressionVersion is 0: {
 						if (compressedSpan.Length >= 8 && MemoryMarshal.Read<uint>(compressedSpan) == 0) {
-							DecompressBlocks<TPointer>(CompressionType.Deflate, compressedSpan, data, compressedMemory, dataMemory);
+							DecompressBlocks<TPointer>(compressedSpan, data, compressedMemory, dataMemory);
 							break;
 						}
 
@@ -70,7 +70,7 @@ public abstract class Package : BigWorldFile {
 		return data;
 	}
 
-	private static void DecompressBlocks<TPointer>(CompressionType compressionType, Span<byte> compressedSpan, RentedArray<byte> data, Memory<byte> compressedMemory, Memory<byte> dataMemory) where TPointer : INumber<TPointer> {
+	private static void DecompressBlocks<TPointer>(Span<byte> compressedSpan, RentedArray<byte> data, Memory<byte> compressedMemory, Memory<byte> dataMemory) where TPointer : INumber<TPointer> {
 		var blockInfoCount = MemoryMarshal.Read<int>(compressedSpan[..4]);
 		var blockBytes = blockInfoCount << 2;
 		var blockInfos = MemoryMarshal.Cast<byte, PackageBlock>(compressedSpan[8..blockBytes]);
@@ -79,12 +79,11 @@ public abstract class Package : BigWorldFile {
 		var offset = 8 + blockBytes;
 		const int BLOCK_SIZE = 0x10000;
 		foreach (var blockInfo in blockInfos) {
-			Debug.Assert(blockInfo.IsCompressed is 0 or 1);
 			offset += blockInfo.Size;
 			var start = int.CreateChecked(totalSize - remainingSize);
-			var size = blockInfo.IsCompressed == 1 ? Math.Min(remainingSize, BLOCK_SIZE) : blockInfo.Size;
+			var size = blockInfo.CompressionType != PackageCompressionType.None ? Math.Min(remainingSize, BLOCK_SIZE) : blockInfo.Size;
 			var end = int.CreateChecked(start + Math.Min(remainingSize, BLOCK_SIZE));
-			var n = CompressionHelper.Decompress(blockInfo.IsCompressed == 0 ? CompressionType.None : compressionType, compressedMemory[offset..(offset + blockInfo.Size)], dataMemory[start..end]);
+			var n = CompressionHelper.Decompress(blockInfo.CompressionType.Waterfall, compressedMemory[offset..(offset + blockInfo.Size)], dataMemory[start..end]);
 			Debug.Assert(n == size);
 			offset += blockInfo.Size;
 			remainingSize -= n;

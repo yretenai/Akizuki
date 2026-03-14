@@ -15,6 +15,7 @@ public record struct PackageResourceV2<TPointer> : IPackageStreamedResource<TPoi
 	public TPointer Offset { get; set; }
 	public PackageCompressionSystem CompressionSystem { get; set; }
 	public PackageCompressionType CompressionType { get; set; }
+	public ushort CompressionVersion { get; set; }
 	public int CompressedSize { get; set; }
 	public uint Checksum { get; set; }
 	public TPointer Size { get; set; }
