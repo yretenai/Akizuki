@@ -14,12 +14,14 @@ public record struct PackageResourceV1<TPointer> : IPackageStreamedResource<TPoi
 	public int Reserved { get; set; } // 98% certain this is padding.
 	public int CompressedSize { get; set; }
 	public uint Checksum { get; set; }
-	public TPointer Size { get; set; }
+	public int Size { get; set; }
 	public PackageCompressionSystem CompressionSystem { get; set; }
 	public PackageCompressionType CompressionType { get; set; }
 	public ushort CompressionVersion { get; set; }
 	public ResourceId Id { get; set; }
 	public ResourceId StreamId { get; set; }
+
+	TPointer IPackageStreamedResource<TPointer>.Size => TPointer.CreateTruncating(Size);
 
 	public override int GetHashCode() => Id.GetHashCode();
 }

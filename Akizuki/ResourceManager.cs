@@ -23,18 +23,21 @@ public sealed class ResourceManager : IDisposable {
 		Instance = this;
 
 		if (version == 0) {
-		#pragma warning disable CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
-			version = Directory
-					  .EnumerateDirectories(Path.Combine(installDir, "bin"), "*", SearchOption.TopDirectoryOnly)
-					  .Select(Path.GetFileName)
-					  .Where(x => x != default && x.All(char.IsDigit))
-					  .Select(int.Parse)
-					  .Max();
-		#pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
+			var dir = Path.Combine(installDir, "bin");
+			if (Directory.Exists(dir)) {
+			#pragma warning disable CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
+				version = Directory
+						  .EnumerateDirectories(dir, "*", SearchOption.TopDirectoryOnly)
+						  .Select(Path.GetFileName)
+						  .Where(x => x != default && x.All(char.IsDigit))
+						  .Select(int.Parse)
+						  .Max();
+			#pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
+			}
 		}
 
-		var binDir = Path.Combine(installDir, "bin", version.ToString(CultureInfo.InvariantCulture));
-		var idxDir = Path.Combine(binDir, "idx");
+		var binDir = version == 0 ? installDir : Path.Combine(installDir, "bin", version.ToString(CultureInfo.InvariantCulture));
+		var idxDir = Path.Combine(binDir, version == 0 ? "res_packages" : "idx");
 
 		AkizukiLog.Information("Loading Packages");
 		foreach (var idxFile in new FileEnumerator(idxDir, "*.idx")) {

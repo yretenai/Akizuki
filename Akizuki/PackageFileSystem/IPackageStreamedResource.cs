@@ -6,12 +6,12 @@ using System.Numerics;
 
 namespace Akizuki.PackageFileSystem;
 
-public interface IPackageStreamedResource<TPointer> where TPointer : INumber<TPointer> {
-	TPointer Offset { get; set; }
-	TPointer Size { get; set; }
-	int CompressedSize { get; set; }
-	PackageCompressionSystem CompressionSystem { get; set; }
-	PackageCompressionType CompressionType { get; set; }
-	ushort CompressionVersion { get; set; }
-	uint Checksum { get; set; }
+public interface IPackageStreamedResource<out TPointer> where TPointer : INumber<TPointer> {
+	TPointer Offset { get; }
+	TPointer Size { get; }
+	int CompressedSize { get; }
+	PackageCompressionSystem CompressionSystem { get; }
+	PackageCompressionType CompressionType { get; }
+	ushort CompressionVersion { get; }
+	uint Checksum { get; }
 }

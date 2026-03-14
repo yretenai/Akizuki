@@ -21,6 +21,7 @@ public class PackageV1<TPointer> : Package where TPointer : INumber<TPointer>, I
 
 		var indexHeader = reader.Read<PackageIndexHeaderV1<TPointer>>();
 		nameTableOffset += int.CreateTruncating(indexHeader.NameTableOffset);
+		var nameCount = int.CreateTruncating(indexHeader.NameCount);
 		resourceTableOffset += int.CreateTruncating(indexHeader.ResourceTableOffset);
 		packageTableOffset += int.CreateTruncating(indexHeader.StreamTableOffset);
 
@@ -28,10 +29,10 @@ public class PackageV1<TPointer> : Package where TPointer : INumber<TPointer>, I
 		var oneNameEntry = Unsafe.SizeOf<PackagePathNameV1<TPointer>>();
 		var nameParts = ObjectPool<Dictionary<ResourceId, (string, PackagePathNameV1<TPointer>)>>.Rent();
 		nameParts.Clear();
-		nameParts.EnsureCapacity(indexHeader.NameCount);
+		nameParts.EnsureCapacity(nameCount);
 
 		try {
-			using var fileNames = reader.Read<PackagePathNameV1<TPointer>>(indexHeader.NameCount);
+			using var fileNames = reader.Read<PackagePathNameV1<TPointer>>(nameCount);
 			foreach (var fileName in fileNames) {
 				reader.Position = nameTableOffset + int.CreateTruncating(fileName.Offset) + nameShift;
 				nameParts[fileName.Id] = (reader.ReadCString<byte>(Encoding.ASCII, int.CreateTruncating(fileName.Length) - 1, true), fileName);
@@ -53,7 +54,7 @@ public class PackageV1<TPointer> : Package where TPointer : INumber<TPointer>, I
 
 		reader.Position = packageTableOffset;
 		oneNameEntry = Unsafe.SizeOf<PackagePathNameV1<TPointer>>();
-		using var streams = reader.Read<PackagePathNameV1<TPointer>>(indexHeader.StreamCount);
+		using var streams = reader.Read<PackagePathNameV1<TPointer>>(int.CreateTruncating(indexHeader.StreamCount));
 		foreach (var streamPointer in streams) {
 			reader.Position = packageTableOffset + int.CreateTruncating(streamPointer.Offset) + nameShift;
 			var name = reader.ReadCString<byte>(Encoding.ASCII, int.CreateTruncating(streamPointer.Length) - 1, true).TrimStart('\\', '/', '.');
