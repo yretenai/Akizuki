@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using DragonLib.SourceGen.BitStructGenerator;
+using Pluto.SourceGen.BitStructGenerator;
 
 namespace Akizuki.AssetDb;
 

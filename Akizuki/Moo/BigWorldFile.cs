@@ -5,8 +5,8 @@
 using Akizuki.AssetDb;
 using Akizuki.PackageFileSystem.V1;
 using Akizuki.PackageFileSystem.V2;
-using DragonLib.IO.Binary;
-using Waterfall.Hash.Algorithms;
+using Pluto.IO.Binary;
+using Charon.Hash.Algorithms;
 
 namespace Akizuki.Moo;
 

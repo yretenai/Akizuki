@@ -5,7 +5,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Waterfall.Hash.Algorithms;
+using Charon.Hash.Algorithms;
 
 namespace Akizuki.Moo;
 

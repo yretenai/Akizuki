@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-using Waterfall.Compression;
+using Charon.Compression;
 
 namespace Akizuki.PackageFileSystem;
 
@@ -19,7 +19,7 @@ public enum PackageCompressionType : ushort {
 
 public static class PackageCompressionExtensions {
 	extension(PackageCompressionType type) {
-		public CompressionType Waterfall => type switch {
+		public CompressionType Charon => type switch {
 			PackageCompressionType.None => CompressionType.None,
 			PackageCompressionType.Deflate => CompressionType.Deflate,
 			PackageCompressionType.Block => throw new NotSupportedException(),

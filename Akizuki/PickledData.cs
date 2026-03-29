@@ -4,8 +4,8 @@
 
 using System.IO.Compression;
 using System.Runtime.InteropServices;
-using DragonLib.IO;
-using DragonLib.IO.Binary;
+using Pluto.IO;
+using Pluto.IO.Binary;
 using Ferment;
 
 namespace Akizuki;

@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using System.Xml.Linq;
-using DragonLib.IO;
-using DragonLib.IO.Binary;
+using Pluto.IO;
+using Pluto.IO.Binary;
 
 namespace Akizuki.Camouflage;
 

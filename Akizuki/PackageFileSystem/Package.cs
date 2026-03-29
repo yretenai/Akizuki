@@ -7,10 +7,10 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Akizuki.Moo;
-using DragonLib.IO.Binary;
-using Waterfall.Compression;
-using Waterfall.Hash;
-using Waterfall.Hash.Basis;
+using Pluto.IO.Binary;
+using Charon.Compression;
+using Charon.Hash;
+using Charon.Hash.Basis;
 
 namespace Akizuki.PackageFileSystem;
 
@@ -83,7 +83,7 @@ public abstract class Package : BigWorldFile {
 			var start = int.CreateChecked(totalSize - remainingSize);
 			var size = blockInfo.CompressionType != PackageCompressionType.None ? Math.Min(remainingSize, BLOCK_SIZE) : blockInfo.Size;
 			var end = int.CreateChecked(start + Math.Min(remainingSize, BLOCK_SIZE));
-			var n = CompressionHelper.Decompress(blockInfo.CompressionType.Waterfall, compressedMemory[offset..(offset + blockInfo.Size)], dataMemory[start..end]);
+			var n = CompressionHelper.Decompress(blockInfo.CompressionType.Charon, compressedMemory[offset..(offset + blockInfo.Size)], dataMemory[start..end]);
 			Debug.Assert(n == size);
 			offset += blockInfo.Size;
 			remainingSize -= n;

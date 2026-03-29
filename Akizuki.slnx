@@ -7,11 +7,11 @@ SPDX-License-Identifier: EUPL-1.2
 <Solution>
 	<Folder Name="/Library/">
 		<Project Path="Library/Ferment/Ferment/Ferment.csproj" />
-		<Project Path="Library/DragonLib/DragonLib.SourceGen/DragonLib.SourceGen.csproj" />
-		<Project Path="Library/DragonLib/DragonLib/DragonLib.csproj" />
-		<Project Path="Library/glTFScaffold/glTFScaffold.csproj" />
-		<Project Path="Library/Triton/Triton/Triton.csproj" />
-		<Project Path="Library/Waterfall/Waterfall/Waterfall.csproj" />
+		<Project Path="Library/Neptune/Pluto.SourceGen/Pluto.SourceGen.csproj" />
+		<Project Path="Library/Neptune/Pluto/Pluto.csproj" />
+		<Project Path="Library/Neptune/Ceres/Ceres.csproj" />
+		<Project Path="Library/Neptune/Triton/Triton.csproj" />
+		<Project Path="Library/Neptune/Charon/Charon.csproj" />
 	</Folder>
 	<Project Path="Akizuki.Tests/Akizuki.Tests.csproj" />
 	<Project Path="Akizuki/Akizuki.csproj" />

@@ -2,18 +2,9 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 
-[submodule "Library/glTFScaffold"]
-	path = Library/glTFScaffold
-	url = https://github.com/neptuwunium/glTFScaffold.git
-[submodule "Library/Triton"]
-	path = Library/Triton
-	url = https://github.com/neptuwunium/Triton.git
-[submodule "Library/DragonLib"]
-	path = Library/DragonLib
-	url = https://github.com/neptuwunium/DragonLib.git
 [submodule "Library/Ferment"]
 	path = Library/Ferment
 	url = https://github.com/neptuwunium/Ferment.git
-[submodule "Library/Waterfall"]
-	path = Library/Waterfall
-	url = https://github.com/neptuwunium/Waterfall.git
+[submodule "Library/Neptune"]
+	path = Library/Neptune
+	url = https://github.com/neptuwunium/Neptune.git

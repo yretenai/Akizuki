@@ -9,11 +9,11 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Akizuki.Moo;
-using DragonLib;
-using DragonLib.IO.Binary;
-using Waterfall.Compression;
-using Waterfall.Hash;
-using Waterfall.Hash.Basis;
+using Pluto;
+using Pluto.IO.Binary;
+using Charon.Compression;
+using Charon.Hash;
+using Charon.Hash.Basis;
 
 namespace Akizuki.PackageFileSystem.V2;
 

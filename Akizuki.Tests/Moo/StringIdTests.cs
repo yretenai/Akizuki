@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using Akizuki.Moo;
-using DragonLib;
+using Pluto;
 
 namespace Akizuki.Tests.Moo;
 

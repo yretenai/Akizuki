@@ -16,12 +16,12 @@ SPDX-License-Identifier: EUPL-1.2
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Library\DragonLib\DragonLib.SourceGen\DragonLib.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
-		<ProjectReference Include="..\Library\DragonLib\DragonLib\DragonLib.csproj"/>
+		<ProjectReference Include="..\Library\Neptune\Pluto.SourceGen\Pluto.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+		<ProjectReference Include="..\Library\Neptune\Pluto\Pluto.csproj"/>
 		<ProjectReference Include="..\Library\Ferment\Ferment\Ferment.csproj"/>
-		<ProjectReference Include="..\Library\glTFScaffold\glTFScaffold.csproj"/>
-		<ProjectReference Include="..\Library\Triton\Triton\Triton.csproj"/>
-		<ProjectReference Include="..\Library\Waterfall\Waterfall\Waterfall.csproj"/>
+		<ProjectReference Include="..\Library\Neptune\Ceres\Ceres.csproj"/>
+		<ProjectReference Include="..\Library\Neptune\Triton\Triton.csproj"/>
+		<ProjectReference Include="..\Library\Neptune\Charon\Charon.csproj"/>
 	</ItemGroup>
 
 	<ItemGroup>

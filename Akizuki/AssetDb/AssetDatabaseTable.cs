@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 using Akizuki.Moo;
-using DragonLib.IO.Binary;
+using Pluto.IO.Binary;
 
 namespace Akizuki.AssetDb;
 
